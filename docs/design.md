@@ -1,6 +1,6 @@
 # Design
 
-Product reasoning behind OptoBench. Technical/coding conventions live in
+Product reasoning behind RxVisus. Technical/coding conventions live in
 [../CLAUDE.md](../CLAUDE.md); this file is the "why."
 
 ## What this actually has to beat

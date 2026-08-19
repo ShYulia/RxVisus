@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.optobench.app',
-  appName: 'optobench-scaffold-tmp',
+  appId: 'com.rxvisus.app',
+  appName: 'RxVisus',
   webDir: 'dist'
 };
 

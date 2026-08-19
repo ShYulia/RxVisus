@@ -1,4 +1,4 @@
-# OptoBench
+# RxVisus
 
 A professional toolkit application for opticians and optometrists —
 calculators, an educational Prism Assistant, and a clinical quick
@@ -39,7 +39,10 @@ built to solve real problems, not as a portfolio demo dressed up as one.
 
 ## Note on the name
 
-"OptoBench" was chosen deliberately over more literal alternatives
-(Vergence, RxToolkit were also considered) — it's meant to read as "a
-professional's workbench," which is the actual product framing: a
-toolkit, not a single calculator.
+"RxVisus" was chosen over several alternatives (OptoBench, RxKit, RxBench)
+after checking for naming collisions: "RxKit" collides heavily with
+ReactiveX libraries (RxJava/RxSwift/RxJS) in software search results, and
+"Bench" wasn't wanted in the final name. "Visus" is the clinical Latin
+term for vision/visual acuity used in optometry and ophthalmology, so the
+name keeps "Rx" for immediate prescription-toolkit clarity while reading
+as authentically clinical rather than generic.
