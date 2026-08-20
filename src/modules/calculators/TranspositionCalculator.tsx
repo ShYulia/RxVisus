@@ -3,6 +3,7 @@ import { IonContent, IonPage } from '@ionic/react';
 import { transpose } from '../../domain/calculators/transposition';
 import { formatRx } from './formatDiopter';
 import PageHeader from '../../components/PageHeader';
+import FavoriteStarButton from '../../components/FavoriteStarButton';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import CalculatorResult from '../../components/CalculatorResult';
 import ActionRow from '../../components/ActionRow';
@@ -36,7 +37,11 @@ const TranspositionCalculator: React.FC = () => {
 
   return (
     <IonPage>
-      <PageHeader title="Transposition" backHref="/calculate" />
+      <PageHeader
+        title="Transposition"
+        backHref="/calculate"
+        action={<FavoriteStarButton favorite={{ type: 'calculator', id: 'transposition' }} label="Transposition" />}
+      />
       <IonContent fullscreen className="ion-padding">
         <FieldBoxGrid columns={3}>
           <FieldBox label="SPH" placeholder="-2.00" value={sphere} onChange={setSphere} />

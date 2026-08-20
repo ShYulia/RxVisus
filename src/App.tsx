@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { IonApp, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Tabs from './navigation/Tabs';
 import SideRail from './navigation/SideRail';
+import { useFavoritesStore } from './store/favoritesStore';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -46,17 +48,25 @@ import './theme/shell.css';
 
 setupIonicReact();
 
-const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter>
-      <div className="rx-shell">
-        <SideRail />
-        <div className="rx-shell-main">
-          <Tabs />
+const App: React.FC = () => {
+  const hydrateFavorites = useFavoritesStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrateFavorites();
+  }, [hydrateFavorites]);
+
+  return (
+    <IonApp>
+      <IonReactRouter>
+        <div className="rx-shell">
+          <SideRail />
+          <div className="rx-shell-main">
+            <Tabs />
+          </div>
         </div>
-      </div>
-    </IonReactRouter>
-  </IonApp>
-);
+      </IonReactRouter>
+    </IonApp>
+  );
+};
 
 export default App;

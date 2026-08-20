@@ -152,3 +152,13 @@ export const EyeMarkIcon: React.FC<IconProps> = ({ size = 40, className, slot })
     </svg>
   );
 };
+
+export const StarIcon: React.FC<IconProps> = (props) => (
+  <IconBase {...props} viewBox="0 0 20 20">
+    <path
+      d="M10 2.5l2.35 4.76 5.25.76-3.8 3.7.9 5.23L10 14.5l-4.7 2.45.9-5.23-3.8-3.7 5.25-.76L10 2.5Z"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+  </IconBase>
+);

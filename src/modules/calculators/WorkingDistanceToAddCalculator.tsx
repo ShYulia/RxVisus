@@ -7,6 +7,7 @@ import {
 } from '../../domain/calculators/workingDistanceToAdd';
 import { formatDiopter } from './formatDiopter';
 import PageHeader from '../../components/PageHeader';
+import FavoriteStarButton from '../../components/FavoriteStarButton';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import CalculatorResult from '../../components/CalculatorResult';
 import Disclosure from '../../components/Disclosure';
@@ -46,7 +47,16 @@ const WorkingDistanceToAddCalculator: React.FC = () => {
 
   return (
     <IonPage>
-      <PageHeader title="Working Distance → ADD" backHref="/calculate" />
+      <PageHeader
+        title="Working Distance → ADD"
+        backHref="/calculate"
+        action={
+          <FavoriteStarButton
+            favorite={{ type: 'calculator', id: 'working-distance-add' }}
+            label="Working Distance → ADD"
+          />
+        }
+      />
       <IonContent fullscreen className="ion-padding">
         <FieldBoxGrid columns={3}>
           <FieldBox

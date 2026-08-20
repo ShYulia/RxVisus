@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon } from '../components/icons';
+import { HomeIcon, StarIcon } from '../components/icons';
 import { topLevelModules } from './topLevelModules';
 import { MODULE_ICONS } from './moduleVisuals';
 import './SideRail.css';
@@ -13,6 +13,7 @@ const SideRail: React.FC = () => {
     ...topLevelModules
       .filter((mod) => mod.showInNav)
       .map((mod) => ({ href: mod.route, label: mod.title, Icon: MODULE_ICONS[mod.icon] })),
+    { href: '/favorites', label: 'Favorites', Icon: StarIcon },
   ];
 
   return (

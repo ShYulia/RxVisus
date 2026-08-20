@@ -1,0 +1,32 @@
+.rx-favorite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  color: var(--rx-text-tertiary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.rx-favorite-btn:hover {
+  background: var(--rx-muted-bg);
+  color: var(--rx-text-secondary);
+}
+
+.rx-favorite-btn-active {
+  color: var(--rx-iris);
+}
+
+.rx-favorite-btn-active:hover {
+  background: var(--rx-iris-tint);
+  color: var(--rx-iris-deep);
+}
+
+.rx-favorite-btn:focus-visible {
+  outline: 2px solid var(--rx-iris);
+  outline-offset: 2px;
+}

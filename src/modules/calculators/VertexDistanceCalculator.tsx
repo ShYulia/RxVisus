@@ -8,6 +8,7 @@ import {
 import { GENERIC_TORIC_AVAILABILITY_PROFILE, mapToAvailability } from '../../domain/calculators/toricAvailability';
 import { formatDiopter, formatRx } from './formatDiopter';
 import PageHeader from '../../components/PageHeader';
+import FavoriteStarButton from '../../components/FavoriteStarButton';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import CalculatorResult from '../../components/CalculatorResult';
 import Disclosure from '../../components/Disclosure';
@@ -67,7 +68,11 @@ const VertexDistanceCalculator: React.FC = () => {
 
   return (
     <IonPage>
-      <PageHeader title="Vertex Distance" backHref="/calculate" />
+      <PageHeader
+        title="Vertex Distance"
+        backHref="/calculate"
+        action={<FavoriteStarButton favorite={{ type: 'calculator', id: 'vertex-distance' }} label="Vertex Distance" />}
+      />
       <IonContent fullscreen className="ion-padding">
         <SegmentedControl
           value={presetMode}

@@ -1,6 +1,6 @@
 import { Redirect, Route } from 'react-router-dom';
 import { IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from '@ionic/react';
-import { Calculator, Eye, House, type Icon as PhosphorIcon } from '@phosphor-icons/react';
+import { Calculator, Eye, House, Star, type Icon as PhosphorIcon } from '@phosphor-icons/react';
 import Home from '../modules/home/Home';
 import Calculators from '../modules/calculators/Calculators';
 import { calculatorDefinitions } from '../modules/calculators/calculatorRegistry';
@@ -8,6 +8,7 @@ import Guide from '../modules/guide/Guide';
 import GuidePathway from '../modules/guide/GuidePathway';
 import TestsList from '../modules/guide/TestsList';
 import TestCard from '../modules/guide/TestCard';
+import Favorites from '../modules/favorites/Favorites';
 import { topLevelModules } from './topLevelModules';
 import './Tabs.css';
 
@@ -47,6 +48,9 @@ const Tabs: React.FC = () => (
       <Route exact path="/guide/pathway/:pathwayId">
         <GuidePathway />
       </Route>
+      <Route exact path="/favorites">
+        <Favorites />
+      </Route>
       <Route exact path="/">
         <Redirect to="/home" />
       </Route>
@@ -71,6 +75,12 @@ const Tabs: React.FC = () => (
             </IonTabButton>
           );
         })}
+      <IonTabButton tab="favorites" href="/favorites">
+        <span className="rx-tab-icon-wrap">
+          <Star size={25} weight="duotone" />
+        </span>
+        <IonLabel>Favorites</IonLabel>
+      </IonTabButton>
     </IonTabBar>
   </IonTabs>
 );
