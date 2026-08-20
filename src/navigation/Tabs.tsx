@@ -1,6 +1,6 @@
 import { Redirect, Route } from 'react-router-dom';
 import { IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from '@ionic/react';
-import { HomeIcon } from '../components/icons';
+import { Calculator, Eye, House, type Icon as PhosphorIcon } from '@phosphor-icons/react';
 import Home from '../modules/home/Home';
 import Calculators from '../modules/calculators/Calculators';
 import { calculatorDefinitions } from '../modules/calculators/calculatorRegistry';
@@ -9,8 +9,17 @@ import GuidePathway from '../modules/guide/GuidePathway';
 import TestsList from '../modules/guide/TestsList';
 import TestCard from '../modules/guide/TestCard';
 import { topLevelModules } from './topLevelModules';
-import { MODULE_ICONS } from './moduleVisuals';
 import './Tabs.css';
+
+/**
+ * Bottom-tab-bar icons only — deliberately separate from moduleVisuals'
+ * MODULE_ICONS (used by the desktop SideRail), which keeps its existing
+ * lighter icon style. This mapping is scoped to the mobile tab bar.
+ */
+const TAB_BAR_ICONS: Record<string, PhosphorIcon> = {
+  calculators: Calculator,
+  guide: Eye,
+};
 
 const Tabs: React.FC = () => (
   <IonTabs>
@@ -44,16 +53,20 @@ const Tabs: React.FC = () => (
     </IonRouterOutlet>
     <IonTabBar slot="bottom" className="rx-tabbar">
       <IonTabButton tab="home" href="/home">
-        <HomeIcon size={20} />
+        <span className="rx-tab-icon-wrap">
+          <House size={25} weight="duotone" />
+        </span>
         <IonLabel>Home</IonLabel>
       </IonTabButton>
       {topLevelModules
         .filter((mod) => mod.showInNav)
         .map((mod) => {
-          const Icon = MODULE_ICONS[mod.icon];
+          const Icon = TAB_BAR_ICONS[mod.id];
           return (
             <IonTabButton key={mod.id} tab={mod.id} href={mod.route}>
-              <Icon size={20} />
+              <span className="rx-tab-icon-wrap">
+                <Icon size={25} weight="duotone" />
+              </span>
               <IonLabel>{mod.title}</IonLabel>
             </IonTabButton>
           );
