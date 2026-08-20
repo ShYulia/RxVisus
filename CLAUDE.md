@@ -4,6 +4,18 @@ Guidance for AI-assisted work in this repo. Product reasoning lives in
 [docs/design.md](docs/design.md); this file is the technical/working
 conventions layer.
 
+## Naming
+
+**RxKit is the product brand** (full presentation: "RxKit — Clinical
+Tools for Optometry"; UI surfaces show the short `RxKit` form on their
+own, with the tagline reserved for onboarding/install/About-style brand
+surfaces). **The repository and internal project name are independent
+of the product brand and are not renamed to match** — package name,
+Capacitor `appId`, and the local-storage key namespace all still read
+`rxvisus` (an earlier working name; before that, `OptoBench`). Don't
+"fix" these to say `rxkit` just because the brand changed — see
+[README.md](README.md#note-on-the-name) for the full history.
+
 ## Status
 
 MVP build in progress. Calculators (Transposition, Working Distance → ADD,
@@ -62,29 +74,24 @@ Navigation becomes **Home / Calculators / Clinical Guide / Favorites**.
 
 ### 2. Copy Result — remove from most calculators, keep only on Vertex Distance
 
+**Done (2026-08-20).** `ActionRow` now takes an opt-in `showCopy?: boolean`
+(default `false`) that gates rendering of the Copy Result button entirely;
+`copyText` alone no longer causes the button to appear. Only
+`VertexDistanceCalculator.tsx` passes `showCopy`. `TranspositionCalculator.tsx`
+and `WorkingDistanceToAddCalculator.tsx` now render `<ActionRow onClear={...} />`
+with no copy-related props. `Clear` was left untouched (still always shown) —
+whether `Clear` should also become opt-in is still an open question, not
+decided by this change.
+
 Standing product rule (see also "Working conventions" below):
 **Copy Result is opt-in per calculator, added only when there's a
 concrete external workflow that needs the result copied — never a
 reflexive default.** Vertex Distance keeps it because the converted Rx
 commonly needs to be copied into an email/order form when ordering
 contact lenses; no other current or planned calculator has an equivalent
-described workflow.
-
-Next session:
-- Remove the `ActionRow` Copy Result button from
-  `TranspositionCalculator.tsx` and `WorkingDistanceToAddCalculator.tsx`.
-- Do not add it to the future Spherical Equivalent calculator (item 3) or
-  to Prism/Prentice's Rule by default when that's eventually built.
-- Keep it only on `VertexDistanceCalculator.tsx`.
-- This rule is specifically about **Copy Result**, not `Clear` — `Clear`
-  is a separate, generally-useful action. Confirm with the user whether
-  `Clear` should also become opt-in before assuming either way; nothing
-  here decides that.
-- `components/ActionRow.tsx` itself likely doesn't need to change — this
-  is about which screens render it, not the component's implementation.
-  Check whether `ActionRow` needs a "clear only, no copy" mode/prop once
-  you're in the code, since two of its three current callers will drop
-  the copy half.
+described workflow. Do not add it to the future Spherical Equivalent
+calculator (item 3) or to Prism/Prentice's Rule by default when that's
+eventually built.
 
 ### 3. New calculator — Spherical Equivalent
 
@@ -237,3 +244,53 @@ territory while fully supporting the actual workflow.
   an order/email when ordering contact lenses). Do not add it reflexively
   to every calculator screen just because the component exists — see
   "Next session" item 2 above for the specific cleanup this implies.
+- **Input placeholders are neutral, never realistic example values.** A
+  placeholder that looks like a plausible entered Rx (`-6.50`, `1.50`,
+  `50`, `180`) can be mistaken for an actual or default value.
+  - Dioptric fields (SPH, CYL, ADD, etc.) → `0.00`.
+  - Distance fields (cm, mm) → `0`.
+  - AXIS → **no numeric placeholder at all.** Put the valid range in the
+    label instead (`AXIS (1–180°)`) and leave the field visually empty.
+    Since axis is clinically meaningless without a cylinder, disable the
+    AXIS input (via `FieldBox`'s `disabled` prop) until CYL resolves to
+    non-zero, and don't require it in validation while it's disabled —
+    see `TranspositionCalculator.tsx` / `VertexDistanceCalculator.tsx`
+    for the pattern (blank CYL treated as `0`, axis conditionally
+    required/disabled off that).
+  - Placeholders are visual only — an untouched field's actual state
+    stays empty/`NaN`, never initialized to `0`. Never rely on the
+    placeholder value as the real default.
+  - If a concrete example is genuinely useful, show it as helper text
+    below the input (`FieldBox`'s `helperText` prop, e.g. "Example: 50
+    cm"), never as the placeholder itself.
+- **Displayed axis values are never zero-padded.** `33`, not `033` — an
+  axis under 100 is shown as its plain number, not a fixed 3-digit
+  field. `formatRx` (`formatDiopter.ts`) and the Vertex Distance stock-
+  parameters panel are the two spots that render an axis; keep both
+  plain (no `padStart`) if either is touched again.
+- **A zero sphere is entered and displayed as `Pln`, matching real Rx
+  notation, not `0.00`.** `parseSphereInput` (`formatDiopter.ts`) accepts
+  the typed text `Pln` (case-insensitive) as sphere `0`; `formatSphere`
+  is the inverse — it prints `Pln` for a zero sphere instead of `+0.00`.
+  `formatRx` uses `formatSphere` for the sphere component only —
+  cylinder and other generic diopter values still go through
+  `formatDiopter` and keep showing `+0.00`; plano is sphere-specific
+  clinical shorthand, not a generic "zero" convention. Because `Pln`
+  requires letters, SPH fields use `inputMode="text"` (not `"decimal"`)
+  so the on-screen keyboard doesn't lock mobile users out of typing it;
+  every SPH field should carry a `helperText="Plano: type Pln"` hint
+  (see `TranspositionCalculator.tsx` / `VertexDistanceCalculator.tsx`).
+  Any future calculator with a SPH input (e.g. Spherical Equivalent,
+  item 3 above) should follow the same pattern.
+- **`formatRx` omits the `/ CYL x AXIS` tail entirely when cylinder is
+  0.** A spherical-only Rx is written clinically as just the sphere
+  (`-4.00`, or `Pln`) — never `-4.00 / +0.00 x 180`, since axis has no
+  meaning without a cylinder (same principle as the AXIS-disabled-when-
+  CYL-is-0 input rule above). This was the same "fake axis on a
+  spherical result" bug already fixed once for Vertex Distance's stock-
+  parameters panel (`toricAvailability.ts` / `mapToAvailability`,
+  2026-08-20) — `formatRx` needed the identical fix for its own primary
+  Rx display, since it was still appending a meaningless axis (e.g.
+  `Transposition`'s spherical-only path always fed `axis: 180` into
+  `transpose`, which then does `axis + 90`, silently surfacing as a
+  fake `x 90`).

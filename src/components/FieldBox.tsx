@@ -17,8 +17,11 @@ export interface FieldBoxProps {
   unit?: string;
   value: string;
   placeholder?: string;
-  inputMode?: 'decimal' | 'numeric';
+  /** Secondary text shown below the input, e.g. "Example: 50 cm". Never put an example in `placeholder`. */
+  helperText?: string;
+  inputMode?: 'decimal' | 'numeric' | 'text';
   error?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }
 
@@ -28,8 +31,10 @@ export const FieldBox: React.FC<FieldBoxProps> = ({
   unit,
   value,
   placeholder,
+  helperText,
   inputMode = 'decimal',
   error,
+  disabled = false,
   onChange,
 }) => (
   <div className="rx-fieldbox">
@@ -37,14 +42,20 @@ export const FieldBox: React.FC<FieldBoxProps> = ({
     <div className="rx-fieldbox-value-row">
       <IonInput
         className="rx-fieldbox-input"
-        type="number"
+        // type="text" (not "number") deliberately: the HTML number input spec rejects a
+        // leading "+" as invalid syntax and silently reports value="", which broke entering
+        // plus-cylinder values like "+9.00". We parse the raw text ourselves (parseFloat/
+        // parseInt), which handles a leading "+" fine.
+        type="text"
         inputmode={inputMode}
         placeholder={placeholder}
         value={value}
+        disabled={disabled}
         onIonInput={(e) => onChange(e.detail.value ?? '')}
       />
       {unit && <span className="rx-fieldbox-unit">{unit}</span>}
     </div>
+    {helperText && !error && <p className="rx-fieldbox-helper">{helperText}</p>}
     {error && <p className="rx-fieldbox-error">{error}</p>}
   </div>
 );

@@ -6,7 +6,7 @@ import {
   type VertexDistanceValidationErrors,
 } from '../../domain/calculators/vertexDistance';
 import { GENERIC_TORIC_AVAILABILITY_PROFILE, mapToAvailability } from '../../domain/calculators/toricAvailability';
-import { formatDiopter, formatRx } from './formatDiopter';
+import { formatDiopter, formatRx, formatSphere, parseSphereInput } from './formatDiopter';
 import PageHeader from '../../components/PageHeader';
 import FavoriteStarButton from '../../components/FavoriteStarButton';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
@@ -22,7 +22,7 @@ const VertexDistanceCalculator: React.FC = () => {
   const [fromVertexStr, setFromVertexStr] = useState('12');
   const [toVertexStr, setToVertexStr] = useState('0');
 
-  const sphere = parseFloat(sphereStr);
+  const sphere = parseSphereInput(sphereStr);
   // Blank means "no cylinder" (spherical) — not a missing/invalid value.
   const cylinder = cylinderStr.trim() === '' ? 0 : parseFloat(cylinderStr);
   const axis = parseInt(axisStr, 10);
@@ -106,6 +106,8 @@ const VertexDistanceCalculator: React.FC = () => {
           <FieldBox
             label="SPH"
             placeholder="0.00"
+            helperText="Plano: type Pln"
+            inputMode="text"
             value={sphereStr}
             onChange={setSphereStr}
             error={showFieldError('sphere', sphereStr) ? errors.sphere : undefined}
@@ -118,11 +120,11 @@ const VertexDistanceCalculator: React.FC = () => {
             error={showFieldError('cylinder', cylinderStr) ? errors.cylinder : undefined}
           />
           <FieldBox
-            label="AXIS"
-            placeholder="0"
+            label="AXIS (1–180°)"
             inputMode="numeric"
             value={axisStr}
             onChange={setAxisStr}
+            disabled={cylinder === 0}
             error={showAxisError ? errors.axis : undefined}
           />
         </FieldBoxGrid>
@@ -141,7 +143,7 @@ const VertexDistanceCalculator: React.FC = () => {
                 <FieldBoxGrid columns={3}>
                   <div className="rx-fieldbox rx-fieldbox-static">
                     <span className="rx-fieldbox-label">SPH</span>
-                    <span className="rx-fieldbox-value-static">{formatDiopter(availability.sphere)} D</span>
+                    <span className="rx-fieldbox-value-static">{formatSphere(availability.sphere)}</span>
                   </div>
                 </FieldBoxGrid>
                 <p className="rx-result-panel-caption">Spherical — no cylinder to map.</p>
@@ -154,18 +156,18 @@ const VertexDistanceCalculator: React.FC = () => {
                 <FieldBoxGrid columns={3}>
                   <div className="rx-fieldbox rx-fieldbox-static">
                     <span className="rx-fieldbox-label">SPH</span>
-                    <span className="rx-fieldbox-value-static">{formatDiopter(availability.sphere)} D</span>
+                    <span className="rx-fieldbox-value-static">{formatSphere(availability.sphere)}</span>
                   </div>
                   <div className="rx-fieldbox rx-fieldbox-static">
                     <span className="rx-fieldbox-label">CYL</span>
                     <span className="rx-fieldbox-value-static">
-                      {availability.cylinderCandidatesD.map((c) => formatDiopter(c)).join(' / ')} D
+                      {availability.cylinderCandidatesD.map((c) => formatDiopter(c)).join(' / ')}
                     </span>
                   </div>
                   <div className="rx-fieldbox rx-fieldbox-static">
                     <span className="rx-fieldbox-label">AXIS</span>
                     <span className="rx-fieldbox-value-static">
-                      {String(availability.axis ?? 0).padStart(3, '0')}
+                      {availability.axis ?? 0}
                     </span>
                   </div>
                 </FieldBoxGrid>
@@ -195,7 +197,11 @@ const VertexDistanceCalculator: React.FC = () => {
           <p className="rx-hint">Enter sphere to convert. Add cylinder and axis only for a toric Rx.</p>
         )}
 
-        <ActionRow onClear={handleClear} copyText={outcome && outcome.ok ? formatRx(outcome.result.rx) : undefined} />
+        <ActionRow
+          onClear={handleClear}
+          showCopy
+          copyText={outcome && outcome.ok ? formatRx(outcome.result.rx) : undefined}
+        />
       </IonContent>
     </IonPage>
   );

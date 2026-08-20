@@ -43,8 +43,6 @@ const WorkingDistanceToAddCalculator: React.FC = () => {
     setNewDistanceStr('');
   };
 
-  const copyText = result ? `${formatDiopter(result.equivalentAdd)} D (nearest ${formatDiopter(result.nearestQuarterAdd)} D)` : undefined;
-
   return (
     <IonPage>
       <PageHeader
@@ -62,7 +60,7 @@ const WorkingDistanceToAddCalculator: React.FC = () => {
           <FieldBox
             label="Tested ADD"
             unit="D"
-            placeholder="1.50"
+            placeholder="0.00"
             value={knownAddStr}
             onChange={setKnownAddStr}
             error={showFieldError('knownAdd', knownAddStr) ? errors.knownAdd : undefined}
@@ -70,7 +68,8 @@ const WorkingDistanceToAddCalculator: React.FC = () => {
           <FieldBox
             label="Tested distance"
             unit="cm"
-            placeholder="50"
+            placeholder="0"
+            helperText="Example: 50 cm"
             value={testedDistanceStr}
             onChange={setTestedDistanceStr}
             error={showFieldError('testedDistanceCm', testedDistanceStr) ? errors.testedDistanceCm : undefined}
@@ -78,7 +77,8 @@ const WorkingDistanceToAddCalculator: React.FC = () => {
           <FieldBox
             label="New distance"
             unit="cm"
-            placeholder="80"
+            placeholder="0"
+            helperText="Example: 80 cm"
             value={newDistanceStr}
             onChange={setNewDistanceStr}
             error={showFieldError('newDistanceCm', newDistanceStr) ? errors.newDistanceCm : undefined}
@@ -127,7 +127,7 @@ const WorkingDistanceToAddCalculator: React.FC = () => {
           <p className="rx-hint">Enter the clinically tested ADD and both working distances to convert.</p>
         )}
 
-        <ActionRow onClear={handleClear} copyText={copyText} />
+        <ActionRow onClear={handleClear} />
       </IonContent>
     </IonPage>
   );

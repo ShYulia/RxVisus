@@ -83,3 +83,14 @@
   color: var(--ion-color-danger, #eb445a);
   line-height: 1.4;
 }
+
+.rx-fieldbox-helper {
+  margin: 0;
+  font-size: 11px;
+  color: var(--rx-text-tertiary);
+  line-height: 1.3;
+}
+
+.rx-fieldbox-input[disabled] {
+  opacity: 0.45;
+}
