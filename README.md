@@ -1,4 +1,6 @@
-# RxVisus
+# RxKit
+
+**Clinical Tools for Optometry**
 
 A professional toolkit application for opticians and optometrists —
 calculators, an educational Prism Assistant, and a clinical quick
@@ -39,10 +41,19 @@ built to solve real problems, not as a portfolio demo dressed up as one.
 
 ## Note on the name
 
-"RxVisus" was chosen over several alternatives (OptoBench, RxKit, RxBench)
-after checking for naming collisions: "RxKit" collides heavily with
-ReactiveX libraries (RxJava/RxSwift/RxJS) in software search results, and
-"Bench" wasn't wanted in the final name. "Visus" is the clinical Latin
-term for vision/visual acuity used in optometry and ophthalmology, so the
-name keeps "Rx" for immediate prescription-toolkit clarity while reading
-as authentically clinical rather than generic.
+The product's user-facing brand is **RxKit** — "*RxKit — Clinical Tools
+for Optometry*" is the full presentation; UI surfaces show the short
+form (`RxKit`) with the tagline reserved for onboarding/install/About-
+style brand surfaces.
+
+**The repository and internal project name are independent of the
+product brand and are not being renamed.** The codebase, package name,
+Capacitor `appId`, and local-storage key namespace all still use the
+project's earlier working name (`rxvisus`) — that's a technical/internal
+identifier, not the product people see, so there's no reason to touch
+it just because the brand changed. If you're looking for the earlier
+naming history: this project went through two working names before
+landing on the final brand — `OptoBench`, then `RxVisus` (chosen partly
+because "RxKit" collided with ReactiveX libraries in software search
+results at the time) — before "RxKit" was confirmed as the final
+product name regardless of that collision.

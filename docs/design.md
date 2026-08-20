@@ -1,6 +1,6 @@
 # Design
 
-Product reasoning behind RxVisus. Technical/coding conventions live in
+Product reasoning behind RxKit. Technical/coding conventions live in
 [../CLAUDE.md](../CLAUDE.md); this file is the "why."
 
 ## What this actually has to beat
@@ -47,7 +47,7 @@ Real, but modest and specific — not a viral-growth product.
 ## Information architecture
 
 **Top-level modules, driven by a registry — not a fixed pillar count.**
-RxVisus is a growing professional toolkit, not a permanently three- (or
+RxKit is a growing professional toolkit, not a permanently three- (or
 two-) part app, so the top-level structure is a small data table
 (`navigation/topLevelModules.ts`: id, title, description, route, icon,
 illustration, shown-in-nav) that both Home's cards and the tab bar render

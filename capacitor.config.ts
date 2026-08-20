@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.rxvisus.app',
-  appName: 'RxVisus',
+  appName: 'RxKit',
   webDir: 'dist'
 };
 

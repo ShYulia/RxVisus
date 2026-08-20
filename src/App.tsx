@@ -31,16 +31,17 @@ import '@ionic/react/css/display.css';
 /* import '@ionic/react/css/palettes/dark.always.css'; */
 /* import '@ionic/react/css/palettes/dark.class.css'; */
 /* import '@ionic/react/css/palettes/dark.system.css'; */
-/* No dark palette designed yet — RxVisus renders its light warm-neutral
+/* No dark palette designed yet — RxKit renders its light warm-neutral
    theme regardless of OS setting until a deliberate dark variant exists. */
 
-/* Self-hosted fonts (no network requests — RxVisus is offline-only) */
+/* Self-hosted fonts (no network requests — RxKit is offline-only) */
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
 import '@fontsource/plus-jakarta-sans/600.css';
 import '@fontsource/plus-jakarta-sans/700.css';
 import '@fontsource/plus-jakarta-sans/800.css';
+import '@fontsource/cormorant-garamond/500-italic.css';
 
 /* Theme variables */
 import './theme/variables.css';

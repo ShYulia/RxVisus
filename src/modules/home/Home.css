@@ -14,16 +14,30 @@
   padding: 6px 2px 4px;
 }
 
+.rx-home-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .rx-home-wordmark {
   font-family: var(--rx-font-display);
   font-weight: 800;
-  font-size: 21px;
+  font-size: 24px;
   letter-spacing: -0.01em;
   color: var(--rx-text);
 }
 
-.rx-home-wordmark-dot {
-  color: var(--rx-iris);
+.rx-home-tagline {
+  font-family: var(--rx-font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 19px;
+  letter-spacing: 0.01em;
+  /* A touch darker than --rx-text-secondary — RxKit's larger size otherwise
+     leaves this looking faint by comparison — while staying visibly
+     secondary to the wordmark. */
+  color: #5d5a65;
 }
 
 .rx-profile-btn {
@@ -78,6 +92,9 @@
   position: relative;
   z-index: 1;
   max-width: 46%;
+  /* Nudges the greeting up from vertical-center into the hero's upper-left,
+     independent of how tall the text block happens to render. */
+  margin-top: -70px;
 }
 
 .rx-hero-greeting {
@@ -125,7 +142,7 @@
 
 @media (min-width: 768px) {
   .rx-home-wordmark {
-    font-size: 23px;
+    font-size: 26px;
   }
 
   .rx-hero {

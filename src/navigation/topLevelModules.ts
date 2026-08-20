@@ -1,5 +1,5 @@
 /**
- * The single source of truth for RxVisus's top-level product areas — drives
+ * The single source of truth for RxKit's top-level product areas — drives
  * both Home's cards and the tab bar (see moduleVisuals.tsx for the
  * icon/illustration key -> component resolver, kept separate from this data).
  *

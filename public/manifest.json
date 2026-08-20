@@ -1,6 +1,7 @@
 {
-  "short_name": "Ionic App",
-  "name": "My Ionic App",
+  "short_name": "RxKit",
+  "name": "RxKit",
+  "description": "RxKit — Clinical Tools for Optometry",
   "icons": [
     {
       "src": "assets/icon/favicon.png",

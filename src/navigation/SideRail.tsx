@@ -18,9 +18,7 @@ const SideRail: React.FC = () => {
 
   return (
     <nav className="rx-rail" aria-label="Primary">
-      <div className="rx-rail-wordmark">
-        Rx<span className="rx-rail-wordmark-dot">·</span>Visus
-      </div>
+      <div className="rx-rail-wordmark">RxKit</div>
       {navItems.map(({ href, label, Icon }) => {
         const active = location.pathname.startsWith(href);
         return (

@@ -1,5 +1,5 @@
 /**
- * RxVisus icon set — stroke-based, 20px grid, currentColor. Kept small and
+ * RxKit icon set — stroke-based, 20px grid, currentColor. Kept small and
  * restrained rather than using oversized decorative icon packs.
  */
 export interface IconProps {
@@ -129,7 +129,7 @@ export const UserIcon: React.FC<IconProps> = (props) => (
   </IconBase>
 );
 
-/** RxVisus brand mark — a simple line-art eye, used sparingly as a decorative accent. Wider than tall (5:3). */
+/** RxKit brand mark — a simple line-art eye, used sparingly as a decorative accent. Wider than tall (5:3). */
 export const EyeMarkIcon: React.FC<IconProps> = ({ size = 40, className, slot }) => {
   const svgProps = {
     width: size,

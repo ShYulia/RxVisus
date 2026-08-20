@@ -23,8 +23,6 @@ const Home: React.FC = () => {
     hydrate();
   }, [hydrate]);
 
-  const greeting = displayName ? `${timeOfDayGreeting()}, ${displayName}` : timeOfDayGreeting();
-
   const editDisplayName = () => {
     presentAlert({
       header: 'Your name',
@@ -45,8 +43,9 @@ const Home: React.FC = () => {
       <IonContent fullscreen className="ion-padding rx-home-content">
         <div className="rx-home-inner">
           <div className="rx-home-topbar">
-            <div className="rx-home-wordmark">
-              Rx<span className="rx-home-wordmark-dot">·</span>Visus
+            <div className="rx-home-brand">
+              <div className="rx-home-wordmark">RxKit</div>
+              <div className="rx-home-tagline">Clinical Tools for Optometry</div>
             </div>
             <button type="button" className="rx-profile-btn" onClick={editDisplayName} aria-label="Edit your name">
               <UserIcon size={18} />
@@ -55,7 +54,17 @@ const Home: React.FC = () => {
 
           <div className="rx-hero">
             <div className="rx-hero-text">
-              <h1 className="rx-hero-greeting">{greeting}</h1>
+              <h1 className="rx-hero-greeting">
+                {displayName ? (
+                  <>
+                    {timeOfDayGreeting()},
+                    <br />
+                    {displayName}
+                  </>
+                ) : (
+                  timeOfDayGreeting()
+                )}
+              </h1>
               <p className="rx-hero-subline">What do you need today?</p>
             </div>
             <div className="rx-hero-eye-wrap">
