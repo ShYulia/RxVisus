@@ -33,6 +33,29 @@ describe('mapToAvailability — cylinder', () => {
   });
 });
 
+describe('mapToAvailability — spherical-only (cylinder = 0)', () => {
+  it('reports no cylinder candidates for an exactly spherical result', () => {
+    const result = mapToAvailability({ sphere: -4.75, cylinder: 0, axis: 90 }, profile);
+    expect(result.cylinderCandidatesD).toEqual([]);
+  });
+
+  it('does not snap cylinder = 0 to the nearest configured toric cylinder', () => {
+    // -0.3 (nonzero) maps to -0.75; exactly 0 must not, since it isn't a "small" cylinder — it's none.
+    const result = mapToAvailability({ sphere: -4.75, cylinder: 0, axis: 90 }, profile);
+    expect(result.cylinderCandidatesD).not.toEqual([-0.75]);
+  });
+
+  it('still rounds sphere to the nearest step when spherical-only', () => {
+    const result = mapToAvailability({ sphere: -4.13, cylinder: 0, axis: 90 }, profile);
+    expect(result.sphere).toBeCloseTo(-4.25);
+  });
+
+  it('omits axis when spherical-only', () => {
+    const result = mapToAvailability({ sphere: -4.75, cylinder: 0, axis: 90 }, profile);
+    expect(result.axis).toBeUndefined();
+  });
+});
+
 describe('mapToAvailability — axis (circular rounding)', () => {
   it.each([
     [90, 90],

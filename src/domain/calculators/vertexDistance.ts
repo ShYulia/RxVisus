@@ -56,8 +56,13 @@ function validateCylinder(cylinder: number): string | undefined {
   return undefined;
 }
 
-function validateAxis(axis: number): string | undefined {
-  if (Number.isNaN(axis)) return 'Enter the axis.';
+/**
+ * Axis is clinically meaningless for a spherical-only Rx (cylinder = 0), so it's only
+ * required when there's an actual cylinder to give an axis to. A value that IS entered
+ * still has to be in range, even when not required.
+ */
+function validateAxis(axis: number, required: boolean): string | undefined {
+  if (Number.isNaN(axis)) return required ? 'Enter the axis.' : undefined;
   if (axis < 1 || axis > 180) return 'Axis must be between 1 and 180.';
   return undefined;
 }
@@ -68,7 +73,7 @@ export function validateVertexDistanceInput(input: VertexDistanceInput): VertexD
   if (sphereError) errors.sphere = sphereError;
   const cylinderError = validateCylinder(input.rx.cylinder);
   if (cylinderError) errors.cylinder = cylinderError;
-  const axisError = validateAxis(input.rx.axis);
+  const axisError = validateAxis(input.rx.axis, input.rx.cylinder !== 0);
   if (axisError) errors.axis = axisError;
   const fromError = validateVertexMm(input.fromVertexMm);
   if (fromError) errors.fromVertexMm = fromError;
@@ -89,6 +94,9 @@ function convertMeridianPower(power: number, t: number): number | null {
   return cleanFloat(power / denominator);
 }
 
+/** Axis has no clinical meaning for a spherical-only Rx — this is a neutral placeholder, never a measurement. */
+const NO_CYLINDER_AXIS_PLACEHOLDER = 180;
+
 /**
  * Converts a prescription from one vertex distance to another, applying the vertex-distance
  * formula independently to each principal meridian (sphere, and sphere+cylinder), then
@@ -108,13 +116,16 @@ export function convertVertexDistance(input: VertexDistanceInput): VertexDistanc
     return { ok: false, reason: 'singularity' };
   }
 
+  const axis =
+    input.rx.cylinder === 0 && Number.isNaN(input.rx.axis) ? NO_CYLINDER_AXIS_PLACEHOLDER : input.rx.axis;
+
   return {
     ok: true,
     result: {
       rx: {
         sphere: convertedMeridian1,
         cylinder: cleanFloat(convertedMeridian2 - convertedMeridian1),
-        axis: input.rx.axis,
+        axis,
       },
       meridian1: { power: meridian1Power, convertedPower: convertedMeridian1 },
       meridian2: { power: meridian2Power, convertedPower: convertedMeridian2 },

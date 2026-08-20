@@ -100,6 +100,20 @@ describe('convertVertexDistance', () => {
     if (!outcome.ok) return;
     expect(outcome.result.rx.sphere).toBeCloseTo(9999, 0);
   });
+
+  it('converts a spherical-only Rx (cylinder = 0) without a real axis, still producing cylinder = 0', () => {
+    const outcome = convertVertexDistance({
+      rx: { sphere: -4.75, cylinder: 0, axis: NaN },
+      fromVertexMm: 12,
+      toVertexMm: 0,
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.result.rx.cylinder).toBeCloseTo(0);
+    expect(Number.isNaN(outcome.result.rx.axis)).toBe(false);
+    expect(outcome.result.rx.axis).toBeGreaterThanOrEqual(1);
+    expect(outcome.result.rx.axis).toBeLessThanOrEqual(180);
+  });
 });
 
 describe('validateVertexDistanceInput', () => {
@@ -140,5 +154,30 @@ describe('validateVertexDistanceInput', () => {
   it('rejects a negative vertex distance', () => {
     expect(validateVertexDistanceInput({ ...validInput, fromVertexMm: -1 }).fromVertexMm).toBeDefined();
     expect(validateVertexDistanceInput({ ...validInput, toVertexMm: -1 }).toVertexMm).toBeDefined();
+  });
+
+  it('does not require axis when cylinder is 0 (spherical-only Rx)', () => {
+    const errors = validateVertexDistanceInput({
+      ...validInput,
+      rx: { ...validInput.rx, cylinder: 0, axis: NaN },
+    });
+    expect(errors.axis).toBeUndefined();
+    expect(errors.cylinder).toBeUndefined();
+  });
+
+  it('still rejects an out-of-range axis when cylinder is 0, if one was entered', () => {
+    const errors = validateVertexDistanceInput({
+      ...validInput,
+      rx: { ...validInput.rx, cylinder: 0, axis: 200 },
+    });
+    expect(errors.axis).toBeDefined();
+  });
+
+  it('still requires axis when cylinder is a real non-zero value', () => {
+    const errors = validateVertexDistanceInput({
+      ...validInput,
+      rx: { ...validInput.rx, cylinder: -1.25, axis: NaN },
+    });
+    expect(errors.axis).toBeDefined();
   });
 });

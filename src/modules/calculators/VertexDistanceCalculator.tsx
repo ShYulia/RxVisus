@@ -109,7 +109,7 @@ const VertexDistanceCalculator: React.FC = () => {
           />
           <FieldBox
             label="AXIS"
-            placeholder="1-180"
+            placeholder={cylinder === 0 ? 'n/a for sphere' : '1-180'}
             inputMode="numeric"
             value={axisStr}
             onChange={setAxisStr}
@@ -125,7 +125,20 @@ const VertexDistanceCalculator: React.FC = () => {
 
         {outcome && outcome.ok && (
           <CalculatorResult primaryLabel="Exact Optical Conversion" primaryValue={formatRx(outcome.result.rx)}>
-            {availability && (
+            {availability && availability.cylinderCandidatesD.length === 0 && (
+              <div className="rx-result-panel">
+                <div className="rx-result-panel-label">Nearest Common Stock Parameters</div>
+                <FieldBoxGrid columns={3}>
+                  <div className="rx-fieldbox rx-fieldbox-static">
+                    <span className="rx-fieldbox-label">SPH</span>
+                    <span className="rx-fieldbox-value-static">{formatDiopter(availability.sphere)} D</span>
+                  </div>
+                </FieldBoxGrid>
+                <p className="rx-result-panel-caption">Spherical — no cylinder to map.</p>
+              </div>
+            )}
+
+            {availability && availability.cylinderCandidatesD.length > 0 && (
               <div className="rx-result-panel">
                 <div className="rx-result-panel-label">Nearest Common Stock Parameters</div>
                 <FieldBoxGrid columns={3}>
@@ -141,7 +154,9 @@ const VertexDistanceCalculator: React.FC = () => {
                   </div>
                   <div className="rx-fieldbox rx-fieldbox-static">
                     <span className="rx-fieldbox-label">AXIS</span>
-                    <span className="rx-fieldbox-value-static">{String(availability.axis).padStart(3, '0')}</span>
+                    <span className="rx-fieldbox-value-static">
+                      {String(availability.axis ?? 0).padStart(3, '0')}
+                    </span>
                   </div>
                 </FieldBoxGrid>
                 <p className="rx-result-panel-caption">

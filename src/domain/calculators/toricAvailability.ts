@@ -24,9 +24,14 @@ export const GENERIC_TORIC_AVAILABILITY_PROFILE: ToricAvailabilityProfile = {
 
 export interface ToricAvailabilityMapping {
   sphere: number;
-  /** One value, or two when the exact cylinder is equidistant between two configured values. */
+  /**
+   * One value, or two when the exact cylinder is equidistant between two configured values.
+   * Empty when the exact result is cylinder = 0 — a genuinely spherical Rx, deliberately not
+   * mapped into the toric grid at all (not even "below the smallest configured cylinder").
+   */
   cylinderCandidatesD: number[];
-  axis: number;
+  /** Omitted when cylinderCandidatesD is empty — axis is meaningless for a spherical-only Rx. */
+  axis?: number;
 }
 
 function roundToStep(value: number, step: number): number {
@@ -56,10 +61,19 @@ function roundAxisCircular(axis: number, incrementDeg: number): number {
 /**
  * Maps an exact optical result to the nearest configured stock parameters. This answers
  * "which configured parameters are closest?" — never "which lens should be prescribed?".
+ *
+ * cylinder = 0 is treated as genuinely spherical, not "toric with a very small cylinder" —
+ * it's reported as sphere-only rather than snapped to the nearest configured toric cylinder.
  */
 export function mapToAvailability(rx: Prescription, profile: ToricAvailabilityProfile): ToricAvailabilityMapping {
+  const sphere = roundToStep(rx.sphere, profile.sphereStepD);
+
+  if (rx.cylinder === 0) {
+    return { sphere, cylinderCandidatesD: [] };
+  }
+
   return {
-    sphere: roundToStep(rx.sphere, profile.sphereStepD),
+    sphere,
     cylinderCandidatesD: nearestCylinders(rx.cylinder, profile.availableCylindersD),
     axis: roundAxisCircular(rx.axis, profile.axisIncrementDeg),
   };
