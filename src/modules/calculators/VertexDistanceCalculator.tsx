@@ -22,7 +22,8 @@ const VertexDistanceCalculator: React.FC = () => {
   const [toVertexStr, setToVertexStr] = useState('0');
 
   const sphere = parseFloat(sphereStr);
-  const cylinder = parseFloat(cylinderStr);
+  // Blank means "no cylinder" (spherical) — not a missing/invalid value.
+  const cylinder = cylinderStr.trim() === '' ? 0 : parseFloat(cylinderStr);
   const axis = parseInt(axisStr, 10);
   const fromVertexMm = parseFloat(fromVertexStr);
   const toVertexMm = parseFloat(toVertexStr);
@@ -44,6 +45,10 @@ const VertexDistanceCalculator: React.FC = () => {
 
   const showFieldError = (field: keyof VertexDistanceValidationErrors, raw: string) =>
     raw.trim() !== '' && Boolean(errors[field]);
+
+  // Axis's required-ness depends on cylinder: once cylinder is non-zero, proactively surface
+  // "axis needed" even before the field is touched, rather than silently withholding a result.
+  const showAxisError = cylinder !== 0 ? Boolean(errors.axis) : showFieldError('axis', axisStr);
 
   const noInputYet = sphereStr.trim() === '' && cylinderStr.trim() === '' && axisStr.trim() === '';
 
@@ -95,25 +100,25 @@ const VertexDistanceCalculator: React.FC = () => {
         <FieldBoxGrid columns={3}>
           <FieldBox
             label="SPH"
-            placeholder="-6.50"
+            placeholder="0.00"
             value={sphereStr}
             onChange={setSphereStr}
             error={showFieldError('sphere', sphereStr) ? errors.sphere : undefined}
           />
           <FieldBox
             label="CYL"
-            placeholder="-1.25"
+            placeholder="0.00"
             value={cylinderStr}
             onChange={setCylinderStr}
             error={showFieldError('cylinder', cylinderStr) ? errors.cylinder : undefined}
           />
           <FieldBox
             label="AXIS"
-            placeholder={cylinder === 0 ? 'n/a for sphere' : '1-180'}
+            placeholder="0"
             inputMode="numeric"
             value={axisStr}
             onChange={setAxisStr}
-            error={showFieldError('axis', axisStr) ? errors.axis : undefined}
+            error={showAxisError ? errors.axis : undefined}
           />
         </FieldBoxGrid>
 
@@ -181,7 +186,9 @@ const VertexDistanceCalculator: React.FC = () => {
           </Disclosure>
         )}
 
-        {!outcome && noInputYet && <p className="rx-hint">Enter sphere, cylinder, and axis to convert.</p>}
+        {!outcome && noInputYet && (
+          <p className="rx-hint">Enter sphere to convert. Add cylinder and axis only for a toric Rx.</p>
+        )}
 
         <ActionRow onClear={handleClear} copyText={outcome && outcome.ok ? formatRx(outcome.result.rx) : undefined} />
       </IonContent>
