@@ -95,6 +95,13 @@ destinations; was four when Assistant and Reference were separate).
 Settings goes in the top-app-bar overflow menu, not a nav slot — it's
 rarely touched and shouldn't clutter primary navigation.
 
+**Approved, not yet built: a fourth tab, Favorites** — a cross-module
+shortcut layer (frequently-used calculators, Clinical Guide tests/
+pathways, later other modules' items too), not a Home card. See
+[../CLAUDE.md](../CLAUDE.md)'s "Next session" section for the full
+requirements — this is documented as a starting point for the next
+session, not implemented.
+
 ## MVP scope
 
 **Five calculators, sequenced by complexity/risk, not by request order** —
@@ -112,6 +119,11 @@ the most time to validate it against real practice:
    variable (depends on frame, PD, lens design, often lab-specific
    convention). Build last, and validate the exact rule with the real
    intended user before writing it.
+
+**Approved, not yet built: Spherical Equivalent** (`SE = SPH + CYL/2`,
+SPH + CYL inputs only, no axis) — see [../CLAUDE.md](../CLAUDE.md)'s
+"Next session" section for the full requirements. Documented as a
+starting point for the next session, not implemented.
 
 **Clinical Guide** — guided pathway navigation and canonical test cards in
 one module (see Information architecture above). MVP pathway content:
