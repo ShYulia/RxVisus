@@ -23,7 +23,7 @@ export const topLevelModules: TopLevelModule[] = [
   {
     id: 'calculators',
     title: 'Calculators',
-    description: 'Fast optical conversions',
+    description: 'Optical calculations and conversions',
     route: '/calculate',
     icon: 'calculator',
     illustration: 'calculators-hero',
@@ -32,7 +32,7 @@ export const topLevelModules: TopLevelModule[] = [
   {
     id: 'guide',
     title: 'Clinical Guide',
-    description: 'Fast chairside clinical recall',
+    description: 'Testing pathways and quick clinical recall',
     route: '/guide',
     icon: 'guide',
     illustration: 'guide-hero',

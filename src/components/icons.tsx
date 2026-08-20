@@ -122,6 +122,13 @@ export const SearchIcon: React.FC<IconProps> = (props) => (
   </IconBase>
 );
 
+export const UserIcon: React.FC<IconProps> = (props) => (
+  <IconBase {...props} viewBox="0 0 20 20">
+    <circle cx="10" cy="7" r="3.2" strokeWidth="1.6" />
+    <path d="M3.8 16.5c1-2.9 3.6-4.5 6.2-4.5s5.2 1.6 6.2 4.5" strokeWidth="1.6" strokeLinecap="round" />
+  </IconBase>
+);
+
 /** RxVisus brand mark — a simple line-art eye, used sparingly as a decorative accent. Wider than tall (5:3). */
 export const EyeMarkIcon: React.FC<IconProps> = ({ size = 40, className, slot }) => {
   const svgProps = {

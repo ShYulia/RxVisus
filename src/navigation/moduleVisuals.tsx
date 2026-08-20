@@ -1,4 +1,6 @@
 import { CalculatorIcon, CompassIcon, type IconProps } from '../components/icons';
+import calculatorsIllustration from '../assets/illustrations/calculators.png';
+import clinicalGuideIllustration from '../assets/illustrations/clinical-guide.png';
 
 /** Small nav-weight icons, keyed by TopLevelModule.icon. */
 export const MODULE_ICONS: Record<string, React.FC<IconProps>> = {
@@ -6,13 +8,8 @@ export const MODULE_ICONS: Record<string, React.FC<IconProps>> = {
   guide: CompassIcon,
 };
 
-/**
- * Larger Home-card visuals, keyed by TopLevelModule.illustration. Placeholder
- * mapping (reuses the nav icons) until the dedicated RxVisus hero
- * illustrations are designed — that's the deferred Home visual-redesign
- * follow-up, not part of this architecture change.
- */
-export const MODULE_ILLUSTRATIONS: Record<string, React.FC<IconProps>> = {
-  'calculators-hero': CalculatorIcon,
-  'guide-hero': CompassIcon,
+/** Larger Home feature-card illustrations, keyed by TopLevelModule.illustration. */
+export const MODULE_ILLUSTRATIONS: Record<string, string> = {
+  'calculators-hero': calculatorsIllustration,
+  'guide-hero': clinicalGuideIllustration,
 };
