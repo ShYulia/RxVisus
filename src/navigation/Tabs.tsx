@@ -3,6 +3,7 @@ import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } 
 import { bookOutline, calculatorOutline, glassesOutline, homeOutline } from 'ionicons/icons';
 import Home from '../modules/home/Home';
 import Calculators from '../modules/calculators/Calculators';
+import { calculatorDefinitions } from '../modules/calculators/calculatorRegistry';
 import PrismAssistant from '../modules/prismAssistant/PrismAssistant';
 import QuickReference from '../modules/quickReference/QuickReference';
 
@@ -15,6 +16,11 @@ const Tabs: React.FC = () => (
       <Route exact path="/calculate">
         <Calculators />
       </Route>
+      {calculatorDefinitions.map((def) => (
+        <Route exact path={def.path} key={def.id}>
+          <def.component />
+        </Route>
+      ))}
       <Route exact path="/assistant">
         <PrismAssistant />
       </Route>
