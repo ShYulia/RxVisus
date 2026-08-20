@@ -1,0 +1,23 @@
+.rx-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rx-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--rx-iris-tint);
+  color: var(--rx-iris-deep);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rx-chip:hover {
+  background: var(--rx-iris);
+  color: #ffffff;
+}

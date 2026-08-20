@@ -1,27 +1,11 @@
 import { useMemo, useState } from 'react';
-import {
-  IonBackButton,
-  IonButtons,
-  IonCard,
-  IonCardContent,
-  IonContent,
-  IonHeader,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonPage,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/react';
-import { transpose, type Prescription } from '../../domain/calculators/transposition';
-import { formatDiopter } from './formatDiopter';
-
-function formatRx(rx: Prescription): string {
-  const axis = String(rx.axis).padStart(3, '0');
-  return `${formatDiopter(rx.sphere)} ${formatDiopter(rx.cylinder)} x ${axis}`;
-}
+import { IonContent, IonPage } from '@ionic/react';
+import { transpose } from '../../domain/calculators/transposition';
+import { formatRx } from './formatDiopter';
+import PageHeader from '../../components/PageHeader';
+import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
+import CalculatorResult from '../../components/CalculatorResult';
+import ActionRow from '../../components/ActionRow';
 
 const TranspositionCalculator: React.FC = () => {
   const [sphere, setSphere] = useState('');
@@ -44,62 +28,29 @@ const TranspositionCalculator: React.FC = () => {
     return transpose({ sphere: sphereValue, cylinder: cylinderValue, axis: axisValue });
   }, [sphere, cylinder, axis]);
 
+  const handleClear = () => {
+    setSphere('');
+    setCylinder('');
+    setAxis('');
+  };
+
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/calculate" text="Calculate" />
-          </IonButtons>
-          <IonTitle>Transposition</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="Transposition" backHref="/calculate" />
       <IonContent fullscreen className="ion-padding">
-        <IonList inset>
-          <IonItem>
-            <IonLabel position="stacked">Sphere</IonLabel>
-            <IonInput
-              type="number"
-              inputmode="decimal"
-              placeholder="e.g. -2.00"
-              value={sphere}
-              onIonInput={(e) => setSphere(e.detail.value ?? '')}
-            />
-          </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">Cylinder</IonLabel>
-            <IonInput
-              type="number"
-              inputmode="decimal"
-              placeholder="e.g. -1.00"
-              value={cylinder}
-              onIonInput={(e) => setCylinder(e.detail.value ?? '')}
-            />
-          </IonItem>
-          <IonItem>
-            <IonLabel position="stacked">Axis</IonLabel>
-            <IonInput
-              type="number"
-              inputmode="numeric"
-              placeholder="1-180"
-              value={axis}
-              onIonInput={(e) => setAxis(e.detail.value ?? '')}
-            />
-          </IonItem>
-        </IonList>
+        <FieldBoxGrid columns={3}>
+          <FieldBox label="SPH" placeholder="-2.00" value={sphere} onChange={setSphere} />
+          <FieldBox label="CYL" placeholder="-1.00" value={cylinder} onChange={setCylinder} />
+          <FieldBox label="AXIS" placeholder="1-180" inputMode="numeric" value={axis} onChange={setAxis} />
+        </FieldBoxGrid>
 
         {result ? (
-          <IonCard className="ion-margin-top">
-            <IonCardContent>
-              <IonNote>Transposed prescription</IonNote>
-              <h1>{formatRx(result)}</h1>
-            </IonCardContent>
-          </IonCard>
+          <CalculatorResult primaryLabel="Transposed Prescription" primaryValue={formatRx(result)} />
         ) : (
-          <IonNote className="ion-padding-start ion-margin-top" style={{ display: 'block' }}>
-            Enter sphere, cylinder, and axis (1-180) to transpose.
-          </IonNote>
+          <p className="rx-hint">Enter sphere, cylinder, and axis (1-180) to transpose.</p>
         )}
+
+        <ActionRow onClear={handleClear} copyText={result ? formatRx(result) : undefined} />
       </IonContent>
     </IonPage>
   );

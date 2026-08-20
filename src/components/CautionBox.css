@@ -1,0 +1,26 @@
+.rx-caution {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--rx-caution-tint);
+  border: 1px solid var(--rx-caution-border);
+  border-radius: var(--rx-radius-sm);
+}
+
+.rx-caution-icon {
+  flex: none;
+  color: var(--rx-caution-text);
+  margin-top: 1px;
+}
+
+.rx-caution-text {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--rx-caution-text);
+  line-height: 1.45;
+}
+
+.rx-caution-text + .rx-caution-text {
+  margin-top: 4px;
+}

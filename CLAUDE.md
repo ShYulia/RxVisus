@@ -6,9 +6,12 @@ conventions layer.
 
 ## Status
 
-Design phase. No application code yet — see [README.md](README.md) for the
-product pitch and non-negotiable constraints (no AI/backend, offline-only,
-no patient-identifiable data).
+MVP build in progress. Calculators (Transposition, Working Distance → ADD,
+Vertex Distance) and the Clinical Guide architecture (canonical test
+cards, pathway navigation, seeded with Diplopia) are implemented; Prism
+calculator and most Clinical Guide content are still to come. See
+[README.md](README.md) for the product pitch and non-negotiable
+constraints (no AI/backend, offline-only, no patient-identifiable data).
 
 ## Stack
 
@@ -42,52 +45,70 @@ src/
       transposition.ts
       workingDistanceToAdd.ts
       vertexDistance.ts
-      prism.ts
-      progressiveFittingHeight.ts
+      toricAvailability.ts
+      prism.ts               # not yet built
     reference/
-      prismTopics.ts
-      quickReferenceEntries.ts
-  modules/                 # one folder per top-level pillar — screens + components
+      clinicalTests.ts        # canonical test cards (ClinicalTest)
+      clinicalPathways.ts     # problem-first navigation (ClinicalPathwayNode)
+      guideAreas.ts            # Clinical Guide hub's top-level entries
+  modules/                 # one folder per top-level module — screens + components
     home/
     calculators/
-    prismAssistant/
-    quickReference/
-  components/               # shared UI (buttons, inputs, cards)
+    guide/                  # Clinical Guide: hub, generic pathway renderer, test list/card
+  components/               # shared UI (buttons, inputs, cards, CautionBox, Chip, ...)
   navigation/
+    topLevelModules.ts      # registry driving Home's cards AND the tab bar
+    moduleVisuals.tsx        # icon/illustration key -> component resolver (kept separate from the data)
   store/                     # favorites, usage history, settings — local only
   theme/
 ```
 
-Adding a future module (e.g. contact lens troubleshooting) means adding a
-file under `domain/` and a folder under `modules/` — nothing existing has
-to change.
+Adding a future top-level module (e.g. Contact Lenses) means one entry in
+`navigation/topLevelModules.ts` plus a folder under `modules/` — it won't
+appear in Home or the tab bar until that entry exists. Nothing else has to
+change; there is no special-casing for "future" modules.
 
 ## Data model
 
 No backend — everything is static local content plus local device state.
 
 ```ts
-interface PrismTopic {
-  id: string;
-  title: string;                  // e.g. "Vertical diplopia"
-  symptomTags: string[];          // shared vocabulary with QuickReferenceEntry
-  explanation: string;
-  reasoning: string;               // the "why", not just the rule
-  relatedExamWorkflow: string[];   // IDs into QuickReferenceEntry
+interface ClinicalTest {
+  id: string;                     // canonical, e.g. "double-maddox-rod"
+  title: string;
+  tags: string[];                 // search vocabulary
+  purpose: string;
+  setup: string[];
+  howTo: string[];
+  whatToWatch: string[];
+  record: string[];
+  quickTip?: string;
+  commonMistakes?: string[];      // the details that are easy to forget
 }
 
-interface QuickReferenceEntry {
+interface ClinicalPathwayNode {
   id: string;
-  complaint: string;
-  commonExams: string[];
-  keyRules: string[];
-  relatedPrismTopics: string[];    // IDs into PrismTopic
+  title: string;
+  kind: 'branch' | 'leaf';
+  overview?: string;
+  keySteps?: string[];
+  redFlags?: string[];
+  children?: string[];            // branch only: child ClinicalPathwayNode ids
+  testIds?: string[];             // leaf only: ClinicalTest ids — reference, never a copy
 }
 ```
 
-The Prism Assistant and Clinical Quick Reference share this tag/ID system so
-one underlying topic (e.g. "vertical diplopia") has two views — reasoning
-and workflow — instead of duplicated content that can drift.
+A `ClinicalTest` exists exactly once (`domain/reference/clinicalTests.ts`).
+`ClinicalPathwayNode`s (`domain/reference/clinicalPathways.ts`) walk a
+clinical problem down to a `leaf`, which points at relevant tests by id —
+so "Double Maddox Rod" reached via `Diplopia → Binocular → Vertical` is the
+same canonical Test Card as reaching it via direct search. One generic
+renderer handles every pathway node (branch or leaf) and one renderer
+handles every test card — content grows by adding data, not screens.
+
+Top-level product modules (Calculators, Clinical Guide, and any future
+module) are a small registry, not hardcoded UI — see
+`navigation/topLevelModules.ts` in the folder structure above.
 
 Calculators are pure, stateless functions (input in, number out), no
 persistence by default. User state is local-only: settings, favorites,

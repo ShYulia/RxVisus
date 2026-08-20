@@ -1,0 +1,33 @@
+.rx-action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.rx-action-row ion-button {
+  flex: 1;
+  margin: 0;
+  --border-radius: var(--rx-radius-sm);
+  --box-shadow: none;
+  font-family: var(--rx-font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+  height: 44px;
+}
+
+.rx-action-row .rx-btn-outline {
+  --color: var(--rx-iris-deep);
+  --border-color: var(--rx-iris);
+  --background: transparent;
+  --background-hover: var(--rx-iris-tint);
+  --background-activated: var(--rx-iris-tint);
+}
+
+.rx-action-row .rx-btn-solid {
+  --color: #ffffff;
+  --background: var(--rx-iris);
+  --background-hover: var(--rx-iris-deep);
+  --background-activated: var(--rx-iris-deep);
+}

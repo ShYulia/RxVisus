@@ -1,0 +1,25 @@
+.rx-shell {
+  display: flex;
+  height: 100%;
+}
+
+.rx-shell-main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.rx-hint {
+  margin: 20px 4px 0;
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
+}
+
+.rx-section-label {
+  margin: 20px 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--rx-text-secondary);
+}

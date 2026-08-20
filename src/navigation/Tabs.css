@@ -1,0 +1,24 @@
+.rx-tabbar {
+  --background: var(--rx-surface);
+  --border: 1px solid var(--rx-border);
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.rx-tabbar ion-tab-button {
+  --color: var(--rx-text-tertiary);
+  --color-selected: var(--rx-iris);
+}
+
+.rx-tabbar ion-tab-button ion-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  margin-top: 4px;
+}
+
+@media (min-width: 768px) {
+  .rx-tabbar {
+    display: none;
+  }
+}

@@ -1,0 +1,59 @@
+.rx-rail {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .rx-rail {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    width: var(--rx-rail-width);
+    background: var(--rx-surface);
+    border-right: 1px solid var(--rx-border);
+    padding: 24px 16px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+}
+
+.rx-rail-wordmark {
+  font-family: var(--rx-font-display);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.005em;
+  color: var(--rx-text);
+  padding: 4px 10px 28px;
+}
+
+.rx-rail-wordmark-dot {
+  color: var(--rx-iris);
+}
+
+.rx-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  border-radius: var(--rx-radius-sm);
+  color: var(--rx-text-secondary);
+  text-decoration: none;
+}
+
+.rx-rail-item:hover {
+  background: var(--rx-muted-bg);
+}
+
+.rx-rail-item-active {
+  background: var(--rx-iris-tint);
+  color: var(--rx-iris-deep);
+  font-weight: 600;
+}
+
+.rx-rail-item-active:hover {
+  background: var(--rx-iris-tint);
+}
+
+.rx-rail-label {
+  font-size: 14px;
+}

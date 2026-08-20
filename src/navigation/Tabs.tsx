@@ -1,11 +1,16 @@
 import { Redirect, Route } from 'react-router-dom';
-import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from '@ionic/react';
-import { bookOutline, calculatorOutline, glassesOutline, homeOutline } from 'ionicons/icons';
+import { IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from '@ionic/react';
+import { HomeIcon } from '../components/icons';
 import Home from '../modules/home/Home';
 import Calculators from '../modules/calculators/Calculators';
 import { calculatorDefinitions } from '../modules/calculators/calculatorRegistry';
-import PrismAssistant from '../modules/prismAssistant/PrismAssistant';
-import QuickReference from '../modules/quickReference/QuickReference';
+import Guide from '../modules/guide/Guide';
+import GuidePathway from '../modules/guide/GuidePathway';
+import TestsList from '../modules/guide/TestsList';
+import TestCard from '../modules/guide/TestCard';
+import { topLevelModules } from './topLevelModules';
+import { MODULE_ICONS } from './moduleVisuals';
+import './Tabs.css';
 
 const Tabs: React.FC = () => (
   <IonTabs>
@@ -21,33 +26,38 @@ const Tabs: React.FC = () => (
           <def.component />
         </Route>
       ))}
-      <Route exact path="/assistant">
-        <PrismAssistant />
+      <Route exact path="/guide">
+        <Guide />
       </Route>
-      <Route exact path="/reference">
-        <QuickReference />
+      <Route exact path="/guide/tests">
+        <TestsList />
+      </Route>
+      <Route exact path="/guide/tests/:testId">
+        <TestCard />
+      </Route>
+      <Route exact path="/guide/pathway/:pathwayId">
+        <GuidePathway />
       </Route>
       <Route exact path="/">
         <Redirect to="/home" />
       </Route>
     </IonRouterOutlet>
-    <IonTabBar slot="bottom">
+    <IonTabBar slot="bottom" className="rx-tabbar">
       <IonTabButton tab="home" href="/home">
-        <IonIcon icon={homeOutline} />
+        <HomeIcon size={20} />
         <IonLabel>Home</IonLabel>
       </IonTabButton>
-      <IonTabButton tab="calculate" href="/calculate">
-        <IonIcon icon={calculatorOutline} />
-        <IonLabel>Calculate</IonLabel>
-      </IonTabButton>
-      <IonTabButton tab="assistant" href="/assistant">
-        <IonIcon icon={glassesOutline} />
-        <IonLabel>Assistant</IonLabel>
-      </IonTabButton>
-      <IonTabButton tab="reference" href="/reference">
-        <IonIcon icon={bookOutline} />
-        <IonLabel>Reference</IonLabel>
-      </IonTabButton>
+      {topLevelModules
+        .filter((mod) => mod.showInNav)
+        .map((mod) => {
+          const Icon = MODULE_ICONS[mod.icon];
+          return (
+            <IonTabButton key={mod.id} tab={mod.id} href={mod.route}>
+              <Icon size={20} />
+              <IonLabel>{mod.title}</IonLabel>
+            </IonTabButton>
+          );
+        })}
     </IonTabBar>
   </IonTabs>
 );

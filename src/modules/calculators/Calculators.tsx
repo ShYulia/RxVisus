@@ -1,25 +1,32 @@
-import { IonContent, IonHeader, IonItem, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar } from '@ionic/react';
+import { IonContent, IonPage } from '@ionic/react';
+import PageHeader from '../../components/PageHeader';
+import PillarRow from '../../components/PillarRow';
+import { GlassesIcon, SwapArrowsIcon, TriangleIcon } from '../../components/icons';
 import { calculatorDefinitions } from './calculatorRegistry';
+import '../../components/PillarRow.css';
+
+const ICONS: Record<string, React.ReactNode> = {
+  transposition: <SwapArrowsIcon size={22} />,
+  'working-distance-add': <span className="rx-pillar-icon-text">ADD</span>,
+  'vertex-distance': <GlassesIcon size={22} />,
+};
 
 const Calculators: React.FC = () => {
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Calculate</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="Calculators" backHref="/home" />
       <IonContent fullscreen className="ion-padding">
-        <IonList inset>
+        <div className="rx-pillars">
           {calculatorDefinitions.map((def) => (
-            <IonItem key={def.id} routerLink={def.path} detail>
-              <IonLabel>
-                <h2>{def.title}</h2>
-                <IonNote>{def.subtitle}</IonNote>
-              </IonLabel>
-            </IonItem>
+            <PillarRow key={def.id} icon={ICONS[def.id]} title={def.title} desc={def.subtitle} routerLink={def.path} />
           ))}
-        </IonList>
+          <PillarRow
+            icon={<TriangleIcon size={22} />}
+            title="Prism"
+            desc="Prentice's rule — prism from decentration"
+            comingSoon
+          />
+        </div>
       </IonContent>
     </IonPage>
   );

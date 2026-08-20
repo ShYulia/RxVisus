@@ -35,7 +35,7 @@ Real, but modest and specific — not a viral-growth product.
   professional forums/associations, and word of mouth. Make it trivially
   easy for a happy user to recommend it to a colleague.
 - **Monetization shape for later** (not needed for MVP): keep the
-  calculators, Prism Assistant, and Clinical Quick Reference free forever
+  calculators and Clinical Guide free forever
   (builds trust in a professional community); put a one-time "Pro unlock"
   on higher-effort future modules (contact lens catalogue/troubleshooting,
   comparisons). One-time purchase fits this audience better than a
@@ -46,29 +46,54 @@ Real, but modest and specific — not a viral-growth product.
 
 ## Information architecture
 
-**Three pillars, not a flat tool list** — the requested tools naturally
-group into three distinct kinds of interaction, and that grouping is the
-top-level structure:
+**Top-level modules, driven by a registry — not a fixed pillar count.**
+RxVisus is a growing professional toolkit, not a permanently three- (or
+two-) part app, so the top-level structure is a small data table
+(`navigation/topLevelModules.ts`: id, title, description, route, icon,
+illustration, shown-in-nav) that both Home's cards and the tab bar render
+from. Adding a future module (e.g. Contact Lenses) is one row in that
+table — it doesn't appear anywhere until it's real; there's no
+placeholder tab or empty card for planned-but-unbuilt modules.
 
-- **Calculate** — the MVP calculators. Form in, number out, fast.
-- **Assistant** — the Prism Assistant. Guided, educational,
-  decision-support — teaches reasoning, not just produces a number.
-- **Reference** — the Clinical Quick Reference, and the home for future
-  lookup-style modules.
+For the current MVP, two modules exist:
 
-**Home isn't a menu** — it surfaces recently used and most used tools
-first, learned from actual usage, not a static directory.
+- **Calculators** — form in, number out, fast.
+- **Clinical Guide** — fast chairside clinical recall and guided
+  navigation. This replaces what used to be two separate pillars
+  (**Assistant** and **Reference**) — they didn't hold up as separate
+  destinations: an optometrist doesn't think "should I open Assistant or
+  Reference," they think "my patient has diplopia, what should I check"
+  or "remind me how to run the Double Maddox Rod test." Both needs live
+  in Clinical Guide now.
 
-**Assistant and Reference cross-link, not silo.** "Vertical diplopia" is a
-real entry in both the Prism Assistant (reasoning, base-direction
-convention) and the Clinical Quick Reference (exam workflow). They share a
-tag/ID system (see [../CLAUDE.md](../CLAUDE.md) data model) so one
-underlying topic has two views instead of duplicated content that drifts.
+**Home isn't a menu** — the intent is still to eventually surface
+recently/most-used tools first, learned from actual usage rather than a
+static directory; that behavior isn't implemented yet (Home currently
+renders the module registry as-is).
 
-**Android-first navigation**: bottom nav with four destinations — Home,
-Calculate, Assistant, Reference (standard Material Design pattern for this
-count). Settings goes in the top-app-bar overflow menu, not a fifth slot —
-it's rarely touched and shouldn't clutter primary navigation.
+**Clinical Guide supports two ways into the same content, never
+duplicated.** A clinical-problem entry (`Diplopia → Binocular → Vertical
+→ relevant tests`) and a direct entry (`Tests → Double Maddox Rod`, or
+searching "Maddox") both land on the same canonical Test Card. Pathways
+reference tests by id (`ClinicalPathwayNode.testIds`); they never copy a
+test's content. See `domain/reference/clinicalPathways.ts` and
+`clinicalTests.ts` for the data model — this supersedes the older
+`PrismTopic`/`QuickReferenceEntry` cross-linking design in
+[../CLAUDE.md](../CLAUDE.md) (written for the old separate-pillars split).
+
+**Clinical Guide is not an encyclopedia.** Test cards and pathway leaves
+are compact and structured (Purpose / Setup / How to / What to watch /
+Record / Quick tip, plus Common Mistakes) — the interaction is
+*question/symptom → relevant tests → quick answer* within seconds, not
+*category → chapter → article → read*. One generic pathway renderer
+(`GuidePathway.tsx`) handles every pathway node from data, branch or leaf
+— no per-topic screens.
+
+**Android-first navigation**: bottom nav with Home plus one tab per
+`showInNav` module — currently Home, Calculate, Clinical Guide (three
+destinations; was four when Assistant and Reference were separate).
+Settings goes in the top-app-bar overflow menu, not a nav slot — it's
+rarely touched and shouldn't clutter primary navigation.
 
 ## MVP scope
 
@@ -88,19 +113,16 @@ the most time to validate it against real practice:
    convention). Build last, and validate the exact rule with the real
    intended user before writing it.
 
-**Prism Assistant** — a guided flow, not a form: "What is the patient
-describing?" → crossed diplopia / uncrossed diplopia / vertical diplopia →
-explanation of the base-direction convention *and* the reasoning, linking
-into the matching Quick Reference exam workflow. Classically taught with
-simple ray diagrams in optometry training — lean on illustrations, not just
-text. MVP topics: crossed vs. uncrossed diplopia, vertical diplopia, base
-IN vs. base OUT, common prism rules and why.
-
-**Clinical Quick Reference** — a searchable structure: complaint → common
-exams performed → key clinical rules (crossed/uncrossed/vertical diplopia
-at MVP). Explicitly **not** diagnostic — a memory aid for trained
-professionals. Keep a small, persistent footer note: "reference only —
-clinical judgment required."
+**Clinical Guide** — guided pathway navigation and canonical test cards in
+one module (see Information architecture above). MVP pathway content:
+Binocular Status, Symptom-Driven Testing, Diplopia, Strabismus by Type —
+Diplopia is seeded first (monocular vs. binocular → vertical vs.
+horizontal → relevant tests: Cover Test, Maddox Rod, Double Maddox Rod,
+Hess/Lancaster, Parks 3-Step). The other three areas show as "coming
+soon" on the Clinical Guide hub until their content is written. Explicitly
+**not** diagnostic — a memory aid for trained professionals, structured
+around ray-diagram-style reasoning where relevant (crossed vs. uncrossed
+diplopia, base IN vs. base OUT) rather than long prose.
 
 ## Beyond the MVP
 
@@ -113,7 +135,7 @@ core:
   three, so it benefits most from the domain/modules separation already
   proven out by then.
 - **Lens material/coating comparison** and **expanded binocular vision
-  reference** — lower-effort Reference-pillar extensions, sequenced by
+  reference** — lower-effort Clinical Guide extensions, sequenced by
   whichever the real user asks for first.
 - **Additional calculators** (back vertex power conversions, minimum blank
   size, decentration/induced prism) — add only once real use of the MVP

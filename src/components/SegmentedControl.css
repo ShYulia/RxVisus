@@ -1,0 +1,31 @@
+.rx-segmented {
+  display: flex;
+  gap: 2px;
+  background: var(--rx-muted-bg);
+  border-radius: 999px;
+  padding: 3px;
+  margin-bottom: 14px;
+}
+
+.rx-segmented-item {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-family: var(--rx-font-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rx-text-secondary);
+  cursor: pointer;
+}
+
+.rx-segmented-item-active {
+  background: var(--rx-iris);
+  color: #ffffff;
+}
+
+.rx-segmented-item:focus-visible {
+  outline: 2px solid var(--rx-iris);
+  outline-offset: 2px;
+}

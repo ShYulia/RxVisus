@@ -1,6 +1,7 @@
 import { IonApp, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Tabs from './navigation/Tabs';
+import SideRail from './navigation/SideRail';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -27,17 +28,33 @@ import '@ionic/react/css/display.css';
 
 /* import '@ionic/react/css/palettes/dark.always.css'; */
 /* import '@ionic/react/css/palettes/dark.class.css'; */
-import '@ionic/react/css/palettes/dark.system.css';
+/* import '@ionic/react/css/palettes/dark.system.css'; */
+/* No dark palette designed yet — RxVisus renders its light warm-neutral
+   theme regardless of OS setting until a deliberate dark variant exists. */
+
+/* Self-hosted fonts (no network requests — RxVisus is offline-only) */
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/plus-jakarta-sans/600.css';
+import '@fontsource/plus-jakarta-sans/700.css';
+import '@fontsource/plus-jakarta-sans/800.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import './theme/shell.css';
 
 setupIonicReact();
 
 const App: React.FC = () => (
   <IonApp>
     <IonReactRouter>
-      <Tabs />
+      <div className="rx-shell">
+        <SideRail />
+        <div className="rx-shell-main">
+          <Tabs />
+        </div>
+      </div>
     </IonReactRouter>
   </IonApp>
 );

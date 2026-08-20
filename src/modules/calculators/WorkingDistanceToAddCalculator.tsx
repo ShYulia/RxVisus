@@ -1,29 +1,16 @@
 import { useMemo, useState } from 'react';
-import {
-  IonAccordion,
-  IonAccordionGroup,
-  IonBackButton,
-  IonButtons,
-  IonCard,
-  IonCardContent,
-  IonContent,
-  IonHeader,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonPage,
-  IonText,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/react';
+import { IonContent, IonPage } from '@ionic/react';
 import {
   convertWorkingDistanceToAdd,
   validateWorkingDistanceToAddInput,
   type WorkingDistanceToAddValidationErrors,
 } from '../../domain/calculators/workingDistanceToAdd';
 import { formatDiopter } from './formatDiopter';
+import PageHeader from '../../components/PageHeader';
+import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
+import CalculatorResult from '../../components/CalculatorResult';
+import Disclosure from '../../components/Disclosure';
+import ActionRow from '../../components/ActionRow';
 
 const WorkingDistanceToAddCalculator: React.FC = () => {
   const [knownAddStr, setKnownAddStr] = useState('');
@@ -49,122 +36,88 @@ const WorkingDistanceToAddCalculator: React.FC = () => {
 
   const noInputYet = knownAddStr.trim() === '' && testedDistanceStr.trim() === '' && newDistanceStr.trim() === '';
 
+  const handleClear = () => {
+    setKnownAddStr('');
+    setTestedDistanceStr('');
+    setNewDistanceStr('');
+  };
+
+  const copyText = result ? `${formatDiopter(result.equivalentAdd)} D (nearest ${formatDiopter(result.nearestQuarterAdd)} D)` : undefined;
+
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/calculate" text="Calculate" />
-          </IonButtons>
-          <IonTitle>Working Distance &rarr; ADD</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="Working Distance → ADD" backHref="/calculate" />
       <IonContent fullscreen className="ion-padding">
-        <IonList inset>
-          <IonItem>
-            <IonLabel position="stacked">Clinically tested ADD</IonLabel>
-            <IonInput
-              type="number"
-              inputmode="decimal"
-              placeholder="e.g. 1.50"
-              value={knownAddStr}
-              onIonInput={(e) => setKnownAddStr(e.detail.value ?? '')}
-            />
-          </IonItem>
-          {showFieldError('knownAdd', knownAddStr) && (
-            <IonNote color="danger" className="ion-padding-start">
-              {errors.knownAdd}
-            </IonNote>
-          )}
-
-          <IonItem>
-            <IonLabel position="stacked">Tested working distance (cm)</IonLabel>
-            <IonInput
-              type="number"
-              inputmode="decimal"
-              placeholder="e.g. 50"
-              value={testedDistanceStr}
-              onIonInput={(e) => setTestedDistanceStr(e.detail.value ?? '')}
-            />
-          </IonItem>
-          {showFieldError('testedDistanceCm', testedDistanceStr) && (
-            <IonNote color="danger" className="ion-padding-start">
-              {errors.testedDistanceCm}
-            </IonNote>
-          )}
-
-          <IonItem>
-            <IonLabel position="stacked">New working distance (cm)</IonLabel>
-            <IonInput
-              type="number"
-              inputmode="decimal"
-              placeholder="e.g. 80"
-              value={newDistanceStr}
-              onIonInput={(e) => setNewDistanceStr(e.detail.value ?? '')}
-            />
-          </IonItem>
-          {showFieldError('newDistanceCm', newDistanceStr) && (
-            <IonNote color="danger" className="ion-padding-start">
-              {errors.newDistanceCm}
-            </IonNote>
-          )}
-        </IonList>
+        <FieldBoxGrid columns={3}>
+          <FieldBox
+            label="Tested ADD"
+            unit="D"
+            placeholder="1.50"
+            value={knownAddStr}
+            onChange={setKnownAddStr}
+            error={showFieldError('knownAdd', knownAddStr) ? errors.knownAdd : undefined}
+          />
+          <FieldBox
+            label="Tested distance"
+            unit="cm"
+            placeholder="50"
+            value={testedDistanceStr}
+            onChange={setTestedDistanceStr}
+            error={showFieldError('testedDistanceCm', testedDistanceStr) ? errors.testedDistanceCm : undefined}
+          />
+          <FieldBox
+            label="New distance"
+            unit="cm"
+            placeholder="80"
+            value={newDistanceStr}
+            onChange={setNewDistanceStr}
+            error={showFieldError('newDistanceCm', newDistanceStr) ? errors.newDistanceCm : undefined}
+          />
+        </FieldBoxGrid>
 
         {result && (
-          <IonCard className="ion-margin-top">
-            <IonCardContent>
-              <IonNote>Calculated equivalent ADD</IonNote>
-              <h1>{formatDiopter(result.equivalentAdd)} D</h1>
+          <>
+            <CalculatorResult
+              primaryLabel="Calculated Equivalent ADD"
+              primaryValue={`${formatDiopter(result.equivalentAdd)} D`}
+              secondaryLabel="Nearest 0.25 D"
+              secondaryValue={`${formatDiopter(result.nearestQuarterAdd)} D`}
+              caution={
+                result.requiresCaution
+                  ? "Doesn't yield a positive ADD at this distance. Do not interpret this automatically as a prescription — clinical verification is required."
+                  : undefined
+              }
+            >
+              <p className="rx-result-note">Verify clinically at the intended working distance.</p>
+            </CalculatorResult>
 
-              <IonNote>Nearest 0.25 D</IonNote>
-              <h2>{formatDiopter(result.nearestQuarterAdd)} D</h2>
-
-              {result.requiresCaution && (
-                <IonText color="warning">
-                  <p>
-                    This conversion does not produce a positive ADD for the requested working distance. Do not
-                    interpret this automatically as a prescription — clinical verification is required.
-                  </p>
-                </IonText>
-              )}
-
-              <IonText color="medium">
-                <p>Verify clinically at the intended working distance.</p>
-              </IonText>
-            </IonCardContent>
-          </IonCard>
-        )}
-
-        {result && (
-          <IonAccordionGroup className="ion-margin-top">
-            <IonAccordion value="details">
-              <IonItem slot="header">
-                <IonLabel>Calculation details</IonLabel>
-              </IonItem>
-              <div className="ion-padding" slot="content">
-                <p>
-                  {testedDistanceCm} cm &rarr; {result.testedDistanceDemand.toFixed(2)} D working-distance demand
-                </p>
-                <p>
-                  {newDistanceCm} cm &rarr; {result.newDistanceDemand.toFixed(2)} D working-distance demand
-                </p>
-                <p>
-                  Power adjustment &rarr; {formatDiopter(result.newDistanceDemand - result.testedDistanceDemand)} D
-                </p>
-                <p>
-                  {formatDiopter(knownAdd)} D + ({formatDiopter(result.newDistanceDemand - result.testedDistanceDemand)}{' '}
-                  D) &rarr; {formatDiopter(result.equivalentAdd)} D
-                </p>
-              </div>
-            </IonAccordion>
-          </IonAccordionGroup>
+            <Disclosure label="Calculation details">
+              <p>
+                {testedDistanceCm} cm &rarr; <strong>{result.testedDistanceDemand.toFixed(2)} D</strong>{' '}
+                working-distance demand
+              </p>
+              <p>
+                {newDistanceCm} cm &rarr; <strong>{result.newDistanceDemand.toFixed(2)} D</strong> working-distance
+                demand
+              </p>
+              <p>
+                Power adjustment &rarr;{' '}
+                <strong>{formatDiopter(result.newDistanceDemand - result.testedDistanceDemand)} D</strong>
+              </p>
+              <p>
+                {formatDiopter(knownAdd)} D + (
+                {formatDiopter(result.newDistanceDemand - result.testedDistanceDemand)} D) &rarr;{' '}
+                <strong>{formatDiopter(result.equivalentAdd)} D</strong>
+              </p>
+            </Disclosure>
+          </>
         )}
 
         {!result && noInputYet && (
-          <IonNote className="ion-padding-start ion-margin-top" style={{ display: 'block' }}>
-            Enter the clinically tested ADD and both working distances to convert.
-          </IonNote>
+          <p className="rx-hint">Enter the clinically tested ADD and both working distances to convert.</p>
         )}
+
+        <ActionRow onClear={handleClear} copyText={copyText} />
       </IonContent>
     </IonPage>
   );
