@@ -17,6 +17,15 @@ describe('getClinicalTest', () => {
   });
 });
 
+describe('clinicalTests point-of-care shape', () => {
+  it('every test lists at least one required item and at least one interpretation', () => {
+    for (const test of clinicalTests) {
+      expect(test.youNeed.length, `${test.id} -> youNeed`).toBeGreaterThan(0);
+      expect(test.interpret.length, `${test.id} -> interpret`).toBeGreaterThan(0);
+    }
+  });
+});
+
 describe('searchClinicalTests', () => {
   it('returns every test for an empty query', () => {
     expect(searchClinicalTests('')).toEqual(clinicalTests);

@@ -7,13 +7,16 @@ import CautionBox from '../../components/CautionBox';
 import { CompassIcon } from '../../components/icons';
 import { getPathwayNode } from '../../domain/reference/clinicalPathways';
 import { getClinicalTest } from '../../domain/reference/clinicalTests';
+import PathwayWizard from './PathwayWizard';
 import '../../components/Chip.css';
 import './Guide.css';
 
 /**
  * Generic renderer for any clinical pathway node — branch (more choices) or
- * leaf (guidance + decision flow). One component for every pathway, so a
- * new pathway is a data change, not a new screen.
+ * leaf. A leaf with a `steps` decision flow renders as an interactive
+ * wizard (PathwayWizard); a leaf without one (e.g. Prism Prescribing
+ * Guidance) is plain reference content. One component for every pathway, so
+ * a new pathway is a data change, not a new screen.
  */
 const GuidePathway: React.FC = () => {
   const { pathwayId } = useParams<{ pathwayId: string }>();
@@ -31,12 +34,13 @@ const GuidePathway: React.FC = () => {
   }
 
   const backState = { from: `/guide/pathway/${node.id}` };
+  const hasWizard = node.kind === 'leaf' && !!node.steps && node.steps.length > 0;
 
   return (
     <IonPage>
       <PageHeader title={node.title} backHref="/guide" />
       <IonContent fullscreen className="ion-padding">
-        {node.overview && <p className="rx-hint" style={{ marginTop: 0 }}>{node.overview}</p>}
+        {!hasWizard && node.overview && <p className="rx-hint" style={{ marginTop: 0 }}>{node.overview}</p>}
 
         {node.kind === 'branch' && (
           <div className="rx-pillars" style={{ marginTop: 14 }}>
@@ -56,66 +60,18 @@ const GuidePathway: React.FC = () => {
           </div>
         )}
 
-        {node.kind === 'leaf' && (
+        {hasWizard && <PathwayWizard key={node.id} node={node} />}
+
+        {node.kind === 'leaf' && !hasWizard && (
           <>
             {node.keySteps && node.keySteps.length > 0 && (
               <div className="rx-list-section">
-                <p className="rx-list-section-label">Before testing</p>
+                <p className="rx-list-section-label">Notes</p>
                 <ol>
                   {node.keySteps.map((step) => (
                     <li key={step}>{step}</li>
                   ))}
                 </ol>
-              </div>
-            )}
-
-            {node.steps && node.steps.length > 0 && (
-              <div className="rx-list-section">
-                {node.steps.map((step) => (
-                  <div className="rx-step" key={step.question}>
-                    <p className="rx-step-question">{step.question}</p>
-
-                    {step.testIds && step.testIds.length > 0 && (
-                      <div className="rx-chip-row rx-step-testchips">
-                        {step.testIds.map((testId) => {
-                          const test = getClinicalTest(testId);
-                          return test ? (
-                            <Chip key={testId} label={test.title} routerLink={`/guide/tests/${testId}`} state={backState} />
-                          ) : null;
-                        })}
-                      </div>
-                    )}
-
-                    <div className="rx-step-outcomes">
-                      {step.outcomes.map((outcome) => (
-                        <div className="rx-step-outcome" key={outcome.label}>
-                          <p className="rx-step-outcome-line">
-                            <span className="rx-step-outcome-label">{outcome.label}</span>
-                            <span className="rx-step-outcome-arrow"> &rarr; </span>
-                            <span className="rx-step-outcome-action">{outcome.action}</span>
-                          </p>
-
-                          {outcome.testIds && outcome.testIds.length > 0 && (
-                            <div className="rx-chip-row rx-step-testchips">
-                              {outcome.testIds.map((testId) => {
-                                const test = getClinicalTest(testId);
-                                return test ? (
-                                  <Chip key={testId} label={test.title} routerLink={`/guide/tests/${testId}`} state={backState} />
-                                ) : null;
-                              })}
-                            </div>
-                          )}
-
-                          {outcome.redFlag && (
-                            <CautionBox className="rx-pathway-redflags">
-                              <p className="rx-caution-text">{outcome.redFlag}</p>
-                            </CautionBox>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
               </div>
             )}
 

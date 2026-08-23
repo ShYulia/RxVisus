@@ -1,7 +1,6 @@
 import { useLocation, useParams } from 'react-router-dom';
 import { IonContent, IonPage } from '@ionic/react';
 import PageHeader from '../../components/PageHeader';
-import CautionBox from '../../components/CautionBox';
 import { getClinicalTest } from '../../domain/reference/clinicalTests';
 import SchoberDiagram from './SchoberDiagram';
 import './Guide.css';
@@ -26,7 +25,7 @@ const Section: React.FC<{ label: string; items: string[]; ordered?: boolean }> =
   );
 };
 
-/** The canonical test card — one component, reached from a pathway leaf's chips or from direct search, same content either way. */
+/** The canonical test card — one component, reached from a pathway step's chips or from direct search, same content either way. */
 const TestCard: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
   const location = useLocation<{ from?: string } | undefined>();
@@ -45,6 +44,8 @@ const TestCard: React.FC = () => {
     );
   }
 
+  const hasMoreDetails = !!test.moreDetails && test.moreDetails.length > 0;
+
   return (
     <IonPage>
       <PageHeader title={test.title} backHref={backHref} />
@@ -53,27 +54,50 @@ const TestCard: React.FC = () => {
           {test.purpose}
         </p>
 
+        <Section label="You need" items={test.youNeed} />
         <Section label="Setup" items={test.setup} />
-        {Diagram && <Diagram />}
-        <Section label="How to" items={test.howTo} ordered />
-        <Section label="What to watch" items={test.whatToWatch} />
-        <Section label="Record" items={test.record} />
+        <Section label="Do" items={test.doSteps} ordered />
 
-        {test.quickTip && (
-          <div className="rx-quicktip">
-            <p className="rx-quicktip-label">Quick tip</p>
-            <p>{test.quickTip}</p>
+        {(test.patientSees?.length || Diagram) && (
+          <div className="rx-list-section">
+            <p className="rx-list-section-label">Patient sees</p>
+            {Diagram && <Diagram />}
+            {test.patientSees && test.patientSees.length > 0 && (
+              <ul>
+                {test.patientSees.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
-        {test.commonMistakes && test.commonMistakes.length > 0 && (
-          <CautionBox className="rx-pathway-redflags">
-            {test.commonMistakes.map((mistake) => (
-              <p key={mistake} className="rx-caution-text">
-                {mistake}
-              </p>
-            ))}
-          </CautionBox>
+        {test.interpret.length > 0 && (
+          <div className="rx-list-section">
+            <p className="rx-list-section-label">Interpret</p>
+            <div className="rx-interpret-rows">
+              {test.interpret.map((row) => (
+                <p className="rx-interpret-row" key={row.finding}>
+                  <span className="rx-interpret-finding">{row.finding}</span>
+                  <span className="rx-interpret-arrow"> &rarr; </span>
+                  <span className="rx-interpret-meaning">{row.meaning}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <Section label="Neutralize / measure" items={test.neutralize ?? []} />
+
+        {hasMoreDetails && (
+          <details className="rx-more-details">
+            <summary>More details</summary>
+            <ul>
+              {test.moreDetails!.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </details>
         )}
       </IonContent>
     </IonPage>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { clinicalPathways, getPathwayNode } from './clinicalPathways';
 import { getClinicalTest } from './clinicalTests';
+import { getGlossaryTerm } from './glossary';
 
 describe('getPathwayNode', () => {
   it('finds a known node by id', () => {
@@ -29,11 +30,12 @@ describe('clinicalPathways referential integrity', () => {
     }
   });
 
-  it('every step and outcome testId resolves to a real canonical test', () => {
+  it('every question-step and outcome testId resolves to a real canonical test', () => {
     for (const node of clinicalPathways) {
       for (const step of node.steps ?? []) {
+        if (step.kind !== 'question') continue;
         for (const testId of step.testIds ?? []) {
-          expect(getClinicalTest(testId), `${node.id} -> step "${step.question}" -> test "${testId}"`).toBeDefined();
+          expect(getClinicalTest(testId), `${node.id} -> step "${step.id}" -> test "${testId}"`).toBeDefined();
         }
         for (const outcome of step.outcomes) {
           for (const testId of outcome.testIds ?? []) {
@@ -44,10 +46,55 @@ describe('clinicalPathways referential integrity', () => {
     }
   });
 
-  it('every seeAlso id resolves to a real pathway node', () => {
+  it('every step id is unique within its node', () => {
+    for (const node of clinicalPathways) {
+      const ids = (node.steps ?? []).map((step) => step.id);
+      expect(new Set(ids).size, `${node.id} has duplicate step ids`).toBe(ids.length);
+    }
+  });
+
+  it('every next / measurement-step target resolves to a real step id within the same node', () => {
+    for (const node of clinicalPathways) {
+      const stepIds = new Set((node.steps ?? []).map((step) => step.id));
+      for (const step of node.steps ?? []) {
+        if (step.kind === 'measurement') {
+          expect(stepIds.has(step.next), `${node.id} -> measurement step "${step.id}" -> next "${step.next}"`).toBe(true);
+          continue;
+        }
+        for (const outcome of step.outcomes) {
+          if (outcome.next) {
+            expect(stepIds.has(outcome.next), `${node.id} -> step "${step.id}" -> outcome "${outcome.label}" -> next "${outcome.next}"`).toBe(true);
+          }
+        }
+      }
+    }
+  });
+
+  it('every outcome.infoTerm resolves to a real glossary entry', () => {
+    for (const node of clinicalPathways) {
+      for (const step of node.steps ?? []) {
+        if (step.kind !== 'question') continue;
+        for (const outcome of step.outcomes) {
+          if (outcome.infoTerm) {
+            expect(getGlossaryTerm(outcome.infoTerm), `${node.id} -> step "${step.id}" -> outcome "${outcome.label}" -> infoTerm "${outcome.infoTerm}"`).toBeDefined();
+          }
+        }
+      }
+    }
+  });
+
+  it('every seeAlso id (node-level and outcome-level) resolves to a real pathway node', () => {
     for (const node of clinicalPathways) {
       for (const seeAlsoId of node.seeAlso ?? []) {
         expect(getPathwayNode(seeAlsoId), `${node.id} -> seeAlso "${seeAlsoId}"`).toBeDefined();
+      }
+      for (const step of node.steps ?? []) {
+        if (step.kind !== 'question') continue;
+        for (const outcome of step.outcomes) {
+          for (const seeAlsoId of outcome.seeAlso ?? []) {
+            expect(getPathwayNode(seeAlsoId), `${node.id} -> outcome "${outcome.label}" -> seeAlso "${seeAlsoId}"`).toBeDefined();
+          }
+        }
       }
     }
   });
@@ -59,8 +106,9 @@ describe('clinicalPathways referential integrity', () => {
         expect(SPECIALIST_ONLY_TEST_IDS, `${node.id} -> test "${testId}"`).not.toContain(testId);
       }
       for (const step of node.steps ?? []) {
+        if (step.kind !== 'question') continue;
         for (const testId of step.testIds ?? []) {
-          expect(SPECIALIST_ONLY_TEST_IDS, `${node.id} -> step "${step.question}" -> test "${testId}"`).not.toContain(testId);
+          expect(SPECIALIST_ONLY_TEST_IDS, `${node.id} -> step "${step.id}" -> test "${testId}"`).not.toContain(testId);
         }
         for (const outcome of step.outcomes) {
           for (const testId of outcome.testIds ?? []) {

@@ -3,44 +3,82 @@
  * test cards in clinicalTests.ts. A node is either a branch (more choices)
  * or a leaf (guidance + relevant tests, referenced by id — never duplicated).
  *
- * A leaf's `steps` encode the actual clinical reasoning as short
- * finding -> action decision points (see DecisionStep) — this is the part
- * that should read fast at the point of care. `keySteps` is reserved for
- * plain, non-branching notes (a pre-test checklist, a reference list) that
- * don't change the next action depending on the answer.
+ * A leaf's `steps` form a small step graph — one question/action shown at a
+ * time (see PathwayWizard), not an article. Two kinds of step:
+ *   - 'question': a question with tappable DecisionOutcomes. Each outcome
+ *     either points to another step via `next`, or — with `next` omitted —
+ *     ends the flow at that outcome's `action` (a real clinical endpoint,
+ *     e.g. "refer" or "trial unsuccessful", not just "ran out of tree").
+ *   - 'measurement': a structured numeric entry (prism amount + base, +
+ *     eye where relevant), not a tap choice — see PrismMeasurement.
+ * This keeps the workflow to HISTORY -> EXAMINE -> MEASURE -> TRIAL PRISM ->
+ * PRESCRIBE/FURTHER ASSESSMENT, matching how the exam actually happens,
+ * rather than a differential-diagnosis tree.
  *
  * Content is a reasonable starting draft, not yet clinically validated.
  */
 
 /** One branch of a DecisionStep: a specific finding and what it leads to. */
 export interface DecisionOutcome {
-  /** The finding, kept short — this is what the clinician observed. */
+  /** The finding, kept short — this is what the clinician observed/decided. */
   label: string;
-  /** Short next action or interpretation. Avoid stating a diagnosis this single finding cannot establish on its own. */
+  /** Clinical term for this option, shown as small secondary text — never required reading to use the pathway. */
+  secondaryLabel?: string;
+  /**
+   * Short next action or interpretation, shown once this outcome ends the
+   * flow (no `next`). Avoid stating a diagnosis this single finding cannot
+   * establish on its own.
+   */
   action: string;
   /** Canonical test(s) this outcome leads to, if any. */
   testIds?: string[];
-  /** A red flag specific to this particular finding (not the whole node). */
+  /** A red flag specific to this particular finding — interrupts the flow with an alert before continuing. */
   redFlag?: string;
+  /** Glossary term (see glossary.ts) explaining this option's wording, surfaced via a tap-to-reveal "?". */
+  infoTerm?: string;
+  /** Pathway node(s) worth linking to once this outcome ends the flow (e.g. Prism Prescribing Guidance after a successful trial). */
+  seeAlso?: string[];
+  /** Id of the next DecisionStep within the same node. Omit to end the flow at this outcome. */
+  next?: string;
 }
 
-/** One point in a pathway's decision flow: a question and its possible findings. */
-export interface DecisionStep {
+/** One question/action, answered one at a time, with tappable outcomes. */
+export interface QuestionStep {
+  kind: 'question';
+  /** Stable id, targeted by DecisionOutcome.next and used for wizard navigation/history. */
+  id: string;
   question: string;
-  /** Test(s) used to answer this question, if any (e.g. the cover test itself). */
+  /** Compact label for the choice-history trail (falls back to `question` if omitted). */
+  shortLabel?: string;
+  /** Short framing line shown above the question, e.g. exam-technique instructions. */
+  instruction?: string;
+  /** Show the currently recorded PrismMeasurement above the question (e.g. at the trial step). */
+  showMeasurement?: boolean;
+  /** Test(s) relevant to this question, if any (e.g. the cover test itself) — shown as reference chip(s) before the choices. */
   testIds?: string[];
   outcomes: DecisionOutcome[];
 }
+
+/** A structured prism-measurement entry point — not a tap choice, see PrismMeasurement. */
+export interface MeasurementStep {
+  kind: 'measurement';
+  id: string;
+  question: string;
+  /** Id of the step to continue to once a measurement is recorded. */
+  next: string;
+}
+
+export type DecisionStep = QuestionStep | MeasurementStep;
 
 export interface ClinicalPathwayNode {
   id: string;
   title: string;
   kind: 'branch' | 'leaf';
-  /** Short framing text — a sentence or two, not an article. */
+  /** Short framing text — a sentence or two, shown once at the start of the flow, not an article. */
   overview?: string;
-  /** Plain, non-branching notes — a pre-test checklist or reference list. */
+  /** Plain, non-branching reference notes (e.g. the prism-splitting reminders) — not part of a decision flow. */
   keySteps?: string[];
-  /** The node's decision flow — leaf only. */
+  /** The node's step graph — leaf only. First array element is the entry point. */
   steps?: DecisionStep[];
   /** Red flags that apply to the node generally (vs. a specific DecisionOutcome). */
   redFlags?: string[];
@@ -48,7 +86,7 @@ export interface ClinicalPathwayNode {
   children?: string[];
   /** Leaf only: ClinicalTest ids this situation calls for, when not tied to a specific step/outcome. */
   testIds?: string[];
-  /** Other pathway nodes worth linking to from here (e.g. a shared guidance leaf). */
+  /** Other pathway nodes worth linking to — shown once the flow ends, unless a specific outcome already sets its own seeAlso. */
   seeAlso?: string[];
 }
 
@@ -65,15 +103,32 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
     id: 'diplopia-monocular',
     title: 'Monocular diplopia',
     kind: 'leaf',
-    overview: 'Persists with the fellow eye covered — points to that eye, not to alignment. May affect one eye or occur independently in both.',
-    keySteps: ['Confirm: does the second image persist with the fellow eye covered? Test each eye separately.'],
+    overview: 'Persists with the fellow eye covered — points to that eye, not to alignment. Test each eye separately; it may affect one eye or occur independently in both.',
     steps: [
       {
+        kind: 'question',
+        id: 'field-defect',
+        shortLabel: 'Field defect?',
+        question: 'Visual field defect or metamorphopsia?',
+        outcomes: [
+          {
+            label: 'Yes',
+            action: 'Refer for retinal/macular assessment.',
+            redFlag: 'New monocular diplopia with a visual field defect or metamorphopsia — refer for retinal/macular assessment.',
+            next: 'pinhole',
+          },
+          { label: 'No', action: '', next: 'pinhole' },
+        ],
+      },
+      {
+        kind: 'question',
+        id: 'pinhole',
+        shortLabel: 'Pinhole',
         question: 'Pinhole: does it resolve or improve?',
         testIds: ['pinhole-test'],
         outcomes: [
           {
-            label: 'Resolves / improves significantly',
+            label: 'Resolves / improves',
             action: 'Optical cause more likely — check refraction and astigmatism (incl. irregular), and the tear film/ocular surface.',
           },
           {
@@ -83,82 +138,189 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         ],
       },
     ],
-    redFlags: ['New monocular diplopia with a visual field defect or metamorphopsia — refer for retinal/macular assessment.'],
   },
   {
     id: 'diplopia-binocular',
     title: 'Binocular diplopia',
     kind: 'leaf',
-    overview:
-      'Resolves when either eye is covered. Reported direction (horizontal / vertical / oblique) is a descriptor, not a diagnosis — oblique means a combined horizontal + vertical separation and is carried through the steps below, not a separate path.',
-    keySteps: [
-      'Note onset/urgency, constant vs. intermittent, and distance vs. near vs. both — clues to combine with the findings below, not conclusions on their own.',
-    ],
-    redFlags: ['Sudden onset with pain, ptosis, or pupil involvement — urgent medical/neuro-ophthalmic referral.'],
+    overview: 'Resolves when either eye is covered. History -> Examine -> Measure -> Trial prism -> Prescribe or refer.',
     steps: [
+      // HISTORY
       {
-        question: 'Cover test: comitant or incomitant across gaze positions?',
-        testIds: ['cover-test'],
+        kind: 'question',
+        id: 'onset',
+        shortLabel: 'Onset',
+        question: 'When did it start?',
         outcomes: [
-          { label: 'Comitant', action: 'Continue to quantify below if precision is needed.' },
-          { label: 'Incomitant (varies with gaze)', action: 'Assess motility next.' },
-          { label: 'Not reproducible', action: 'Reconsider intermittency — retest when symptomatic.' },
+          { label: 'Sudden / recent', action: '', next: 'onset-flag' },
+          { label: 'Long-standing', action: '', next: 'pattern' },
         ],
       },
       {
-        question: 'Motility / versions & ductions: what limits movement?',
-        outcomes: [
-          {
-            label: 'Single muscle underacts, vertical component present',
-            action: 'Localize with Parks 3-Step — only when an isolated cyclovertical palsy is suspected.',
-            testIds: ['parks-3-step'],
-          },
-          {
-            label: 'Limitation suggestive of restriction',
-            action: 'Consider restrictive/orbital causes; assess and refer as appropriate.',
-            redFlag: 'Limitation suggestive of mechanical restriction (e.g. thyroid eye disease, orbital pathology) — assess and refer as appropriate.',
-          },
-          {
-            label: 'Incomitant, no clear single-muscle localization',
-            action: "Track over time; if it doesn't clarify, consider further/specialist assessment (e.g. Hess/Lancaster mapping).",
-          },
-        ],
-      },
-      {
-        question: 'Torsion: are the images tilted relative to each other?',
-        outcomes: [
-          {
-            label: 'Torsion present or suspected (incl. oblique diplopia)',
-            action: 'Quantify with Double Maddox Rod.',
-            testIds: ['double-maddox-rod'],
-          },
-          { label: 'No torsional component', action: 'Skip — continue below.' },
-        ],
-      },
-      {
-        question: 'Does the deviation need precise quantification (e.g. for prism)?',
+        kind: 'question',
+        id: 'onset-flag',
+        shortLabel: 'Red flags',
+        question: 'Any pain, ptosis, or pupil involvement?',
         outcomes: [
           {
             label: 'Yes',
-            action: 'Measure subjectively with what the room already has set up — Schober (projector cross target) or Maddox Rod.',
-            testIds: ['schober-test', 'maddox-rod'],
+            action: '',
+            redFlag: 'Sudden diplopia with pain, ptosis, or pupil involvement — urgent medical/neuro-ophthalmic referral.',
+            next: 'pattern',
           },
-          { label: 'Already quantified', action: 'Continue to prism guidance below.' },
+          { label: 'No', action: '', next: 'pattern' },
         ],
       },
       {
-        question: 'Do symptoms and alignment findings fully agree?',
+        kind: 'question',
+        id: 'pattern',
+        shortLabel: 'Pattern',
+        question: 'How often?',
+        outcomes: [
+          { label: 'Constant', action: '', next: 'distance-near' },
+          { label: 'Intermittent', action: '', next: 'distance-near' },
+        ],
+      },
+      {
+        kind: 'question',
+        id: 'distance-near',
+        shortLabel: 'Distance/near',
+        question: 'When is it worse?',
+        outcomes: [
+          { label: 'Distance', action: '', next: 'cover-test' },
+          { label: 'Near', action: '', next: 'cover-test' },
+          { label: 'Both', action: '', next: 'cover-test' },
+        ],
+      },
+
+      // EXAMINE
+      {
+        kind: 'question',
+        id: 'cover-test',
+        shortLabel: 'Cover Test',
+        question: 'Cover Test result?',
+        instruction: 'Check alignment.',
+        testIds: ['cover-test'],
+        outcomes: [
+          { label: 'No deviation', action: '', next: 'symptomatic-now' },
+          { label: 'Phoria', action: '', next: 'direction' },
+          { label: 'Tropia', action: '', next: 'direction' },
+          { label: 'Not sure', action: '', next: 'symptomatic-now' },
+        ],
+      },
+      {
+        kind: 'question',
+        id: 'symptomatic-now',
+        shortLabel: 'Symptomatic now?',
+        question: 'Is the patient symptomatic right now?',
+        outcomes: [
+          { label: 'Yes', action: '', next: 'sensory-check' },
+          {
+            label: 'No',
+            action: 'Deviation not demonstrated today — reassess when symptomatic / further assessment as appropriate.',
+          },
+        ],
+      },
+      {
+        kind: 'question',
+        id: 'direction',
+        shortLabel: 'Direction',
+        question: 'Direction?',
+        outcomes: [
+          { label: 'Eso', action: '', next: 'gaze-dependence' },
+          { label: 'Exo', action: '', next: 'gaze-dependence' },
+          { label: 'Hyper', action: '', next: 'gaze-dependence' },
+          { label: 'Combined', action: '', next: 'gaze-dependence' },
+        ],
+      },
+      {
+        kind: 'question',
+        id: 'gaze-dependence',
+        shortLabel: 'Gaze-dependent?',
+        question: 'Does the deviation change with gaze direction?',
         outcomes: [
           {
-            label: "No — findings don't fully explain symptoms, or fusion/suppression status matters",
-            action: 'Assess binocular sensory status with Worth 4 Dot (distance, standard projector target).',
-            testIds: ['worth-4-dot'],
+            label: 'Yes',
+            secondaryLabel: 'incomitant',
+            infoTerm: 'incomitant',
+            action:
+              'Gaze-dependent deviation can make permanent prism management less straightforward. Consider further assessment/referral according to the overall presentation.',
+            testIds: ['parks-3-step', 'double-maddox-rod'],
           },
-          { label: 'Yes — alignment and symptoms agree', action: 'Not routinely needed.' },
+          { label: 'No', secondaryLabel: 'comitant', infoTerm: 'comitant', action: '', next: 'sensory-check' },
+          { label: 'Not sure', action: '', next: 'gaze-instruction' },
+        ],
+      },
+      {
+        kind: 'question',
+        id: 'gaze-instruction',
+        shortLabel: 'Check gaze positions',
+        question: 'Compare alignment in primary, right, left, up and down gaze.',
+        outcomes: [{ label: 'Continue', action: '', next: 'gaze-dependence' }],
+      },
+
+      // Optional sensory check — reached whenever there's no confirmed deviation to
+      // characterize (symptomatic-now: Yes) or once a deviation is confirmed comitant.
+      {
+        kind: 'question',
+        id: 'sensory-check',
+        shortLabel: 'Sensory status',
+        question: 'Check sensory status? (optional)',
+        testIds: ['worth-4-dot'],
+        outcomes: [
+          { label: 'Fusion', action: '', next: 'measure' },
+          { label: 'Suppression OD', action: '', next: 'sensory-suppression-note' },
+          { label: 'Suppression OS', action: '', next: 'sensory-suppression-note' },
+          { label: 'Diplopia', action: '', next: 'measure' },
+          { label: 'Skip', action: '', next: 'measure' },
+        ],
+      },
+      {
+        kind: 'question',
+        id: 'sensory-suppression-note',
+        shortLabel: 'Suppression noted',
+        question: 'Prism may relieve symptomatic diplopia but is unlikely to restore fusion while suppression persists.',
+        outcomes: [{ label: 'Continue', action: '', next: 'measure' }],
+      },
+
+      // MEASURE
+      {
+        kind: 'question',
+        id: 'measure',
+        shortLabel: 'Measure',
+        question: 'Measure deviation.',
+        testIds: ['schober-test', 'maddox-rod'],
+        outcomes: [{ label: 'Enter measurement', action: '', next: 'record-measurement' }],
+      },
+      {
+        kind: 'measurement',
+        id: 'record-measurement',
+        question: 'Record measurement.',
+        next: 'trial',
+      },
+
+      // TRIAL PRISM
+      {
+        kind: 'question',
+        id: 'trial',
+        shortLabel: 'Trial prism',
+        question: 'With best correction + trial prism:',
+        instruction: 'Place the proposed prism in a trial frame together with the patient’s best correction.',
+        showMeasurement: true,
+        outcomes: [
+          {
+            label: 'Single comfortable vision',
+            action: 'Trial successful.',
+            seeAlso: ['diplopia-prism-prescribing'],
+          },
+          { label: 'Improved but not fully comfortable', action: '', next: 'record-measurement' },
+          {
+            label: 'No meaningful improvement',
+            action: 'Prism trial unsuccessful — reassess / further assessment as appropriate.',
+          },
         ],
       },
     ],
-    seeAlso: ['diplopia-prism-prescribing'],
   },
   {
     id: 'diplopia-prism-prescribing',

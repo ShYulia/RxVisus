@@ -51,88 +51,8 @@
   line-height: 1.5;
 }
 
-.rx-quicktip {
-  margin: 20px 4px 0;
-  border-radius: var(--rx-radius);
-  background: var(--rx-iris-tint);
-  padding: 14px 16px;
-}
-
-.rx-quicktip-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--rx-iris-deep);
-  margin: 0 0 4px;
-}
-
-.rx-quicktip p {
-  margin: 0;
-  font-size: 13.5px;
-  color: var(--rx-text);
-  line-height: 1.5;
-}
-
 .rx-pathway-redflags {
   margin-top: 20px;
-}
-
-.rx-step {
-  margin: 0 4px 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--rx-border);
-}
-
-.rx-step:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.rx-step-question {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--rx-text);
-  margin: 0 0 8px;
-}
-
-.rx-step-testchips {
-  margin-bottom: 10px;
-}
-
-.rx-step-outcomes {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.rx-step-outcome-line {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--rx-text);
-}
-
-.rx-step-outcome-label {
-  font-weight: 600;
-}
-
-.rx-step-outcome-arrow {
-  color: var(--rx-text-tertiary);
-}
-
-.rx-step-outcome-action {
-  color: var(--rx-text-secondary);
-}
-
-.rx-step-outcome .rx-step-testchips {
-  margin-top: 6px;
-  margin-bottom: 0;
-}
-
-.rx-step-outcome .rx-pathway-redflags {
-  margin-top: 8px;
 }
 
 .rx-schober-diagram {
@@ -140,6 +60,276 @@
   width: 100%;
   max-width: 320px;
   height: auto;
-  margin: 8px 4px 18px;
+  margin: 4px 0 10px;
   color: var(--rx-text-secondary);
+}
+
+/* Interpret rows (Test Card): short finding -> meaning pairs. */
+.rx-interpret-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rx-interpret-row {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rx-interpret-finding {
+  font-weight: 600;
+  color: var(--rx-text);
+}
+
+.rx-interpret-arrow {
+  color: var(--rx-text-tertiary);
+}
+
+.rx-interpret-meaning {
+  color: var(--rx-text-secondary);
+}
+
+/* Test Card: collapsed background info. */
+.rx-more-details {
+  margin: 20px 4px 0;
+}
+
+.rx-more-details summary {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--rx-text-secondary);
+  cursor: pointer;
+}
+
+.rx-more-details ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rx-more-details li {
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
+}
+
+/* Pathway wizard: one question/action at a time. */
+.rx-wizard-trail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  margin: 0 4px 16px;
+}
+
+.rx-wizard-trail-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.rx-wizard-trail-arrow {
+  color: var(--rx-text-tertiary);
+  margin: 0 4px;
+  font-size: 12px;
+}
+
+.rx-wizard-trail-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rx-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--rx-text-tertiary);
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.rx-wizard-restart {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rx-iris-deep);
+  background: none;
+  border: none;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.rx-wizard-question {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--rx-text);
+  margin: 4px 4px 14px;
+  line-height: 1.35;
+}
+
+.rx-wizard-testchips-block {
+  margin: 0 4px 14px;
+}
+
+.rx-wizard-testchips-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--rx-text-tertiary);
+  margin: 0 0 6px;
+}
+
+.rx-wizard-choice-secondary {
+  font-weight: 400;
+  color: var(--rx-text-tertiary);
+}
+
+.rx-wizard-measurement-summary {
+  margin: 0 4px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rx-iris-deep);
+}
+
+.rx-measurement-form {
+  margin: 0 4px;
+}
+
+.rx-wizard-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 4px;
+}
+
+.rx-wizard-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--rx-text);
+  background: var(--rx-surface);
+  border: 1px solid var(--rx-border);
+  border-radius: var(--rx-radius);
+  padding: 16px 18px;
+  cursor: pointer;
+}
+
+.rx-wizard-choice:active {
+  background: var(--rx-iris-tint);
+  border-color: var(--rx-iris);
+}
+
+.rx-wizard-result {
+  margin: 4px 4px 0;
+}
+
+.rx-wizard-result-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--rx-text-secondary);
+  margin: 0 0 6px;
+}
+
+.rx-wizard-result-action {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--rx-text);
+  line-height: 1.4;
+  margin: 0 0 4px;
+}
+
+.rx-wizard-seealso {
+  margin-top: 18px;
+}
+
+/* Tap-to-reveal glossary term. */
+.rx-term-info {
+  position: relative;
+  display: inline-flex;
+}
+
+.rx-term-info-trigger {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--rx-text-tertiary);
+  color: var(--rx-text-secondary);
+  background: none;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rx-term-info-popover {
+  position: absolute;
+  z-index: 5;
+  top: 26px;
+  right: 0;
+  width: 220px;
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--rx-text);
+  background: var(--rx-surface);
+  border: 1px solid var(--rx-border);
+  border-radius: var(--rx-radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 10px 12px;
+}
+
+/* Interrupting red-flag alert. */
+.rx-alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 24px;
+}
+
+.rx-alert-box {
+  width: 100%;
+  max-width: 360px;
+  background: var(--rx-surface);
+  border: 1px solid var(--rx-caution-border);
+  border-radius: var(--rx-radius);
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.rx-alert-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--rx-caution-text);
+  margin: 0 0 8px;
+}
+
+.rx-alert-message {
+  font-size: 14px;
+  color: var(--rx-text);
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.rx-alert-continue {
+  width: 100%;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--rx-iris);
+  border: none;
+  border-radius: var(--rx-radius-sm);
+  padding: 12px 16px;
+  cursor: pointer;
 }
