@@ -142,15 +142,16 @@ territory while fully supporting the actual workflow.
   [docs/design.md](docs/design.md)) — simplest first to prove the pattern,
   most clinically variable last.
 - **Copy Result is shown on every calculator except Working Distance →
-  ADD.** (Revised 2026-08-23 — originally opt-in per calculator with a
-  concrete external-workflow justification; broadened after product
-  decision.) `ActionRow`'s `showCopy` prop (default `false`) still gates
-  the button — Transposition, Vertex Distance, and Spherical Equivalent
-  all pass `showCopy` with `copyText` set to their formatted result;
-  Working Distance → ADD is the one deliberate exception and renders
-  `<ActionRow onClear={...} />` with no copy-related props. If you add a
-  new calculator, default to including Copy Result unless there's a
-  specific reason (like ADD's) to leave it off.
+  ADD and Prism.** (Revised 2026-08-23 — originally opt-in per calculator
+  with a concrete external-workflow justification; broadened after
+  product decision. Prism excluded 2026-08-23 per product decision.)
+  `ActionRow`'s `showCopy` prop (default `false`) still gates the button
+  — Transposition, Vertex Distance, and Spherical Equivalent all pass
+  `showCopy` with `copyText` set to their formatted result; Working
+  Distance → ADD and Prism render `<ActionRow onClear={...} />` with no
+  copy-related props. If you add a new calculator, default to including
+  Copy Result unless there's a specific reason (like ADD's or Prism's)
+  to leave it off.
 - **Input placeholders are neutral, never realistic example values.** A
   placeholder that looks like a plausible entered Rx (`-6.50`, `1.50`,
   `50`, `180`) can be mistaken for an actual or default value.

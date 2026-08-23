@@ -10,6 +10,7 @@ const ICONS: Record<string, React.ReactNode> = {
   'working-distance-add': <span className="rx-pillar-icon-text">ADD</span>,
   'vertex-distance': <GlassesIcon size={22} />,
   'spherical-equivalent': <span className="rx-pillar-icon-text">SE</span>,
+  prism: <TriangleIcon size={22} />,
 };
 
 const Calculators: React.FC = () => {
@@ -21,12 +22,6 @@ const Calculators: React.FC = () => {
           {calculatorDefinitions.map((def) => (
             <PillarRow key={def.id} icon={ICONS[def.id]} title={def.title} desc={def.subtitle} routerLink={def.path} />
           ))}
-          <PillarRow
-            icon={<TriangleIcon size={22} />}
-            title="Prism"
-            desc="Prentice's rule — prism from decentration"
-            comingSoon
-          />
         </div>
       </IonContent>
     </IonPage>

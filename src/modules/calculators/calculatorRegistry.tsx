@@ -2,6 +2,7 @@ import TranspositionCalculator from './TranspositionCalculator';
 import WorkingDistanceToAddCalculator from './WorkingDistanceToAddCalculator';
 import VertexDistanceCalculator from './VertexDistanceCalculator';
 import SphericalEquivalentCalculator from './SphericalEquivalentCalculator';
+import PrismCalculator from './PrismCalculator';
 
 export interface CalculatorDefinition {
   id: string;
@@ -45,5 +46,13 @@ export const calculatorDefinitions: CalculatorDefinition[] = [
     subtitle: 'Reduce a toric Rx to its equivalent sphere power',
     mark: 'SPH + CYL/2',
     component: SphericalEquivalentCalculator,
+  },
+  {
+    id: 'prism',
+    path: '/calculate/prism',
+    title: 'Prism',
+    subtitle: "Prentice's Rule — induced prism from decentration, and the reverse",
+    mark: 'Δ = c·F',
+    component: PrismCalculator,
   },
 ];
