@@ -57,7 +57,11 @@ const SphericalEquivalentCalculator: React.FC = () => {
           <p className="rx-hint">Enter sphere to calculate. Cylinder is optional.</p>
         )}
 
-        <ActionRow onClear={handleClear} />
+        <ActionRow
+          onClear={handleClear}
+          showCopy
+          copyText={result !== null ? `${formatSphere(result)} D` : undefined}
+        />
       </IonContent>
     </IonPage>
   );

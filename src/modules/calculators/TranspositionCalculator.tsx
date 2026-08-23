@@ -66,7 +66,7 @@ const TranspositionCalculator: React.FC = () => {
           <p className="rx-hint">Enter sphere to transpose. Add cylinder and axis only for a toric Rx.</p>
         )}
 
-        <ActionRow onClear={handleClear} />
+        <ActionRow onClear={handleClear} showCopy copyText={result ? formatRx(result) : undefined} />
       </IonContent>
     </IonPage>
   );
