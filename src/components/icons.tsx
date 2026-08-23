@@ -76,6 +76,12 @@ export const ChevronRightIcon: React.FC<IconProps> = (props) => (
   </IconBase>
 );
 
+export const ChevronLeftIcon: React.FC<IconProps> = (props) => (
+  <IconBase {...props} size={props.size ?? 16} viewBox="0 0 16 16">
+    <path d="M10 3.5L5 8l5 4.5" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </IconBase>
+);
+
 export const ChevronDownIcon: React.FC<IconProps> = (props) => (
   <IconBase {...props} size={props.size ?? 16} viewBox="0 0 16 16">
     <path d="M3.5 6L8 10.5 12.5 6" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />

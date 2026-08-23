@@ -53,19 +53,33 @@ describe('clinicalPathways referential integrity', () => {
     }
   });
 
-  it('every next / measurement-step target resolves to a real step id within the same node', () => {
+  it('every next target resolves to a real step id within the same node', () => {
     for (const node of clinicalPathways) {
       const stepIds = new Set((node.steps ?? []).map((step) => step.id));
       for (const step of node.steps ?? []) {
-        if (step.kind === 'measurement') {
-          expect(stepIds.has(step.next), `${node.id} -> measurement step "${step.id}" -> next "${step.next}"`).toBe(true);
+        if (step.kind === 'measurement' || step.kind === 'text-entry' || step.kind === 'rx-entry') {
+          expect(stepIds.has(step.next), `${node.id} -> ${step.kind} step "${step.id}" -> next "${step.next}"`).toBe(true);
           continue;
         }
+        if (step.kind === 'final-rx') continue;
         for (const outcome of step.outcomes) {
           if (outcome.next) {
             expect(stepIds.has(outcome.next), `${node.id} -> step "${step.id}" -> outcome "${outcome.label}" -> next "${outcome.next}"`).toBe(true);
           }
         }
+      }
+    }
+  });
+
+  it('every measurement consistencyCheck.recheckStepId resolves to a real step id within the same node', () => {
+    for (const node of clinicalPathways) {
+      const stepIds = new Set((node.steps ?? []).map((step) => step.id));
+      for (const step of node.steps ?? []) {
+        if (step.kind !== 'measurement' || !step.consistencyCheck) continue;
+        expect(
+          stepIds.has(step.consistencyCheck.recheckStepId),
+          `${node.id} -> step "${step.id}" -> consistencyCheck.recheckStepId "${step.consistencyCheck.recheckStepId}"`,
+        ).toBe(true);
       }
     }
   });
@@ -115,6 +129,30 @@ describe('clinicalPathways referential integrity', () => {
             expect(SPECIALIST_ONLY_TEST_IDS, `${node.id} -> outcome "${outcome.label}" -> test "${testId}"`).not.toContain(testId);
           }
         }
+      }
+    }
+  });
+
+  it('Diplopia and Strabismus reuse the exact same Measure -> Trial -> Prescribe step objects, not copies', () => {
+    const diplopia = getPathwayNode('diplopia-binocular');
+    const strabismus = getPathwayNode('strabismus');
+    for (const id of ['best-correction', 'measure', 'record-measurement', 'trial', 'final-rx']) {
+      const diplopiaStep = diplopia?.steps?.find((step) => step.id === id);
+      const strabismusStep = strabismus?.steps?.find((step) => step.id === id);
+      expect(diplopiaStep, `diplopia-binocular -> step "${id}"`).toBeDefined();
+      expect(strabismusStep, `strabismus -> step "${id}"`).toBeDefined();
+      expect(strabismusStep, `step "${id}" should be the same shared object, not a duplicate`).toBe(diplopiaStep);
+    }
+  });
+
+  it('every measurement consistencyCheck.findingKey has a matching recordAs producer in the same node', () => {
+    for (const node of clinicalPathways) {
+      const recordedKeys = new Set(
+        (node.steps ?? []).flatMap((step) => (step.kind === 'question' ? step.outcomes.flatMap((o) => (o.recordAs ? [o.recordAs.key] : [])) : [])),
+      );
+      for (const step of node.steps ?? []) {
+        if (step.kind !== 'measurement' || !step.consistencyCheck) continue;
+        expect(recordedKeys.has(step.consistencyCheck.findingKey), `${node.id} -> step "${step.id}" -> consistencyCheck.findingKey "${step.consistencyCheck.findingKey}" has no recordAs producer`).toBe(true);
       }
     }
   });

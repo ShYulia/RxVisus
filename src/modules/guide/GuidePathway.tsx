@@ -33,14 +33,20 @@ const GuidePathway: React.FC = () => {
     );
   }
 
-  const backState = { from: `/guide/pathway/${node.id}` };
   const hasWizard = node.kind === 'leaf' && !!node.steps && node.steps.length > 0;
+  if (hasWizard) {
+    // PathwayWizard owns its own page shell (header, back/exit behavior, content) —
+    // nesting it inside another IonPage here would break Ionic's page stack.
+    return <PathwayWizard key={node.id} node={node} />;
+  }
+
+  const backState = { from: `/guide/pathway/${node.id}` };
 
   return (
     <IonPage>
       <PageHeader title={node.title} backHref="/guide" />
       <IonContent fullscreen className="ion-padding">
-        {!hasWizard && node.overview && <p className="rx-hint" style={{ marginTop: 0 }}>{node.overview}</p>}
+        {node.overview && <p className="rx-hint" style={{ marginTop: 0 }}>{node.overview}</p>}
 
         {node.kind === 'branch' && (
           <div className="rx-pillars" style={{ marginTop: 14 }}>
@@ -60,9 +66,7 @@ const GuidePathway: React.FC = () => {
           </div>
         )}
 
-        {hasWizard && <PathwayWizard key={node.id} node={node} />}
-
-        {node.kind === 'leaf' && !hasWizard && (
+        {node.kind === 'leaf' && (
           <>
             {node.keySteps && node.keySteps.length > 0 && (
               <div className="rx-list-section">

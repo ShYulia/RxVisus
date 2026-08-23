@@ -297,8 +297,57 @@
   color: var(--rx-iris-deep);
 }
 
-.rx-measurement-form {
+.rx-measurement-form,
+.rx-textentry-form,
+.rx-rxentry-form {
   margin: 0 4px;
+}
+
+.rx-rxentry-form .rx-list-section-label {
+  margin-top: 18px;
+}
+
+.rx-rxentry-form .rx-list-section-label:first-child {
+  margin-top: 0;
+}
+
+/* Non-blocking clinical consistency check. */
+.rx-consistency-box {
+  margin: 0 4px 18px;
+}
+
+.rx-consistency-box .rx-caution-text + .rx-caution-text {
+  margin-top: 6px;
+}
+
+/* Final Rx: measured/trialled prism, split reasoning, resulting Rx per eye. */
+.rx-final-rx {
+  margin: 4px 4px 0;
+}
+
+.rx-final-rx-row {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  color: var(--rx-text);
+}
+
+.rx-final-rx-row span {
+  color: var(--rx-text-secondary);
+  margin-right: 4px;
+}
+
+.rx-final-rx-notes {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rx-final-rx-notes li {
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
 }
 
 .rx-wizard-choices {

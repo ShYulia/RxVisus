@@ -29,3 +29,19 @@
   color: var(--rx-text-secondary);
   line-height: 1.4;
 }
+
+.rx-header-back-btn {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  margin: 0;
+  color: var(--rx-text);
+}
+
+.rx-header-exit-btn {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--rx-iris-deep);
+}
