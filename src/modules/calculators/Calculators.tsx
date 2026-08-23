@@ -9,6 +9,7 @@ const ICONS: Record<string, React.ReactNode> = {
   transposition: <SwapArrowsIcon size={22} />,
   'working-distance-add': <span className="rx-pillar-icon-text">ADD</span>,
   'vertex-distance': <GlassesIcon size={22} />,
+  'spherical-equivalent': <span className="rx-pillar-icon-text">SE</span>,
 };
 
 const Calculators: React.FC = () => {

@@ -1,6 +1,7 @@
 import TranspositionCalculator from './TranspositionCalculator';
 import WorkingDistanceToAddCalculator from './WorkingDistanceToAddCalculator';
 import VertexDistanceCalculator from './VertexDistanceCalculator';
+import SphericalEquivalentCalculator from './SphericalEquivalentCalculator';
 
 export interface CalculatorDefinition {
   id: string;
@@ -36,5 +37,13 @@ export const calculatorDefinitions: CalculatorDefinition[] = [
     subtitle: 'Convert a prescription between two vertex distances',
     mark: 'd₁ → d₂',
     component: VertexDistanceCalculator,
+  },
+  {
+    id: 'spherical-equivalent',
+    path: '/calculate/spherical-equivalent',
+    title: 'Spherical Equivalent',
+    subtitle: 'Reduce a toric Rx to its equivalent sphere power',
+    mark: 'SPH + CYL/2',
+    component: SphericalEquivalentCalculator,
   },
 ];

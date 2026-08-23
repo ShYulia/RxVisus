@@ -19,110 +19,13 @@ Capacitor `appId`, and the local-storage key namespace all still read
 ## Status
 
 MVP build in progress. Calculators (Transposition, Working Distance → ADD,
-Vertex Distance) and the Clinical Guide architecture (canonical test
-cards, pathway navigation, seeded with Diplopia) are implemented; Prism
-calculator and most Clinical Guide content are still to come. See
-[README.md](README.md) for the product pitch and non-negotiable
-constraints (no AI/backend, offline-only, no patient-identifiable data).
-See "Next session" below for three items approved but deliberately not
-yet built.
-
-## NEXT SESSION — approved, not yet implemented
-
-Approved 2026-08-20. None of the three items below have any code written
-yet — no routes, no domain files, no store, no UI changes. Do not treat
-anything in this section as already working. Each is its own
-implementation pass; check in before combining more than one in a single
-session (see "Working conventions" below on incremental steps).
-
-### 1. Favorites — fourth bottom-navigation tab
-
-Navigation becomes **Home / Calculators / Clinical Guide / Favorites**.
-
-- Favorites is a **bottom-nav tab**, not a Home card. Home stays focused
-  on exactly two destinations (Calculators, Clinical Guide) — do not add
-  a third Home feature card for Favorites.
-- Favorites is a cross-module shortcut layer, not tied to one content
-  type: it should eventually surface frequently-used/bookmarked items
-  from any module — calculators, Clinical Guide tests, Clinical Guide
-  pathways, and future module items (e.g. a future Contact Lenses entry)
-  — not just calculators.
-- Worked example: a user who frequently uses Vertex Distance should be
-  able to go `Favorites → Vertex Distance` directly.
-- Icon: a star. Match whichever icon style/library ends up canonical for
-  navigation — the bottom tab bar currently uses `@phosphor-icons/react`
-  (duotone) while the desktop `SideRail` still uses the original
-  hand-drawn `components/icons.tsx` set; decide/confirm consistency
-  before picking one for Favorites.
-- Persistence: local-only, offline. Likely the same shape already
-  established for the display-name preference — a Zustand store
-  (`store/`) hydrated from `@capacitor/preferences` (see
-  `store/profileStore.ts` for the existing pattern to mirror).
-- Data model: work out what a stored "favorite" reference looks like
-  before implementing — likely something like
-  `{ type: 'calculator' | 'test' | 'pathway'; id: string }`, pointing at
-  existing ids already defined in `calculatorRegistry.ts`,
-  `domain/reference/clinicalTests.ts`, and
-  `domain/reference/clinicalPathways.ts`. Favorites is a cross-cutting
-  shortcut list, not a fourth entry in `navigation/topLevelModules.ts`
-  (that registry is specifically for top-level product *modules*, and
-  Favorites doesn't have its own screens/content the way Calculators or
-  Clinical Guide do) — it needs its own small registry/store instead.
-- Touches: `navigation/Tabs.tsx`, `navigation/SideRail.tsx`, a new
-  `store/favoritesStore.ts` (or similar), and a new `modules/favorites/`
-  screen.
-
-### 2. Copy Result — remove from most calculators, keep only on Vertex Distance
-
-**Done (2026-08-20).** `ActionRow` now takes an opt-in `showCopy?: boolean`
-(default `false`) that gates rendering of the Copy Result button entirely;
-`copyText` alone no longer causes the button to appear. Only
-`VertexDistanceCalculator.tsx` passes `showCopy`. `TranspositionCalculator.tsx`
-and `WorkingDistanceToAddCalculator.tsx` now render `<ActionRow onClear={...} />`
-with no copy-related props. `Clear` was left untouched (still always shown) —
-whether `Clear` should also become opt-in is still an open question, not
-decided by this change.
-
-Standing product rule (see also "Working conventions" below):
-**Copy Result is opt-in per calculator, added only when there's a
-concrete external workflow that needs the result copied — never a
-reflexive default.** Vertex Distance keeps it because the converted Rx
-commonly needs to be copied into an email/order form when ordering
-contact lenses; no other current or planned calculator has an equivalent
-described workflow. Do not add it to the future Spherical Equivalent
-calculator (item 3) or to Prism/Prentice's Rule by default when that's
-eventually built.
-
-### 3. New calculator — Spherical Equivalent
-
-Add to the calculator roadmap, following the exact same architecture as
-the existing calculators: a pure domain function + `.test.ts` under
-`domain/calculators/`, a screen under `modules/calculators/` using the
-existing `FieldBox`/`FieldBoxGrid` inputs and `CalculatorResult` output
-components, registered in `calculatorRegistry.ts` so it appears in the
-Calculators hub automatically.
-
-- **Formula**: `SE = SPH + (CYL / 2)`.
-- **Inputs**: SPH and CYL only — no axis (axis doesn't affect spherical
-  equivalent). Use neutral zero placeholders for both (`0.00` / `0.00`),
-  matching the placeholder convention established for Vertex Distance
-  this session — never an example Rx value (e.g. `-6.50`) as a
-  placeholder, since a muted example value can be mistaken for an
-  entered one.
-- **Worked example**: SPH −4.00, CYL −1.50 → Spherical Equivalent
-  = −4.75 D.
-- Use the existing diopter/Rx formatting helpers
-  (`modules/calculators/formatDiopter.ts`) rather than inventing new
-  formatting.
-- Should eventually be a valid Favorites target (item 1) — keep its
-  `calculatorRegistry.ts` id stable once created, since Favorites will
-  likely reference calculators by id.
-- **No Copy Result button** — per item 2's rule, there's no described
-  external workflow for this calculator.
-- Purely a mathematical calculation, not a clinical recommendation or
-  interpretation — same "convert, never decide" posture already
-  established for Working Distance → ADD and Vertex Distance (see
-  memory/feedback on this principle from earlier sessions, if available).
+Vertex Distance, Spherical Equivalent), Favorites (cross-module shortcut
+layer, seeded from calculators and Clinical Guide content), and the
+Clinical Guide architecture (canonical test cards, pathway navigation,
+seeded with Diplopia) are implemented; Prism calculator and most Clinical
+Guide content are still to come. See [README.md](README.md) for the
+product pitch and non-negotiable constraints (no AI/backend, offline-only,
+no patient-identifiable data).
 
 ## Stack
 
@@ -242,8 +145,10 @@ territory while fully supporting the actual workflow.
   only when a calculator has a concrete external workflow that needs the
   result copied elsewhere (Vertex Distance: pasting the converted Rx into
   an order/email when ordering contact lenses). Do not add it reflexively
-  to every calculator screen just because the component exists — see
-  "Next session" item 2 above for the specific cleanup this implies.
+  to every calculator screen just because the component exists — `ActionRow`'s
+  `showCopy` prop (default `false`) gates it; Transposition, Working
+  Distance → ADD, and Spherical Equivalent all render `<ActionRow onClear={...} />`
+  with no copy-related props.
 - **Input placeholders are neutral, never realistic example values.** A
   placeholder that looks like a plausible entered Rx (`-6.50`, `1.50`,
   `50`, `180`) can be mistaken for an actual or default value.
@@ -279,9 +184,9 @@ territory while fully supporting the actual workflow.
   requires letters, SPH fields use `inputMode="text"` (not `"decimal"`)
   so the on-screen keyboard doesn't lock mobile users out of typing it;
   every SPH field should carry a `helperText="Plano: type Pln"` hint
-  (see `TranspositionCalculator.tsx` / `VertexDistanceCalculator.tsx`).
-  Any future calculator with a SPH input (e.g. Spherical Equivalent,
-  item 3 above) should follow the same pattern.
+  (see `TranspositionCalculator.tsx` / `VertexDistanceCalculator.tsx` /
+  `SphericalEquivalentCalculator.tsx`). Any future calculator with a SPH
+  input should follow the same pattern.
 - **`formatRx` omits the `/ CYL x AXIS` tail entirely when cylinder is
   0.** A spherical-only Rx is written clinically as just the sphere
   (`-4.00`, or `Pln`) — never `-4.00 / +0.00 x 180`, since axis has no
