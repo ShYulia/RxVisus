@@ -2,12 +2,19 @@ import { useLocation, useParams } from 'react-router-dom';
 import { IonContent, IonPage } from '@ionic/react';
 import PageHeader from '../../components/PageHeader';
 import { getClinicalTest } from '../../domain/reference/clinicalTests';
-import SchoberDiagram from './SchoberDiagram';
+import MaddoxRodQuickCard from './MaddoxRodQuickCard';
+import SchoberQuickCard from './SchoberQuickCard';
 import './Guide.css';
 
-/** Test cards where a small diagram scans faster than another paragraph. Keyed by ClinicalTest id. */
-const TEST_DIAGRAMS: Record<string, React.FC> = {
-  'schober-test': SchoberDiagram,
+/**
+ * Test cards with a bespoke visual quick-reference layout (recognition image, SETUP,
+ * PATIENT SEES -> MEANS -> NEUTRALIZE rows) instead of the generic text sections below.
+ * This is the general pattern for any future point-of-care Test Card that needs it —
+ * see SchoberQuickCard/MaddoxRodQuickCard and the shared FindingRow/diagram components.
+ */
+const QUICK_CARDS: Record<string, React.FC> = {
+  'schober-test': SchoberQuickCard,
+  'maddox-rod': MaddoxRodQuickCard,
 };
 
 const Section: React.FC<{ label: string; items: string[]; ordered?: boolean }> = ({ label, items, ordered }) => {
@@ -31,7 +38,7 @@ const TestCard: React.FC = () => {
   const location = useLocation<{ from?: string } | undefined>();
   const backHref = location.state?.from ?? '/guide/tests';
   const test = getClinicalTest(testId);
-  const Diagram = test ? TEST_DIAGRAMS[test.id] : undefined;
+  const QuickCard = test ? QUICK_CARDS[test.id] : undefined;
 
   if (!test) {
     return (
@@ -55,39 +62,43 @@ const TestCard: React.FC = () => {
         </p>
 
         <Section label="You need" items={test.youNeed} />
-        <Section label="Setup" items={test.setup} />
-        <Section label="Do" items={test.doSteps} ordered />
 
-        {(test.patientSees?.length || Diagram) && (
-          <div className="rx-list-section">
-            <p className="rx-list-section-label">Patient sees</p>
-            {Diagram && <Diagram />}
+        {QuickCard ? (
+          <QuickCard />
+        ) : (
+          <>
+            <Section label="Setup" items={test.setup ?? []} />
+            <Section label="Do" items={test.doSteps ?? []} ordered />
+
             {test.patientSees && test.patientSees.length > 0 && (
-              <ul>
-                {test.patientSees.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+              <div className="rx-list-section">
+                <p className="rx-list-section-label">Patient sees</p>
+                <ul>
+                  {test.patientSees.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
             )}
-          </div>
-        )}
 
-        {test.interpret.length > 0 && (
-          <div className="rx-list-section">
-            <p className="rx-list-section-label">Interpret</p>
-            <div className="rx-interpret-rows">
-              {test.interpret.map((row) => (
-                <p className="rx-interpret-row" key={row.finding}>
-                  <span className="rx-interpret-finding">{row.finding}</span>
-                  <span className="rx-interpret-arrow"> &rarr; </span>
-                  <span className="rx-interpret-meaning">{row.meaning}</span>
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
+            {test.interpret && test.interpret.length > 0 && (
+              <div className="rx-list-section">
+                <p className="rx-list-section-label">Interpret</p>
+                <div className="rx-interpret-rows">
+                  {test.interpret.map((row) => (
+                    <p className="rx-interpret-row" key={row.finding}>
+                      <span className="rx-interpret-finding">{row.finding}</span>
+                      <span className="rx-interpret-arrow"> &rarr; </span>
+                      <span className="rx-interpret-meaning">{row.meaning}</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        <Section label="Neutralize / measure" items={test.neutralize ?? []} />
+            <Section label="Neutralize / measure" items={test.neutralize ?? []} />
+          </>
+        )}
 
         {hasMoreDetails && (
           <details className="rx-more-details">

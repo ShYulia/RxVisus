@@ -21,14 +21,18 @@ export interface ClinicalTest {
   purpose: string;
   /** Equipment, as short nouns. */
   youNeed: string[];
-  /** Where things go / room conditions. */
-  setup: string[];
+  /**
+   * Where things go / room conditions, what to ask/do, and short finding -> meaning pairs.
+   * Optional: a test with a bespoke visual quick-reference card (see TestCard's QUICK_CARDS,
+   * e.g. Schober/Maddox Rod) covers this ground with diagrams instead and omits these fields.
+   */
+  setup?: string[];
   /** What to ask the patient / do, as short imperative steps. */
-  doSteps: string[];
+  doSteps?: string[];
   /** What the patient reports seeing, if relevant to interpretation. */
   patientSees?: string[];
   /** Common findings and what each one means — kept as short finding/meaning pairs, not prose. */
-  interpret: { finding: string; meaning: string }[];
+  interpret?: { finding: string; meaning: string }[];
   /** Exactly how to neutralize/measure, and the endpoint — only for tests where this applies. */
   neutralize?: string[];
   /** Background not needed mid-exam: tips, common mistakes, what to record. Shown behind a collapsed disclosure. */
@@ -66,16 +70,13 @@ export const clinicalTests: ClinicalTest[] = [
     tags: ['diplopia', 'binocular', 'phoria'],
     purpose: 'Dissociate the eyes to measure a horizontal or vertical phoria.',
     youNeed: ['Maddox rod', 'Muscle light or pen light', 'Prism bar or loose prisms'],
-    setup: ['Rod over one eye, in trial frame or phoropter.', 'Dim the room.'],
-    doSteps: ['Patient views the light through the rod.', 'Ask if the streak passes through the light, or is offset — and which direction.'],
-    patientSees: ['A single streak of light, separate from the white light source.'],
-    interpret: [
-      { finding: 'Streak through the light', meaning: 'No measurable deviation on this axis.' },
-      { finding: 'Streak offset', meaning: 'A phoria — neutralize to quantify.' },
-      { finding: 'Streak broken or lost', meaning: 'Suppression.' },
+    moreDetails: [
+      'Grooves horizontal → vertical line (for horizontal deviation). Grooves vertical → horizontal line (for vertical deviation).',
+      'Ask whether the line passes through the light and, if not, which direction it is offset — neutralize with prism until it does.',
+      'A broken streak, or loss of the rod-eye/fellow-eye image together, indicates suppression rather than a measurable phoria.',
+      'A single rod over one eye is enough for most single-plane checks — reserve double Maddox for torsion.',
+      'This card documents rod over OD, light seen by OS. If your setup is reversed, mirror every left/right direction below.',
     ],
-    neutralize: ['Add prism until the streak passes through the light. Read the amount and base directly off the bar/lens.'],
-    moreDetails: ['A single rod over one eye is enough for most single-plane checks — reserve double Maddox for torsion.'],
   },
   {
     id: 'double-maddox-rod',
@@ -169,17 +170,12 @@ export const clinicalTests: ClinicalTest[] = [
     tags: ['diplopia', 'binocular', 'phoria', 'projector', 'dissociation'],
     purpose: 'Chair-side subjective measurement of horizontal/vertical deviation using the standard projector cross-and-circle target.',
     youNeed: ['Projector Schober/cross target', 'Red/green glasses', 'Prism bar or loose prisms'],
-    setup: ['Dim room, patient at the projector chart distance.'],
-    doSteps: ['Patient wears red/green glasses and views the projected target.', 'Ask where the red cross appears relative to the green circles.'],
-    patientSees: ['A red cross inside green concentric circles — centered or displaced.'],
-    interpret: [
-      { finding: 'Horizontal displacement', meaning: 'Horizontal deviation.' },
-      { finding: 'Vertical displacement', meaning: 'Vertical deviation.' },
-    ],
-    neutralize: ['Add prism, increasing toward the side the cross needs to move. Endpoint: cross reported centered. Read the prism directly off the bar/lens.'],
     moreDetails: [
+      'Dim room, patient at the projector chart distance.',
+      'Add prism, increasing toward the side the cross needs to move, until the patient reports it centered. Read the amount directly off the bar/lens.',
       'Uses the same projector slide as Worth 4 Dot dissociation — no extra equipment.',
       "Don't stop before the patient confirms it's centered — a rough estimate understates the deviation.",
+      'This card documents red over OD, green over OS. If your setup is reversed, mirror every left/right direction below.',
     ],
   },
 ];

@@ -55,13 +55,118 @@
   margin-top: 20px;
 }
 
-.rx-schober-diagram {
-  display: block;
-  width: 100%;
-  max-width: 320px;
-  height: auto;
-  margin: 4px 0 10px;
+/* Test Card quick-reference card: recognize -> setup -> patient sees -> means -> neutralize. */
+.rx-quickcard {
+  margin: 18px 4px 0;
+}
+
+.rx-quickcard-recognition {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 16px;
+}
+
+.rx-quickcard-recognition-caption {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--rx-text-secondary);
+}
+
+.rx-quickcard-setup {
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rx-quickcard-setup-row {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--rx-text);
+}
+
+.rx-quickcard-setup-arrow {
+  color: var(--rx-text-tertiary);
+}
+
+.rx-quickcard-swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.rx-quickcard-swatch-red {
+  background: #e5484d;
+}
+
+.rx-quickcard-swatch-green {
+  background: #2fa84f;
+}
+
+.rx-quickcard-secondary {
+  font-weight: 400;
+  color: var(--rx-text-tertiary);
+}
+
+.rx-quickcard-axis-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--rx-text-tertiary);
+}
+
+.rx-finding-rows {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.rx-finding-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--rx-border);
+}
+
+.rx-finding-row-diagram {
+  flex: none;
+  line-height: 0;
+}
+
+.rx-finding-row-arrow {
+  flex: none;
+  color: var(--rx-text-tertiary);
+  font-size: 14px;
+}
+
+.rx-finding-row-meaning {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--rx-text);
+}
+
+.rx-finding-row-neutralize {
+  margin-left: auto;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--rx-iris-deep);
+  background: var(--rx-iris-tint);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.rx-finding-row-neutralize-endpoint {
+  color: var(--rx-caution-text, var(--rx-text-secondary));
+  background: none;
+  font-weight: 700;
 }
 
 /* Interpret rows (Test Card): short finding -> meaning pairs. */

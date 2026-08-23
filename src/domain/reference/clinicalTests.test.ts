@@ -18,10 +18,20 @@ describe('getClinicalTest', () => {
 });
 
 describe('clinicalTests point-of-care shape', () => {
-  it('every test lists at least one required item and at least one interpretation', () => {
+  // Schober and Maddox Rod have a bespoke visual quick-reference card (TestCard's
+  // QUICK_CARDS) that covers setup/interpretation with diagrams instead of these fields.
+  const HAS_VISUAL_QUICK_CARD = ['schober-test', 'maddox-rod'];
+
+  it('every test lists at least one required item', () => {
     for (const test of clinicalTests) {
       expect(test.youNeed.length, `${test.id} -> youNeed`).toBeGreaterThan(0);
-      expect(test.interpret.length, `${test.id} -> interpret`).toBeGreaterThan(0);
+    }
+  });
+
+  it('every test without a visual quick card has at least one interpretation', () => {
+    for (const test of clinicalTests) {
+      if (HAS_VISUAL_QUICK_CARD.includes(test.id)) continue;
+      expect(test.interpret?.length ?? 0, `${test.id} -> interpret`).toBeGreaterThan(0);
     }
   });
 });
