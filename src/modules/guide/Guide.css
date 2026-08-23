@@ -77,3 +77,69 @@
 .rx-pathway-redflags {
   margin-top: 20px;
 }
+
+.rx-step {
+  margin: 0 4px 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rx-border);
+}
+
+.rx-step:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.rx-step-question {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rx-text);
+  margin: 0 0 8px;
+}
+
+.rx-step-testchips {
+  margin-bottom: 10px;
+}
+
+.rx-step-outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rx-step-outcome-line {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--rx-text);
+}
+
+.rx-step-outcome-label {
+  font-weight: 600;
+}
+
+.rx-step-outcome-arrow {
+  color: var(--rx-text-tertiary);
+}
+
+.rx-step-outcome-action {
+  color: var(--rx-text-secondary);
+}
+
+.rx-step-outcome .rx-step-testchips {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.rx-step-outcome .rx-pathway-redflags {
+  margin-top: 8px;
+}
+
+.rx-schober-diagram {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin: 8px 4px 18px;
+  color: var(--rx-text-secondary);
+}

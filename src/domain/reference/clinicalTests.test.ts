@@ -6,6 +6,12 @@ describe('getClinicalTest', () => {
     expect(getClinicalTest('double-maddox-rod')?.title).toBe('Double Maddox Rod');
   });
 
+  it('finds the newly added Pinhole Test, Worth 4 Dot, and Schober Test', () => {
+    expect(getClinicalTest('pinhole-test')?.title).toBe('Pinhole Test');
+    expect(getClinicalTest('worth-4-dot')?.title).toBe('Worth 4 Dot');
+    expect(getClinicalTest('schober-test')?.title).toBe('Schober Test (Cross Test)');
+  });
+
   it('returns undefined for an unknown id', () => {
     expect(getClinicalTest('not-a-real-test')).toBeUndefined();
   });

@@ -34,6 +34,7 @@ const TestsList: React.FC = () => {
               title={test.title}
               desc={test.purpose}
               routerLink={`/guide/tests/${test.id}`}
+              state={{ from: '/guide/tests' }}
             />
           ))}
         </div>

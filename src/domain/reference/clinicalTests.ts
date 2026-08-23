@@ -108,6 +108,62 @@ export const clinicalTests: ClinicalTest[] = [
     quickTip: 'Only reach for this test once you know the deviation is a single cyclovertical palsy, not a combined or horizontal one.',
     commonMistakes: ['Applying the 3-step test to a combined horizontal-and-vertical deviation, where it does not give a valid answer.'],
   },
+  {
+    id: 'pinhole-test',
+    title: 'Pinhole Test',
+    tags: ['diplopia', 'monocular', 'refraction', 'visual-acuity'],
+    purpose: 'Distinguish a refractive/optical cause of blur or monocular diplopia from a non-refractive ocular cause.',
+    setup: ['Multi-hole pinhole occluder.', "Patient's habitual correction in place, if worn."],
+    howTo: [
+      'View the target (VA chart or the diplopic image) through the pinhole, one eye at a time.',
+      'Compare with and without the pinhole.',
+    ],
+    whatToWatch: ['Whether the second image or blur resolves, improves, or is unchanged through the pinhole.'],
+    record: ['Eye tested and whether the pinhole resolved, improved, or did not change the finding.'],
+    quickTip: 'A multi-hole pinhole is easier for patients to align than a single-hole occluder.',
+    commonMistakes: ['Testing both eyes together instead of one at a time — the result must be attributed to a single eye.'],
+  },
+  {
+    id: 'worth-4-dot',
+    title: 'Worth 4 Dot',
+    tags: ['diplopia', 'binocular', 'fusion', 'suppression', 'sensory', 'projector'],
+    purpose: 'Assess binocular sensory status — fusion, suppression, or diplopia — with dissociated colored targets.',
+    setup: ['Worth 4 Dot target on the standard chart projector (2 green, 1 red, 1 white), at distance.', 'Red/green glasses, dim room.'],
+    howTo: [
+      'Patient wears the red/green glasses and views the projected four-dot target at distance.',
+      'Ask how many dots are seen, and their colors and arrangement.',
+    ],
+    whatToWatch: [
+      '4 dots (2 red/pink, 2 green), steady → normal fusion.',
+      '2 red dots only → suppression of the eye behind the green filter.',
+      '3 green dots only → suppression of the eye behind the red filter.',
+      '5 dots, or dots that swap/alternate → diplopia (crossed or uncrossed) — note the pattern.',
+    ],
+    record: ['Distance result. Near Worth 4 Dot can add distance-specific suppression information, but only if a dedicated near target is actually available.'],
+    quickTip: "Don't assume a near result — the standard projector target is distance-only. Near testing needs a separate dedicated near Worth target.",
+    commonMistakes: ['Assuming the projector distance target can substitute for a true near Worth 4 Dot assessment.'],
+  },
+  {
+    id: 'schober-test',
+    title: 'Schober Test (Cross Test)',
+    tags: ['diplopia', 'binocular', 'phoria', 'projector', 'dissociation'],
+    purpose: 'Chair-side subjective measurement of horizontal/vertical deviation using the standard projector cross-and-circle target.',
+    setup: ['Projector Schober/cross target: red cross, green concentric circles.', 'Red/green glasses.', 'Prism bar or loose prisms at hand.'],
+    howTo: [
+      'Patient wears red/green glasses and views the projected target.',
+      'Ask where the red cross appears relative to the green circles — centered, or displaced and in which direction.',
+      'Add prism, increasing toward the side the cross needs to move, until the patient reports it centered.',
+      'Read the neutralizing prism directly off the bar/lens.',
+    ],
+    whatToWatch: [
+      'Horizontal displacement → horizontal deviation.',
+      'Vertical displacement → vertical deviation.',
+      'Endpoint: cross reported centered within the circles.',
+    ],
+    record: ['Direction of initial displacement and the neutralizing prism (base and amount).'],
+    quickTip: "Uses the same projector slide as Worth 4 Dot dissociation — no extra equipment beyond what's already in the room.",
+    commonMistakes: ["Stopping before the patient confirms the cross is centered — a rough estimate understates the deviation."],
+  },
 ];
 
 export function getClinicalTest(id: string): ClinicalTest | undefined {

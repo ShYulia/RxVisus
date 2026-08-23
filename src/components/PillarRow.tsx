@@ -8,10 +8,12 @@ export interface PillarRowProps {
   desc: string;
   comingSoon?: boolean;
   routerLink?: string;
+  /** Location state carried to the destination — e.g. { from } so a Test Card's Back returns here. */
+  state?: Record<string, unknown>;
 }
 
 /** Home's pillar entry — a doorway, not a dashboard widget. */
-const PillarRow: React.FC<PillarRowProps> = ({ icon, title, desc, comingSoon, routerLink }) => {
+const PillarRow: React.FC<PillarRowProps> = ({ icon, title, desc, comingSoon, routerLink, state }) => {
   const inner = (
     <>
       <span className={`rx-pillar-icon ${comingSoon ? 'rx-pillar-icon-muted' : ''}`}>{icon}</span>
@@ -31,7 +33,7 @@ const PillarRow: React.FC<PillarRowProps> = ({ icon, title, desc, comingSoon, ro
   }
 
   return (
-    <Link className="rx-pillar" to={routerLink}>
+    <Link className="rx-pillar" to={{ pathname: routerLink, state }}>
       {inner}
     </Link>
   );

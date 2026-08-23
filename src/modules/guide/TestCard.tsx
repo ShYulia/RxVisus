@@ -1,9 +1,15 @@
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { IonContent, IonPage } from '@ionic/react';
 import PageHeader from '../../components/PageHeader';
 import CautionBox from '../../components/CautionBox';
 import { getClinicalTest } from '../../domain/reference/clinicalTests';
+import SchoberDiagram from './SchoberDiagram';
 import './Guide.css';
+
+/** Test cards where a small diagram scans faster than another paragraph. Keyed by ClinicalTest id. */
+const TEST_DIAGRAMS: Record<string, React.FC> = {
+  'schober-test': SchoberDiagram,
+};
 
 const Section: React.FC<{ label: string; items: string[]; ordered?: boolean }> = ({ label, items, ordered }) => {
   if (items.length === 0) return null;
@@ -23,12 +29,15 @@ const Section: React.FC<{ label: string; items: string[]; ordered?: boolean }> =
 /** The canonical test card — one component, reached from a pathway leaf's chips or from direct search, same content either way. */
 const TestCard: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
+  const location = useLocation<{ from?: string } | undefined>();
+  const backHref = location.state?.from ?? '/guide/tests';
   const test = getClinicalTest(testId);
+  const Diagram = test ? TEST_DIAGRAMS[test.id] : undefined;
 
   if (!test) {
     return (
       <IonPage>
-        <PageHeader title="Not found" backHref="/guide/tests" />
+        <PageHeader title="Not found" backHref={backHref} />
         <IonContent fullscreen className="ion-padding">
           <p className="rx-hint">This test doesn&rsquo;t exist.</p>
         </IonContent>
@@ -38,13 +47,14 @@ const TestCard: React.FC = () => {
 
   return (
     <IonPage>
-      <PageHeader title={test.title} backHref="/guide/tests" />
+      <PageHeader title={test.title} backHref={backHref} />
       <IonContent fullscreen className="ion-padding">
         <p className="rx-hint" style={{ marginTop: 0 }}>
           {test.purpose}
         </p>
 
         <Section label="Setup" items={test.setup} />
+        {Diagram && <Diagram />}
         <Section label="How to" items={test.howTo} ordered />
         <Section label="What to watch" items={test.whatToWatch} />
         <Section label="Record" items={test.record} />
