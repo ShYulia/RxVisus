@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { IonButton, IonContent, IonPage, useIonViewWillEnter } from '@ionic/react';
+import { IonButton, IonContent, IonPage, useIonViewWillEnter, useIonViewWillLeave } from '@ionic/react';
 import PageHeader from '../../components/PageHeader';
 import PillarRow from '../../components/PillarRow';
 import { CompassIcon } from '../../components/icons';
@@ -83,11 +83,20 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   );
   const [result, setResult] = useState<DecisionOutcome | null>(null);
 
-  // "New Patient" (renamed from "Start over") asks for confirmation before wiping progress.
-  const [confirmingNewPatient, setConfirmingNewPatient] = useState(false);
+  // The "assessment in progress" checkpoint shown when reopening an unfinished assessment (see
+  // the ionViewWillEnter hook below), and its nested "Start New Assessment" confirmation.
+  const [pendingResumeGate, setPendingResumeGate] = useState(false);
+  const [confirmingNewAssessment, setConfirmingNewAssessment] = useState(false);
 
   const currentStep = currentStepId ? stepById.get(currentStepId) : undefined;
   const isTerminalStep = currentStep?.kind === 'final-rx' || currentStep?.kind === 'binocular-summary';
+
+  // Always-fresh refs for the two lifecycle hooks below, which register their callback once
+  // (deps: []) and must not close over stale render values.
+  const historyRef = useRef(history);
+  historyRef.current = history;
+  const isTerminalStepRef = useRef(isTerminalStep);
+  isTerminalStepRef.current = isTerminalStep;
 
   // Full Assessment entered directly skips the Quick Screen checkpoint transparently —
   // no history entry, so Back/breadcrumb behave as if it never existed for that path.
@@ -173,7 +182,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   };
 
   const finishQuickScreen = (stepId: string, finishNext: string) => {
-    pushHistory(stepId, 'Finish (Quick Screen)', { measurement, bestCorrection, findings: recordedFindings });
+    pushHistory(stepId, 'Finish Screening', { measurement, bestCorrection, findings: recordedFindings });
     setCurrentStepId(finishNext);
     setResult(null);
   };
@@ -236,24 +245,28 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
     setResult(null);
   };
 
-  const startNewPatient = () => {
+  const startNewAssessment = () => {
     restart();
-    setConfirmingNewPatient(false);
+    setPendingResumeGate(false);
+    setConfirmingNewAssessment(false);
   };
 
-  const hasEnteredRef = useRef(false);
+  // Ionic keeps this page instance alive in its router page stack, so leaving mid-assessment and
+  // coming back must never silently resume or silently discard the previous patient's data.
+  // - Leaving from a completed step (Summary / Final Rx) always clears the assessment — a
+  //   finished assessment must never later look like an unfinished one to resume.
+  // - Leaving from an unfinished step preserves everything; reopening then shows the "assessment
+  //   in progress" checkpoint below instead of silently resuming.
+  useIonViewWillLeave(() => {
+    if (isTerminalStepRef.current) restart();
+  });
 
-  // Ionic keeps this page instance alive in its router page stack, so simply leaving this route
-  // and coming back (a tab switch, Guide hub -> pathway again, etc.) would otherwise silently
-  // resume the previous patient's in-progress data. ionViewWillEnter fires every time this page
-  // is (re)activated, whether that's this component's first mount or a later reactivation —
-  // every reactivation after the first clears the assessment, so leaving the pathway and coming
-  // back always starts clean, with no persistence across sessions.
+  // Reopening with an unfinished assessment still in state (i.e. it wasn't cleared on leaving,
+  // per the above) shows the checkpoint rather than silently resuming.
   useIonViewWillEnter(() => {
-    if (hasEnteredRef.current) {
-      restart();
+    if (historyRef.current.length > 0 && !isTerminalStepRef.current) {
+      setPendingResumeGate(true);
     }
-    hasEnteredRef.current = true;
   });
 
   const jumpTo = (index: number) => {
@@ -282,8 +295,52 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
 
   return (
     <IonPage>
-      <PageHeader title={node.title} backHref="/guide" onBack={history.length > 0 ? stepBack : undefined} />
+      <PageHeader
+        title={node.title}
+        backHref="/guide"
+        onBack={history.length > 0 ? stepBack : undefined}
+        action={
+          !isTerminalStep && !pendingResumeGate ? (
+            <IonButton fill="clear" routerLink="/guide" className="rx-header-guide-link-btn">
+              Back to Clinical Guide
+            </IonButton>
+          ) : undefined
+        }
+      />
       <IonContent fullscreen className="ion-padding">
+        {pendingResumeGate ? (
+          <div className="rx-wizard-step">
+            {!confirmingNewAssessment ? (
+              <>
+                <p className="rx-wizard-question">{node.title} assessment in progress</p>
+                <div className="rx-wizard-choices">
+                  <IonButton className="rx-btn-solid" expand="block" onClick={() => setPendingResumeGate(false)}>
+                    Continue Assessment
+                  </IonButton>
+                  <IonButton fill="outline" expand="block" onClick={() => setConfirmingNewAssessment(true)}>
+                    Start New Assessment
+                  </IonButton>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="rx-wizard-question">Start a new assessment?</p>
+                <p className="rx-hint" style={{ marginTop: 0 }}>
+                  Current assessment data will be cleared.
+                </p>
+                <div className="rx-wizard-choices">
+                  <IonButton fill="outline" expand="block" onClick={() => setConfirmingNewAssessment(false)}>
+                    Cancel
+                  </IonButton>
+                  <IonButton className="rx-btn-solid" expand="block" onClick={startNewAssessment}>
+                    Start New Assessment
+                  </IonButton>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+        <>
         {history.length > 0 &&
           (isTerminalStep ? (
             <details className="rx-wizard-trail-collapsed">
@@ -297,9 +354,6 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
                     </button>
                   </span>
                 ))}
-                <button type="button" className="rx-wizard-restart" onClick={() => setConfirmingNewPatient(true)}>
-                  New Patient
-                </button>
               </div>
             </details>
           ) : (
@@ -312,9 +366,6 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
                   </button>
                 </span>
               ))}
-              <button type="button" className="rx-wizard-restart" onClick={() => setConfirmingNewPatient(true)}>
-                New Patient
-              </button>
             </div>
           ))}
 
@@ -324,23 +375,6 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
           </p>
         )}
 
-        {confirmingNewPatient ? (
-          <div className="rx-wizard-step">
-            <p className="rx-wizard-question">Start a new patient?</p>
-            <p className="rx-hint" style={{ marginTop: 0 }}>
-              Current assessment data will be cleared.
-            </p>
-            <div className="rx-wizard-choices">
-              <IonButton fill="outline" expand="block" onClick={() => setConfirmingNewPatient(false)}>
-                Cancel
-              </IonButton>
-              <IonButton className="rx-btn-solid" expand="block" onClick={startNewPatient}>
-                Start New Patient
-              </IonButton>
-            </div>
-          </div>
-        ) : (
-        <>
         {pendingOutcome?.outcome.redFlag && (
           <RedFlagAlert
             message={pendingOutcome.outcome.redFlag}
@@ -425,6 +459,17 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
 
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'final-rx' && (
           <FinalRxSummary measurement={measurement} bestCorrection={bestCorrection} trialOutcomeLabel={history[history.length - 1]?.outcomeLabel} />
+        )}
+
+        {!pendingOutcome && !pendingConsistencyWarning && !result && isTerminalStep && (
+          <div className="rx-wizard-choices rx-terminal-actions">
+            <IonButton className="rx-btn-solid" expand="block" onClick={restart}>
+              New Patient
+            </IonButton>
+            <IonButton fill="outline" expand="block" routerLink="/guide">
+              Back to Clinical Guide
+            </IonButton>
+          </div>
         )}
 
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'question' && (

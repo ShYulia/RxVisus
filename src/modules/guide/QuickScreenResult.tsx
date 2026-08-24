@@ -44,13 +44,13 @@ const QuickScreenResult: React.FC<QuickScreenResultProps> = ({ findings, onConti
               Continue to Full Assessment
             </IonButton>
             <IonButton fill="outline" expand="block" onClick={onFinish}>
-              Finish here
+              Finish Screening
             </IonButton>
           </>
         ) : (
           <>
             <IonButton className="rx-btn-solid" expand="block" onClick={onFinish}>
-              Finish here
+              Finish Screening
             </IonButton>
             <IonButton fill="outline" expand="block" onClick={onContinue}>
               Continue to Full Assessment

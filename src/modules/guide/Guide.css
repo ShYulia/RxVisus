@@ -490,15 +490,10 @@
   cursor: pointer;
 }
 
-.rx-wizard-restart {
-  margin-left: auto;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rx-iris-deep);
-  background: none;
-  border: none;
-  padding: 2px 0;
-  cursor: pointer;
+/* Terminal-step actions (New Patient / Back to Clinical Guide) — deliberately separate from
+   Assessment History, which is for reviewing/navigating steps only, never actions. */
+.rx-terminal-actions {
+  margin-top: 24px;
 }
 
 .rx-wizard-question {

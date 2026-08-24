@@ -18,7 +18,7 @@ describe('QuickScreenResult', () => {
     expect(screen.queryByText(/convergence insufficiency/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/possible/i)).not.toBeInTheDocument();
 
-    expect(screen.getByText('Finish here').className).toContain('rx-btn-solid');
+    expect(screen.getByText('Finish Screening').className).toContain('rx-btn-solid');
   });
 
   it('symptoms present + normal screening -> "Further assessment recommended", with reasons under a "Why:" label, Continue is the primary action', async () => {
@@ -51,7 +51,7 @@ describe('QuickScreenResult', () => {
     await waitForIonicReact();
     await userEvent.click(screen.getByText('Continue to Full Assessment'));
     expect(onContinue).toHaveBeenCalledTimes(1);
-    await userEvent.click(screen.getByText('Finish here'));
+    await userEvent.click(screen.getByText('Finish Screening'));
     expect(onFinish).toHaveBeenCalledTimes(1);
   });
 });

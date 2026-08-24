@@ -37,3 +37,12 @@
   color: var(--rx-text);
 }
 
+.rx-header-guide-link-btn {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--rx-iris-deep);
+}
+

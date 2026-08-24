@@ -197,32 +197,47 @@ describe('PathwayWizard — Binocular Status', () => {
     expect(screen.getByText('Near Point of Convergence')).toBeInTheDocument();
   });
 
-  it('"New Patient" (renamed from "Start over") asks for confirmation and, once confirmed, clears everything back to the first step', async () => {
+  it('"New Patient" is not shown persistently during an active assessment — only "Back to Clinical Guide" is', async () => {
     renderWizard();
     await waitForIonicReact();
     await clickChoice('Quick Screen');
-    await skipTextEntry(); // age -> history.length === 1
+    await skipTextEntry(); // age -> now on symptoms, history.length === 1
 
-    await userEvent.click(screen.getByText('New Patient'));
-    expect(await screen.findByText('Start a new patient?')).toBeInTheDocument();
-    expect(screen.getByText('Current assessment data will be cleared.')).toBeInTheDocument();
-
-    await userEvent.click(screen.getByText('Cancel'));
-    expect(screen.queryByText('Start a new patient?')).not.toBeInTheDocument();
-    // cancelling leaves the in-progress assessment untouched
-    expect(screen.getByText('Symptoms (select all that apply)')).toBeInTheDocument();
-
-    await userEvent.click(screen.getByText('New Patient'));
-    await userEvent.click(screen.getByText('Start New Patient'));
-
-    // back at the very first step, with no history left
-    expect(await screen.findByText('How would you like to proceed?')).toBeInTheDocument();
-    expect(screen.queryByText('Quick Screen', { selector: 'button.rx-wizard-trail-btn' })).not.toBeInTheDocument();
+    expect(screen.queryByText('New Patient')).not.toBeInTheDocument();
+    expect(screen.queryByText('Exit')).not.toBeInTheDocument();
+    expect(screen.getByText('Back to Clinical Guide')).toBeInTheDocument();
   });
 
-  it('there is no Exit action — the header only offers Back within the active assessment', async () => {
+  it('Assessment History lists steps only — no "New Patient" or other action lives there', async () => {
     renderWizard();
     await waitForIonicReact();
-    expect(screen.queryByText('Exit')).not.toBeInTheDocument();
+    await clickChoice('Quick Screen');
+    await skipTextEntry(); // age
+    await clickChoice('No symptoms');
+    await userEvent.click(screen.getByText('Continue'));
+
+    const trail = document.querySelector('.rx-wizard-trail')!;
+    expect(within(trail as HTMLElement).queryByText('New Patient')).not.toBeInTheDocument();
+  });
+
+  it('at the completed Summary, "New Patient" is the primary action and "Back to Clinical Guide" is secondary; New Patient clears everything back to the first step', async () => {
+    renderWizard();
+    await waitForIonicReact();
+    await completeCoreScreening('Full Assessment', 'No symptoms');
+    await completeFullAssessmentCore();
+    await userEvent.click(screen.getByText('Continue to Summary'));
+
+    expect(await screen.findByText(/No significant binocular or accommodative dysfunction demonstrated/)).toBeInTheDocument();
+    const newPatientBtn = screen.getByText('New Patient');
+    const backToGuideBtn = screen.getByText('Back to Clinical Guide');
+    expect(newPatientBtn.closest('ion-button')).toHaveClass('rx-btn-solid');
+    expect(backToGuideBtn.closest('ion-button')).not.toHaveClass('rx-btn-solid');
+
+    // the header's own "Back to Clinical Guide" link is not duplicated once at the terminal step
+    expect(screen.getAllByText('Back to Clinical Guide')).toHaveLength(1);
+
+    await userEvent.click(newPatientBtn);
+    expect(await screen.findByText('How would you like to proceed?')).toBeInTheDocument();
+    expect(screen.queryByText('Quick Screen', { selector: 'button.rx-wizard-trail-btn' })).not.toBeInTheDocument();
   });
 });
