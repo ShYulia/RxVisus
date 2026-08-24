@@ -168,8 +168,8 @@ function checkAccommodativeInfacility(data: ParsedBinocularData): PatternMatch |
   if (mafBoth) supporting.push('MAF difficulty clearing both +2.00 and −2.00');
   if (bafBoth) supporting.push('BAF difficulty clearing both +2.00 and −2.00');
   if (data.symptoms.has('slowRefocusNearToDistance') || data.symptoms.has('slowRefocusDistanceToNear')) supporting.push('Slow refocusing reported');
-  if (data.maf?.od !== undefined && data.maf.od < BINOCULAR_NORMS.mafNotableBelowCpm) supporting.push(`Reduced MAF OD (${data.maf.od} cpm)`);
-  if (data.maf?.os !== undefined && data.maf.os < BINOCULAR_NORMS.mafNotableBelowCpm) supporting.push(`Reduced MAF OS (${data.maf.os} cpm)`);
+  if (data.maf?.od !== undefined && data.maf.od < BINOCULAR_NORMS.mafNotableBelowCpm) supporting.push(`Reduced MAF OD (${data.maf.od} cycles/min)`);
+  if (data.maf?.os !== undefined && data.maf.os < BINOCULAR_NORMS.mafNotableBelowCpm) supporting.push(`Reduced MAF OS (${data.maf.os} cycles/min)`);
 
   return { id: 'ainfac', label: 'Accommodative Infacility', confidence: supporting.length > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
 }

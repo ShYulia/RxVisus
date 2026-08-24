@@ -50,13 +50,21 @@ function buildRows(data: ParsedBinocularData, nearSheard: SheardResult, distance
     { label: 'Near Sheard', value: formatSheard('Near', nearSheard) },
     { label: 'Distance Sheard', value: formatSheard('Distance', distanceSheard) },
     { label: 'Amplitude of accommodation', value: data.aaOD !== undefined || data.aaOS !== undefined ? `OD ${data.aaOD ?? '—'}D  OS ${data.aaOS ?? '—'}D` : undefined },
-    { label: 'MAF', value: data.maf ? `OD ${data.maf.od ?? '—'} cpm  OS ${data.maf.os ?? '—'} cpm${data.maf.difficulty ? `  (difficulty: ${data.maf.difficulty})` : ''}` : undefined },
-    { label: 'BAF', value: data.baf ? `${data.baf.cyclesPerMin ?? '—'} cpm${data.baf.difficulty ? `  (difficulty: ${data.baf.difficulty})` : ''}` : undefined },
+    {
+      label: 'MAF',
+      value: data.maf
+        ? `OD ${data.maf.od ?? '—'} cycles/min  OS ${data.maf.os ?? '—'} cycles/min${data.maf.difficulty ? `  (difficulty: ${data.maf.difficulty})` : ''}`
+        : undefined,
+    },
+    {
+      label: 'BAF',
+      value: data.baf ? `${data.baf.cyclesPerMin ?? '—'} cycles/min${data.baf.difficulty ? `  (difficulty: ${data.baf.difficulty})` : ''}` : undefined,
+    },
     { label: 'Gradient AC/A', value: data.acaGradient !== undefined ? `${data.acaGradient}Δ/D` : undefined },
     { label: 'NRA / PRA', value: data.nra !== undefined || data.pra !== undefined ? `NRA +${data.nra ?? '—'}  PRA -${data.pra ?? '—'}` : undefined },
     {
       label: 'Vergence facility',
-      value: data.vergenceFacilityUnavailable ? 'Equipment not available' : data.vergenceFacilityCpm !== undefined ? `${data.vergenceFacilityCpm} cpm` : undefined,
+      value: data.vergenceFacilityUnavailable ? 'Equipment not available' : data.vergenceFacilityCpm !== undefined ? `${data.vergenceFacilityCpm} cycles/min` : undefined,
     },
     { label: 'MEM / Nott retinoscopy', value: data.memNott },
     { label: 'Stereoacuity', value: data.stereoacuity },

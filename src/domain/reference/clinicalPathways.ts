@@ -820,8 +820,8 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         id: 'maf-cycles',
         question: 'Monocular Accommodative Facility',
         fields: [
-          { key: 'maf.OD', label: 'OD (cpm)' },
-          { key: 'maf.OS', label: 'OS (cpm)' },
+          { key: 'maf.OD', label: 'OD (cycles/min)' },
+          { key: 'maf.OS', label: 'OS (cycles/min)' },
         ],
         testIds: ['monocular-accommodative-facility-test'],
         next: 'maf-difficulty',

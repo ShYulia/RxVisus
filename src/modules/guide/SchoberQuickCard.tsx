@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import SegmentedControl from '../../components/SegmentedControl';
+import ActionFlow from './ActionFlow';
 import CrossCircleDiagram from './CrossCircleDiagram';
 import FindingRow from './FindingRow';
 
@@ -35,6 +36,8 @@ const SchoberQuickCard: React.FC = () => {
           <strong>OS</strong> sees the circles
         </p>
       </div>
+
+      <ActionFlow steps={['Add prism toward the side the cross needs to move', 'PATIENT REPORTS: cross centered — stop, read the amount off the bar/lens']} />
 
       <FindingRow
         diagram={<CrossCircleDiagram position="center" />}

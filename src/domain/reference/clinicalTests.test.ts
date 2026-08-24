@@ -18,9 +18,18 @@ describe('getClinicalTest', () => {
 });
 
 describe('clinicalTests point-of-care shape', () => {
-  // Schober and Maddox Rod have a bespoke visual quick-reference card (TestCard's
-  // QUICK_CARDS) that covers setup/interpretation with diagrams instead of these fields.
-  const HAS_VISUAL_QUICK_CARD = ['schober-test', 'maddox-rod'];
+  // These tests have a bespoke visual quick-reference card (TestCard's QUICK_CARDS) that
+  // covers setup/interpretation itself — Schober/Maddox Rod with diagrams, MAF/BAF/Vergence
+  // Facility with a flip-sequence instruction card — instead of the generic text fields below.
+  const HAS_VISUAL_QUICK_CARD = [
+    'schober-test',
+    'maddox-rod',
+    'double-maddox-rod',
+    'worth-4-dot',
+    'monocular-accommodative-facility-test',
+    'binocular-accommodative-facility-test',
+    'vergence-facility-test',
+  ];
 
   it('every test lists at least one required item', () => {
     for (const test of clinicalTests) {
@@ -28,11 +37,27 @@ describe('clinicalTests point-of-care shape', () => {
     }
   });
 
-  it('every test without a visual quick card has at least one interpretation', () => {
+  it('every test without a visual quick card has at least one interpretation (full table or a one-line reminder)', () => {
     for (const test of clinicalTests) {
       if (HAS_VISUAL_QUICK_CARD.includes(test.id)) continue;
-      expect(test.interpret?.length ?? 0, `${test.id} -> interpret`).toBeGreaterThan(0);
+      const hasInterpretation = (test.interpret?.length ?? 0) > 0 || !!test.quickInterpretReminder;
+      expect(hasInterpretation, `${test.id} -> interpret or quickInterpretReminder`).toBe(true);
     }
+  });
+
+  it('a test with a keyAnchorCaption always has a keyAnchor to caption', () => {
+    for (const test of clinicalTests) {
+      if (test.keyAnchorCaption) {
+        expect(test.keyAnchor, `${test.id} -> keyAnchorCaption without a keyAnchor`).toBeTruthy();
+      }
+    }
+  });
+
+  it('MAF does not overclaim a mandatory starting lens in its background notes — phrased as convention, not a requirement', () => {
+    const maf = getClinicalTest('monocular-accommodative-facility-test')!;
+    const details = maf.moreDetails!.join(' ');
+    expect(details).toContain('not a strict requirement');
+    expect(details.toLowerCase()).not.toContain('must start');
   });
 });
 

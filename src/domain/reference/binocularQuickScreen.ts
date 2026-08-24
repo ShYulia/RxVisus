@@ -46,10 +46,10 @@ export function evaluateQuickScreen(data: ParsedBinocularData): QuickScreenResul
     objectiveReasons.push('Difficulty clearing MAF flipper');
   }
   if (data.maf?.od !== undefined && data.maf.od < BINOCULAR_NORMS.mafNotableBelowCpm) {
-    objectiveReasons.push(`MAF OD ${data.maf.od} cpm`);
+    objectiveReasons.push(`MAF OD ${data.maf.od} cycles/min`);
   }
   if (data.maf?.os !== undefined && data.maf.os < BINOCULAR_NORMS.mafNotableBelowCpm) {
-    objectiveReasons.push(`MAF OS ${data.maf.os} cpm`);
+    objectiveReasons.push(`MAF OS ${data.maf.os} cycles/min`);
   }
 
   return {

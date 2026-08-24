@@ -2,20 +2,37 @@ import { useLocation, useParams } from 'react-router-dom';
 import { IonContent, IonPage } from '@ionic/react';
 import PageHeader from '../../components/PageHeader';
 import { getClinicalTest } from '../../domain/reference/clinicalTests';
+import ActionFlow from './ActionFlow';
+import DoubleMaddoxRodQuickCard from './DoubleMaddoxRodQuickCard';
+import { BAFQuickCard, MAFQuickCard, VergenceFacilityQuickCard } from './FacilityQuickCards';
 import MaddoxRodQuickCard from './MaddoxRodQuickCard';
 import SchoberQuickCard from './SchoberQuickCard';
+import Worth4DotQuickCard from './Worth4DotQuickCard';
 import './Guide.css';
 
 /**
- * Test cards with a bespoke visual quick-reference layout (recognition image, SETUP,
- * PATIENT SEES -> MEANS -> NEUTRALIZE rows) instead of the generic text sections below.
- * This is the general pattern for any future point-of-care Test Card that needs it —
- * see SchoberQuickCard/MaddoxRodQuickCard and the shared FindingRow/diagram components.
+ * Test cards with a bespoke visual quick-reference layout instead of the generic text
+ * sections below. This is the general pattern for any future point-of-care Test Card that
+ * needs it — see SchoberQuickCard/MaddoxRodQuickCard (recognition image, SETUP, PATIENT SEES
+ * -> MEANS -> NEUTRALIZE rows) and FacilityQuickCards (flip-sequence instruction cards for
+ * MAF/BAF/Vergence Facility) for two different shapes of "not the generic template."
  */
 const QUICK_CARDS: Record<string, React.FC> = {
   'schober-test': SchoberQuickCard,
   'maddox-rod': MaddoxRodQuickCard,
+  'double-maddox-rod': DoubleMaddoxRodQuickCard,
+  'worth-4-dot': Worth4DotQuickCard,
+  'monocular-accommodative-facility-test': MAFQuickCard,
+  'binocular-accommodative-facility-test': BAFQuickCard,
+  'vergence-facility-test': VergenceFacilityQuickCard,
 };
+
+/**
+ * Quick cards that fully own their own equipment/setup presentation (folded into their
+ * meta strip / instruction chips) — TestCard must not also render the generic Equipment
+ * section above them, or the same information would appear twice.
+ */
+const SELF_CONTAINED_QUICK_CARDS = new Set(['monocular-accommodative-facility-test', 'binocular-accommodative-facility-test', 'vergence-facility-test']);
 
 const Section: React.FC<{ label: string; items: string[]; ordered?: boolean }> = ({ label, items, ordered }) => {
   if (items.length === 0) return null;
@@ -61,14 +78,33 @@ const TestCard: React.FC = () => {
           {test.purpose}
         </p>
 
-        <Section label="You need" items={test.youNeed} />
+        {!SELF_CONTAINED_QUICK_CARDS.has(test.id) && <Section label="Equipment" items={test.youNeed} />}
+
+        {!SELF_CONTAINED_QUICK_CARDS.has(test.id) && test.meta && test.meta.length > 0 && <p className="rx-testcard-meta">{test.meta.join('  •  ')}</p>}
 
         {QuickCard ? (
           <QuickCard />
         ) : (
           <>
-            <Section label="Setup" items={test.setup ?? []} />
-            <Section label="Do" items={test.doSteps ?? []} ordered />
+            {(!test.meta || test.meta.length === 0) && <Section label="Setup" items={test.setup ?? []} />}
+
+            {test.doSteps && test.doSteps.length > 0 && (
+              <>
+                <p className="rx-list-section-label" style={{ margin: '0 4px 4px' }}>
+                  How to
+                </p>
+                <ActionFlow steps={test.doSteps} />
+              </>
+            )}
+
+            {test.keyAnchor && (
+              <div className="rx-testcard-anchor">
+                <p className="rx-testcard-anchor-line">{test.keyAnchor}</p>
+                {test.keyAnchorCaption && <p className="rx-testcard-anchor-caption">{test.keyAnchorCaption}</p>}
+              </div>
+            )}
+
+            {test.quickReminder && <p className="rx-testcard-reminder">{test.quickReminder}</p>}
 
             {test.patientSees && test.patientSees.length > 0 && (
               <div className="rx-list-section">
@@ -80,6 +116,8 @@ const TestCard: React.FC = () => {
                 </ul>
               </div>
             )}
+
+            <Section label="What to note" items={test.whatToNote ?? []} />
 
             {test.interpret && test.interpret.length > 0 && (
               <div className="rx-list-section">
@@ -96,13 +134,15 @@ const TestCard: React.FC = () => {
               </div>
             )}
 
+            {test.quickInterpretReminder && <p className="rx-testcard-interpret-reminder">{test.quickInterpretReminder}</p>}
+
             <Section label="Neutralize / measure" items={test.neutralize ?? []} />
           </>
         )}
 
         {hasMoreDetails && (
           <details className="rx-more-details">
-            <summary>More details</summary>
+            <summary>More / Interpretation</summary>
             <ul>
               {test.moreDetails!.map((item) => (
                 <li key={item}>{item}</li>

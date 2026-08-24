@@ -169,6 +169,15 @@
   font-weight: 700;
 }
 
+/* Sight row (Test Card): what the patient reports -> what it means, no neutralize column. */
+.rx-sight-row-caption {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--rx-text-tertiary);
+}
+
 /* Interpret rows (Test Card): short finding -> meaning pairs. */
 .rx-interpret-rows {
   display: flex;
@@ -193,6 +202,209 @@
 
 .rx-interpret-meaning {
   color: var(--rx-text-secondary);
+}
+
+/* Test Card: compact single-line setup summary (e.g. "40 cm • BINOCULAR • BEST CORRECTION"). */
+.rx-testcard-meta {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rx-text-tertiary);
+  margin: 0 4px 16px;
+}
+
+/* Test Card: "what do I do" as a vertical arrow sequence — the dominant visual on a
+   procedural card, not a numbered paragraph. */
+.rx-actionflow {
+  margin: 4px 4px 16px;
+}
+
+.rx-actionflow-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.rx-actionflow-arrow {
+  font-size: 15px;
+  color: var(--rx-text-tertiary);
+  line-height: 1.7;
+}
+
+.rx-actionflow-step {
+  margin: 2px 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--rx-text);
+}
+
+/* Test Card: strong visual anchor for the core repeating action (e.g. "+2.00 ↔ −2.00"). */
+.rx-testcard-anchor {
+  margin: 16px 4px 4px;
+  padding: 14px 16px;
+  text-align: center;
+  background: var(--rx-iris-tint);
+  border-radius: var(--rx-radius);
+}
+
+.rx-testcard-anchor-line {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--rx-iris-deep);
+}
+
+.rx-testcard-anchor-caption {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--rx-text-secondary);
+}
+
+/* Test Card: one short clarifying note (e.g. a cycle definition). */
+.rx-testcard-reminder {
+  margin: 10px 4px 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
+}
+
+/* Test Card: one-line interpretation reminder, in place of a full Interpret table. */
+.rx-testcard-interpret-reminder {
+  margin: 18px 4px 0;
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
+  padding-left: 10px;
+  border-left: 2px solid var(--rx-border);
+}
+
+/* Flow instruction card (MAF/BAF/Vergence Facility): explicit equipment, an explicit
+   vertical step-by-step flow (the dominant visual), and explicit record/interpret prompts —
+   optimized for minimum cognitive load, not minimum word count. Not the generic
+   Equipment/Setup/How-to text sections. */
+.rx-flowcard {
+  margin: 4px 4px 0;
+}
+
+.rx-flowcard-meta {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rx-text-tertiary);
+  margin: 0 0 14px;
+}
+
+.rx-flowcard-equipment {
+  text-align: center;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--rx-iris-deep);
+  background: var(--rx-iris-tint);
+  border-radius: var(--rx-radius-sm);
+}
+
+.rx-flowcard-note {
+  text-align: center;
+  margin: 0 0 16px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--rx-text);
+}
+
+.rx-flowcard-flow {
+  margin: 0 0 16px;
+}
+
+.rx-flowcard-flow-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rx-flowcard-arrow {
+  font-size: 15px;
+  color: var(--rx-text-tertiary);
+  line-height: 1.8;
+}
+
+.rx-flowcard-step-value {
+  margin: 2px 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--rx-iris-deep);
+}
+
+.rx-flowcard-step-action {
+  margin: 2px 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--rx-text-secondary);
+  background: var(--rx-border);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.rx-flowcard-section-label {
+  margin-top: 20px;
+}
+
+.rx-flowcard-question {
+  margin: 0 4px 4px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--rx-text);
+}
+
+.rx-flowcard-subnote {
+  margin: 0 4px 4px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--rx-text-secondary);
+}
+
+.rx-flowcard-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 4px 4px;
+}
+
+.rx-flowcard-option {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rx-text);
+  border: 1px solid var(--rx-border);
+  border-radius: var(--rx-radius-sm);
+  padding: 5px 12px;
+}
+
+.rx-flowcard-interpret {
+  margin: 4px 4px 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--rx-border);
+}
+
+.rx-flowcard-interpret p {
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
+}
+
+.rx-flowcard-interpret p:last-child {
+  margin-bottom: 0;
 }
 
 /* Test Card: collapsed background info. */
