@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { IonButton, IonContent, IonPage } from '@ionic/react';
-import Chip from '../../components/Chip';
 import PageHeader from '../../components/PageHeader';
 import PillarRow from '../../components/PillarRow';
 import { CompassIcon } from '../../components/icons';
 import { checkHorizontalDirectionConsistency, type ConsistencyWarning as ConsistencyWarningInfo } from '../../domain/reference/consistencyChecks';
-import { getClinicalTest } from '../../domain/reference/clinicalTests';
 import {
   getPathwayNode,
   type ClinicalPathwayNode,
@@ -13,16 +11,22 @@ import {
   type MeasurementStep,
   type QuestionStep,
   type RxEntryStep,
+  type SymptomSelectStep,
   type TextEntryStep,
 } from '../../domain/reference/clinicalPathways';
 import { formatPrismMeasurement, type BestCorrection, type PrismMeasurement } from '../../domain/reference/prismMeasurement';
 import { formatRx } from '../calculators/formatDiopter';
+import BinocularSummary from './BinocularSummary';
 import ConsistencyWarning from './ConsistencyWarning';
 import FinalRxSummary from './FinalRxSummary';
 import MeasurementForm from './MeasurementForm';
+import OptionalTestsMenu from './OptionalTestsMenu';
+import QuickScreenResult from './QuickScreenResult';
 import RedFlagAlert from './RedFlagAlert';
 import RxEntryForm from './RxEntryForm';
+import SymptomSelectForm from './SymptomSelectForm';
 import TermInfo from './TermInfo';
+import TestChips from './TestChips';
 import TextEntryForm from './TextEntryForm';
 
 /** Everything a step's outcome can affect, snapshotted after every commit so jumping back to an earlier step restores exactly the state that existed then. */
@@ -54,21 +58,6 @@ function formatBestCorrection(value: BestCorrection): string {
   return `OD ${formatRx(value.od)} · OS ${formatRx(value.os)}`;
 }
 
-const TestChips: React.FC<{ testIds?: string[]; state: Record<string, unknown>; label?: string }> = ({ testIds, state, label }) => {
-  if (!testIds || testIds.length === 0) return null;
-  return (
-    <div className="rx-wizard-testchips-block">
-      {label && <p className="rx-wizard-testchips-label">{label}</p>}
-      <div className="rx-chip-row">
-        {testIds.map((testId) => {
-          const test = getClinicalTest(testId);
-          return test ? <Chip key={testId} label={test.title} routerLink={`/guide/tests/${testId}`} state={state} /> : null;
-        })}
-      </div>
-    </div>
-  );
-};
-
 /**
  * One relevant question/action at a time, not the whole algorithm on one
  * page. Remounted per pathway node (keyed by node.id in GuidePathway) so
@@ -95,6 +84,14 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   const [result, setResult] = useState<DecisionOutcome | null>(null);
 
   const currentStep = currentStepId ? stepById.get(currentStepId) : undefined;
+
+  // Full Assessment entered directly skips the Quick Screen checkpoint transparently —
+  // no history entry, so Back/breadcrumb behave as if it never existed for that path.
+  useLayoutEffect(() => {
+    if (currentStep?.kind === 'quick-screen-result' && recordedFindings.entryMode === 'full') {
+      setCurrentStepId(currentStep.continueNext);
+    }
+  }, [currentStep, recordedFindings.entryMode]);
 
   const applySnapshot = (snap: WizardSnapshot) => {
     setMeasurement(snap.measurement);
@@ -141,8 +138,45 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   };
 
   const commitTextEntry = (step: TextEntryStep, values: Record<string, string>) => {
-    pushHistory(step.id, formatTextEntry(values, step.fields), { measurement, bestCorrection, findings: recordedFindings });
+    const findings = { ...recordedFindings, ...values };
+    setRecordedFindings(findings);
+    pushHistory(step.id, formatTextEntry(values, step.fields), { measurement, bestCorrection, findings });
     setCurrentStepId(step.next);
+    setResult(null);
+  };
+
+  const commitSymptomSelect = (step: SymptomSelectStep, selectedKeys: string[]) => {
+    const findings = { ...recordedFindings, [step.recordAsKey]: selectedKeys.join(',') };
+    setRecordedFindings(findings);
+    const isNoneOnly = selectedKeys.length === 0 || (selectedKeys.length === 1 && selectedKeys[0] === step.exclusiveKey);
+    const label = isNoneOnly ? 'No symptoms' : selectedKeys.map((key) => step.options.find((o) => o.key === key)?.label ?? key).join(', ');
+    pushHistory(step.id, label, { measurement, bestCorrection, findings });
+    const next = step.branchOnKey && selectedKeys.includes(step.branchOnKey.key) ? step.branchOnKey.next : step.next;
+    setCurrentStepId(next);
+    setResult(null);
+  };
+
+  const continueToFullAssessment = (stepId: string, continueNext: string) => {
+    pushHistory(stepId, 'Continue to Full Assessment', { measurement, bestCorrection, findings: recordedFindings });
+    setCurrentStepId(continueNext);
+    setResult(null);
+  };
+
+  const finishQuickScreen = (stepId: string, finishNext: string) => {
+    pushHistory(stepId, 'Finish (Quick Screen)', { measurement, bestCorrection, findings: recordedFindings });
+    setCurrentStepId(finishNext);
+    setResult(null);
+  };
+
+  const selectOptionalTest = (stepId: string, label: string, targetStepId: string) => {
+    pushHistory(stepId, label, { measurement, bestCorrection, findings: recordedFindings });
+    setCurrentStepId(targetStepId);
+    setResult(null);
+  };
+
+  const skipOptionalTests = (stepId: string, skipNext: string) => {
+    pushHistory(stepId, 'Skip', { measurement, bestCorrection, findings: recordedFindings });
+    setCurrentStepId(skipNext);
     setResult(null);
   };
 
@@ -251,7 +285,14 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
           </p>
         )}
 
-        {pendingOutcome?.outcome.redFlag && <RedFlagAlert message={pendingOutcome.outcome.redFlag} onContinue={acknowledgeAlert} />}
+        {pendingOutcome?.outcome.redFlag && (
+          <RedFlagAlert
+            message={pendingOutcome.outcome.redFlag}
+            title={pendingOutcome.outcome.redFlagTitle}
+            seeAlso={pendingOutcome.outcome.seeAlso}
+            onContinue={acknowledgeAlert}
+          />
+        )}
 
         {!pendingOutcome && pendingConsistencyWarning && (
           <ConsistencyWarning
@@ -277,9 +318,46 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'text-entry' && (
           <div className="rx-wizard-step">
             <p className="rx-wizard-question">{currentStep.question}</p>
-            <TextEntryForm fields={currentStep.fields} helperText={currentStep.helperText} onSubmit={(values) => commitTextEntry(currentStep, values)} />
+            <TextEntryForm
+              fields={currentStep.fields}
+              groups={currentStep.groups}
+              helperText={currentStep.helperText}
+              testIds={currentStep.testIds}
+              backState={backState}
+              onSubmit={(values) => commitTextEntry(currentStep, values)}
+            />
           </div>
         )}
+
+        {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'symptom-select' && (
+          <div className="rx-wizard-step">
+            <p className="rx-wizard-question">{currentStep.question}</p>
+            <SymptomSelectForm
+              options={currentStep.options}
+              exclusiveKey={currentStep.exclusiveKey}
+              onSubmit={(keys) => commitSymptomSelect(currentStep, keys)}
+            />
+          </div>
+        )}
+
+        {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'quick-screen-result' && recordedFindings.entryMode !== 'full' && (
+          <QuickScreenResult
+            findings={recordedFindings}
+            onContinue={() => continueToFullAssessment(currentStep.id, currentStep.continueNext)}
+            onFinish={() => finishQuickScreen(currentStep.id, currentStep.finishNext)}
+          />
+        )}
+
+        {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'optional-tests-menu' && (
+          <OptionalTestsMenu
+            options={currentStep.options}
+            findings={recordedFindings}
+            onSelect={(option) => selectOptionalTest(currentStep.id, option.label, option.stepId)}
+            onSkip={() => skipOptionalTests(currentStep.id, currentStep.skipNext)}
+          />
+        )}
+
+        {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'binocular-summary' && <BinocularSummary findings={recordedFindings} />}
 
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'rx-entry' && (
           <div className="rx-wizard-step">

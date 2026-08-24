@@ -379,6 +379,112 @@
   border-color: var(--rx-iris);
 }
 
+.rx-symptom-choice-active {
+  background: var(--rx-iris-tint);
+  border-color: var(--rx-iris);
+}
+
+.rx-symptom-check {
+  flex: none;
+  width: 18px;
+  color: var(--rx-iris-deep);
+  font-weight: 800;
+}
+
+/* Quick Screen checkpoint. */
+.rx-quickscreen-headline {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--rx-text);
+  margin: 4px 4px 14px;
+  line-height: 1.35;
+}
+
+.rx-quickscreen-reasons {
+  margin: 0 4px 18px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rx-quickscreen-reasons li {
+  font-size: 14px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
+}
+
+/* Optional/targeted tests menu. */
+.rx-optional-hints {
+  margin: 0 4px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rx-optional-hint {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
+}
+
+.rx-optional-skip {
+  margin-top: 14px;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rx-text-secondary);
+  background: none;
+  border: none;
+  padding: 10px 0;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Binocular Summary. */
+.rx-summary-headline {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--rx-text);
+  margin: 4px 4px 16px;
+  line-height: 1.35;
+}
+
+.rx-summary-pattern {
+  margin: 0 4px 14px;
+}
+
+.rx-summary-pattern-label {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--rx-text);
+  margin: 0 0 4px;
+}
+
+.rx-summary-pattern-confidence {
+  font-weight: 400;
+  color: var(--rx-text-tertiary);
+}
+
+.rx-summary-pattern ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rx-summary-pattern li {
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
+}
+
+.rx-summary-measurements {
+  margin-top: 18px;
+}
+
 .rx-wizard-result {
   margin: 4px 4px 0;
 }
@@ -474,6 +580,10 @@
   color: var(--rx-text);
   line-height: 1.5;
   margin: 0 0 18px;
+}
+
+.rx-alert-seealso {
+  margin: 0 0 16px;
 }
 
 .rx-alert-continue {

@@ -28,6 +28,20 @@
  *     equal/balanced split between the two lenses (Prism Prescribing
  *     Guidance's own reasoning, reused inline — see PRISM_DISTRIBUTION_NOTES),
  *     and the resulting Final Rx per eye (best correction + assigned prism).
+ *   - 'symptom-select': a multi-select symptom checklist (Binocular Status),
+ *     recorded as one comma-joined `recordedFindings` entry — see
+ *     binocularFindings.ts for the parser this feeds.
+ *   - 'quick-screen-result': the Quick Screen checkpoint (Binocular Status
+ *     only) — shown with Continue/Finish when entered via Quick Screen;
+ *     PathwayWizard skips it transparently (no history entry) when entered
+ *     directly via Full Assessment, so Back/breadcrumb behave as if it never
+ *     existed for that path.
+ *   - 'optional-tests-menu': a loop-back menu of optional/targeted tests
+ *     (same loop pattern as Diplopia's gaze-instruction step) — never
+ *     mandatory, always skippable.
+ *   - 'binocular-summary': always terminal. Runs the pattern-interpretation
+ *     engine (binocularPatterns.ts) over the recorded findings and shows the
+ *     actual measurements alongside the interpretation, never labels alone.
  * This keeps the workflow to HISTORY -> EXAMINE -> MEASURE -> CONSISTENCY
  * CHECK -> BEST CORRECTION -> TRIAL PRISM -> PRESCRIBE/FURTHER ASSESSMENT,
  * matching how the exam actually happens, rather than a differential-
@@ -58,6 +72,8 @@ export interface DecisionOutcome {
   testIds?: string[];
   /** A red flag specific to this particular finding — interrupts the flow with an alert before continuing. */
   redFlag?: string;
+  /** Overrides the alert's default "Urgent assessment may be indicated" title — for a caution that isn't itself an emergency (e.g. "use the Diplopia pathway instead"). */
+  redFlagTitle?: string;
   /** Glossary term (see glossary.ts) explaining this option's wording, surfaced via a tap-to-reveal "?". */
   infoTerm?: string;
   /** Pathway node(s) worth linking to once this outcome ends the flow. */
@@ -114,10 +130,74 @@ export interface TextEntryStep {
   id: string;
   question: string;
   fields: TextEntryField[];
+  /** Purely a rendering hint that reorganizes `fields` into labeled visual sections (e.g. "BI"/"BO") — `fields` above stays the source of truth for values. */
+  groups?: { label: string; keys: string[] }[];
   /** Short caption shown below the fields, e.g. noting any notation is fine. */
   helperText?: string;
+  /** Test(s) relevant to this entry, if any — shown as reference chip(s) before the fields. */
+  testIds?: string[];
   /** Id of the step to continue to once submitted. */
   next: string;
+}
+
+/** One symptom checkbox option within a SymptomSelectStep. */
+export interface SymptomOption {
+  key: string;
+  label: string;
+}
+
+/** A multi-select symptom checklist — recorded as a single comma-joined `recordedFindings` entry, never a branch by itself. */
+export interface SymptomSelectStep {
+  kind: 'symptom-select';
+  id: string;
+  question: string;
+  options: SymptomOption[];
+  /** recordedFindings key the comma-joined selection is written to (e.g. 'symptoms') — see binocularFindings.ts. */
+  recordAsKey: string;
+  /** Selecting this option key clears every other selection (e.g. "No symptoms"). */
+  exclusiveKey?: string;
+  /** Default step to continue to once submitted. */
+  next: string;
+  /** If this specific option key is among the selections, route here instead of `next` (e.g. diplopia -> a follow-up question) — both eventually converge back to the same place. */
+  branchOnKey?: { key: string; next: string };
+}
+
+/**
+ * The Quick Screen checkpoint — always reached after the shared screening
+ * steps, regardless of entry point. When entered via "Full Assessment"
+ * directly, PathwayWizard skips it transparently (no diagnosis-adjacent
+ * gate shown); when entered via "Quick Screen", it shows the recommendation
+ * (see binocularQuickScreen.ts) with Continue/Finish actions.
+ */
+export interface QuickScreenResultStep {
+  kind: 'quick-screen-result';
+  id: string;
+  /** Step id to continue to for the Full Assessment. */
+  continueNext: string;
+  /** Step id to jump to when the clinician ends the assessment here (interpretation still runs on whatever core data was gathered). */
+  finishNext: string;
+}
+
+/** One entry in an OptionalTestsMenuStep. */
+export interface OptionalTestOption {
+  label: string;
+  /** Step id to navigate to when chosen; that step's own `next` should point back to this same menu step. */
+  stepId: string;
+}
+
+/** A loop-back menu of optional/targeted tests (same loop pattern as Diplopia's gaze-instruction step) — never mandatory, always skippable. */
+export interface OptionalTestsMenuStep {
+  kind: 'optional-tests-menu';
+  id: string;
+  options: OptionalTestOption[];
+  /** Step id to continue to once done with optional testing. */
+  skipNext: string;
+}
+
+/** Always terminal: runs the pattern-interpretation engine (binocularPatterns.ts) over the recorded findings. */
+export interface BinocularSummaryStep {
+  kind: 'binocular-summary';
+  id: string;
 }
 
 /** The patient's best refractive correction (SPH/CYL/AXIS per eye) — see BestCorrection. */
@@ -135,7 +215,16 @@ export interface FinalRxStep {
   id: string;
 }
 
-export type DecisionStep = QuestionStep | MeasurementStep | TextEntryStep | RxEntryStep | FinalRxStep;
+export type DecisionStep =
+  | QuestionStep
+  | MeasurementStep
+  | TextEntryStep
+  | RxEntryStep
+  | FinalRxStep
+  | SymptomSelectStep
+  | QuickScreenResultStep
+  | OptionalTestsMenuStep
+  | BinocularSummaryStep;
 
 export interface ClinicalPathwayNode {
   id: string;
@@ -222,6 +311,23 @@ const sharedPrismSteps: DecisionStep[] = [
     kind: 'final-rx',
     id: 'final-rx',
   },
+];
+
+/**
+ * Binocular Status's symptom checklist — keys match SYMPTOM_LABELS in
+ * binocularQuickScreen.ts exactly, since both read/write the same
+ * `recordedFindings.symptoms` comma-joined set.
+ */
+const BINOCULAR_SYMPTOM_OPTIONS: SymptomOption[] = [
+  { key: 'nearStrain', label: 'Eye strain / fatigue at near' },
+  { key: 'headache', label: 'Headache with visual work' },
+  { key: 'nearBlur', label: 'Blur at near' },
+  { key: 'distanceBlur', label: 'Blur at distance' },
+  { key: 'slowRefocusNearToDistance', label: 'Slow refocusing near → distance' },
+  { key: 'slowRefocusDistanceToNear', label: 'Slow refocusing distance → near' },
+  { key: 'readingDifficulty', label: 'Reading difficulty / losing place' },
+  { key: 'diplopia', label: 'Intermittent diplopia' },
+  { key: 'none', label: 'No symptoms' },
 ];
 
 export const clinicalPathways: ClinicalPathwayNode[] = [
@@ -602,6 +708,293 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
       },
 
       ...sharedPrismSteps,
+    ],
+  },
+  {
+    id: 'binocular-status',
+    title: 'Binocular Status',
+    kind: 'leaf',
+    overview:
+      'Quick Screen flags whether a fuller workup is warranted; Full Assessment characterizes the finding. Each pattern below (Convergence Insufficiency, Fusional Vergence Dysfunction, Accommodative Infacility, etc.) has its own required/supporting findings — no single value creates a diagnosis.',
+    steps: [
+      // ENTRY
+      {
+        kind: 'question',
+        id: 'entry',
+        shortLabel: 'Entry',
+        question: 'How would you like to proceed?',
+        outcomes: [
+          { label: 'Quick Screen', action: '', next: 'age', recordAs: { key: 'entryMode', value: 'quick' } },
+          { label: 'Full Assessment', action: '', next: 'age', recordAs: { key: 'entryMode', value: 'full' } },
+        ],
+      },
+      {
+        kind: 'text-entry',
+        id: 'age',
+        question: 'Patient age',
+        fields: [{ key: 'age.value', label: 'Age (years)' }],
+        helperText: 'Used only for the accommodative-amplitude age-expected minimum.',
+        next: 'symptoms',
+      },
+      {
+        kind: 'symptom-select',
+        id: 'symptoms',
+        question: 'Symptoms (select all that apply)',
+        options: BINOCULAR_SYMPTOM_OPTIONS,
+        recordAsKey: 'symptoms',
+        exclusiveKey: 'none',
+        next: 'distance-phoria-type',
+        branchOnKey: { key: 'diplopia', next: 'diplopia-new-check' },
+      },
+      {
+        kind: 'question',
+        id: 'diplopia-new-check',
+        shortLabel: 'Diplopia new?',
+        question: 'Is the diplopia new or recent?',
+        outcomes: [
+          {
+            label: 'Yes',
+            action: '',
+            recordAs: { key: 'diplopiaNew', value: 'yes' },
+            redFlag: 'New/recent diplopia is better characterized by the Diplopia pathway (onset, red flags, direction, gaze-dependence) than by Binocular Status.',
+            redFlagTitle: 'Consider the Diplopia pathway',
+            seeAlso: ['diplopia'],
+            next: 'distance-phoria-type',
+          },
+          { label: 'No', action: '', recordAs: { key: 'diplopiaNew', value: 'no' }, next: 'distance-phoria-type' },
+        ],
+      },
+
+      // CORE SCREENING (shared by Quick Screen and Full Assessment)
+      {
+        kind: 'question',
+        id: 'distance-phoria-type',
+        shortLabel: 'Distance phoria',
+        question: 'Distance phoria (cover test / Maddox rod)?',
+        testIds: ['cover-test', 'maddox-rod'],
+        outcomes: [
+          { label: 'Ortho', action: '', next: 'near-phoria-type', recordAs: { key: 'distancePhoria.type', value: 'ortho' } },
+          { label: 'Exo', action: '', next: 'distance-phoria-amount', recordAs: { key: 'distancePhoria.type', value: 'exo' } },
+          { label: 'Eso', action: '', next: 'distance-phoria-amount', recordAs: { key: 'distancePhoria.type', value: 'eso' } },
+        ],
+      },
+      {
+        kind: 'text-entry',
+        id: 'distance-phoria-amount',
+        question: 'Distance phoria amount',
+        fields: [{ key: 'distancePhoria.amount', label: 'Amount (Δ)' }],
+        next: 'near-phoria-type',
+      },
+      {
+        kind: 'question',
+        id: 'near-phoria-type',
+        shortLabel: 'Near phoria',
+        question: 'Near phoria (cover test / Maddox rod)?',
+        testIds: ['cover-test', 'maddox-rod'],
+        outcomes: [
+          { label: 'Ortho', action: '', next: 'npc', recordAs: { key: 'nearPhoria.type', value: 'ortho' } },
+          { label: 'Exo', action: '', next: 'near-phoria-amount', recordAs: { key: 'nearPhoria.type', value: 'exo' } },
+          { label: 'Eso', action: '', next: 'near-phoria-amount', recordAs: { key: 'nearPhoria.type', value: 'eso' } },
+        ],
+      },
+      {
+        kind: 'text-entry',
+        id: 'near-phoria-amount',
+        question: 'Near phoria amount',
+        fields: [{ key: 'nearPhoria.amount', label: 'Amount (Δ)' }],
+        next: 'npc',
+      },
+      {
+        kind: 'text-entry',
+        id: 'npc',
+        question: 'Near Point of Convergence',
+        fields: [
+          { key: 'npc.break', label: 'Break (cm)' },
+          { key: 'npc.recovery', label: 'Recovery (cm)' },
+        ],
+        testIds: ['npc-test'],
+        next: 'maf-cycles',
+      },
+      {
+        kind: 'text-entry',
+        id: 'maf-cycles',
+        question: 'Monocular Accommodative Facility',
+        fields: [
+          { key: 'maf.OD', label: 'OD (cpm)' },
+          { key: 'maf.OS', label: 'OS (cpm)' },
+        ],
+        testIds: ['monocular-accommodative-facility-test'],
+        next: 'maf-difficulty',
+      },
+      {
+        kind: 'question',
+        id: 'maf-difficulty',
+        shortLabel: 'MAF difficulty',
+        question: 'Which side was difficult to clear, if any?',
+        outcomes: [
+          { label: 'Minus lenses', action: '', next: 'quick-screen-result', recordAs: { key: 'maf.difficulty', value: 'minus' } },
+          { label: 'Plus lenses', action: '', next: 'quick-screen-result', recordAs: { key: 'maf.difficulty', value: 'plus' } },
+          { label: 'Both', action: '', next: 'quick-screen-result', recordAs: { key: 'maf.difficulty', value: 'both' } },
+          { label: 'Neither', action: '', next: 'quick-screen-result', recordAs: { key: 'maf.difficulty', value: 'neither' } },
+        ],
+      },
+
+      // QUICK SCREEN CHECKPOINT
+      {
+        kind: 'quick-screen-result',
+        id: 'quick-screen-result',
+        continueNext: 'near-vergence',
+        finishNext: 'binocular-summary',
+      },
+
+      // FULL ASSESSMENT
+      {
+        kind: 'text-entry',
+        id: 'near-vergence',
+        question: 'Near Fusional Vergence Ranges',
+        fields: [
+          { key: 'nearVergence.bi.blur', label: 'Blur' },
+          { key: 'nearVergence.bi.break', label: 'Break' },
+          { key: 'nearVergence.bi.recovery', label: 'Recovery' },
+          { key: 'nearVergence.bo.blur', label: 'Blur' },
+          { key: 'nearVergence.bo.break', label: 'Break' },
+          { key: 'nearVergence.bo.recovery', label: 'Recovery' },
+        ],
+        groups: [
+          { label: 'BI', keys: ['nearVergence.bi.blur', 'nearVergence.bi.break', 'nearVergence.bi.recovery'] },
+          { label: 'BO', keys: ['nearVergence.bo.blur', 'nearVergence.bo.break', 'nearVergence.bo.recovery'] },
+        ],
+        helperText: 'Δ. Leave blank whatever wasn’t recorded.',
+        testIds: ['fusional-vergence-test'],
+        next: 'aa',
+      },
+      {
+        kind: 'text-entry',
+        id: 'aa',
+        question: 'Amplitude of Accommodation',
+        fields: [
+          { key: 'aa.OD', label: 'OD (D)' },
+          { key: 'aa.OS', label: 'OS (D)' },
+        ],
+        testIds: ['amplitude-of-accommodation-test'],
+        next: 'baf-cycles',
+      },
+      {
+        kind: 'text-entry',
+        id: 'baf-cycles',
+        question: 'Binocular Accommodative Facility',
+        fields: [{ key: 'baf.cyclesPerMin', label: 'Cycles/min' }],
+        testIds: ['binocular-accommodative-facility-test'],
+        next: 'baf-difficulty',
+      },
+      {
+        kind: 'question',
+        id: 'baf-difficulty',
+        shortLabel: 'BAF difficulty',
+        question: 'Which side was difficult to clear, if any?',
+        outcomes: [
+          { label: 'Minus lenses', action: '', next: 'optional-menu', recordAs: { key: 'baf.difficulty', value: 'minus' } },
+          { label: 'Plus lenses', action: '', next: 'optional-menu', recordAs: { key: 'baf.difficulty', value: 'plus' } },
+          { label: 'Both', action: '', next: 'optional-menu', recordAs: { key: 'baf.difficulty', value: 'both' } },
+          { label: 'Neither', action: '', next: 'optional-menu', recordAs: { key: 'baf.difficulty', value: 'neither' } },
+        ],
+      },
+
+      // OPTIONAL / TARGETED TESTS
+      {
+        kind: 'optional-tests-menu',
+        id: 'optional-menu',
+        options: [
+          { label: 'Distance Fusional Vergence', stepId: 'distance-vergence' },
+          { label: 'Gradient AC/A', stepId: 'aca-gradient' },
+          { label: 'NRA / PRA', stepId: 'nra-pra' },
+          { label: 'Vergence Facility', stepId: 'vergence-facility-gate' },
+          { label: 'MEM / Nott Retinoscopy', stepId: 'mem-nott' },
+          { label: 'Stereoacuity', stepId: 'stereoacuity' },
+        ],
+        skipNext: 'binocular-summary',
+      },
+      {
+        kind: 'text-entry',
+        id: 'distance-vergence',
+        question: 'Distance Fusional Vergence Ranges',
+        fields: [
+          { key: 'distanceVergence.bi.blur', label: 'Blur' },
+          { key: 'distanceVergence.bi.break', label: 'Break' },
+          { key: 'distanceVergence.bi.recovery', label: 'Recovery' },
+          { key: 'distanceVergence.bo.blur', label: 'Blur' },
+          { key: 'distanceVergence.bo.break', label: 'Break' },
+          { key: 'distanceVergence.bo.recovery', label: 'Recovery' },
+        ],
+        groups: [
+          { label: 'BI', keys: ['distanceVergence.bi.blur', 'distanceVergence.bi.break', 'distanceVergence.bi.recovery'] },
+          { label: 'BO', keys: ['distanceVergence.bo.blur', 'distanceVergence.bo.break', 'distanceVergence.bo.recovery'] },
+        ],
+        helperText: 'Δ. Leave blank whatever wasn’t recorded.',
+        testIds: ['fusional-vergence-test'],
+        next: 'optional-menu',
+      },
+      {
+        kind: 'text-entry',
+        id: 'aca-gradient',
+        question: 'Gradient AC/A',
+        fields: [{ key: 'acaGradient.value', label: 'Ratio (Δ/D)' }],
+        testIds: ['gradient-aca-test'],
+        next: 'optional-menu',
+      },
+      {
+        kind: 'text-entry',
+        id: 'nra-pra',
+        question: 'NRA / PRA',
+        fields: [
+          { key: 'nra.value', label: 'NRA (+D)' },
+          { key: 'pra.value', label: 'PRA (−D)' },
+        ],
+        testIds: ['nra-pra-test'],
+        next: 'optional-menu',
+      },
+      {
+        kind: 'question',
+        id: 'vergence-facility-gate',
+        shortLabel: 'Prism flippers?',
+        question: 'Prism flippers available?',
+        outcomes: [
+          { label: 'Yes', action: '', next: 'vergence-facility' },
+          { label: 'No', action: '', next: 'optional-menu', recordAs: { key: 'vergenceFacility.status', value: 'unavailable' } },
+        ],
+      },
+      {
+        kind: 'text-entry',
+        id: 'vergence-facility',
+        question: 'Vergence Facility',
+        fields: [{ key: 'vergenceFacility.cyclesPerMin', label: 'Cycles/min' }],
+        testIds: ['vergence-facility-test'],
+        next: 'optional-menu',
+      },
+      {
+        kind: 'text-entry',
+        id: 'mem-nott',
+        question: 'MEM / Nott Dynamic Retinoscopy',
+        fields: [{ key: 'memNott.value', label: 'Finding' }],
+        helperText: 'e.g. "+0.50 lag OU" or "plano".',
+        testIds: ['mem-retinoscopy-test', 'nott-retinoscopy-test'],
+        next: 'optional-menu',
+      },
+      {
+        kind: 'text-entry',
+        id: 'stereoacuity',
+        question: 'Stereoacuity',
+        fields: [{ key: 'stereoacuity.value', label: 'Finding' }],
+        helperText: 'e.g. "40 arc sec".',
+        testIds: ['stereoacuity-test'],
+        next: 'optional-menu',
+      },
+
+      // SUMMARY
+      {
+        kind: 'binocular-summary',
+        id: 'binocular-summary',
+      },
     ],
   },
   {

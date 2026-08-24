@@ -46,6 +46,17 @@ describe('clinicalPathways referential integrity', () => {
     }
   });
 
+  it('every text-entry step testId resolves to a real canonical test', () => {
+    for (const node of clinicalPathways) {
+      for (const step of node.steps ?? []) {
+        if (step.kind !== 'text-entry') continue;
+        for (const testId of step.testIds ?? []) {
+          expect(getClinicalTest(testId), `${node.id} -> step "${step.id}" -> test "${testId}"`).toBeDefined();
+        }
+      }
+    }
+  });
+
   it('every step id is unique within its node', () => {
     for (const node of clinicalPathways) {
       const ids = (node.steps ?? []).map((step) => step.id);
@@ -61,7 +72,26 @@ describe('clinicalPathways referential integrity', () => {
           expect(stepIds.has(step.next), `${node.id} -> ${step.kind} step "${step.id}" -> next "${step.next}"`).toBe(true);
           continue;
         }
-        if (step.kind === 'final-rx') continue;
+        if (step.kind === 'symptom-select') {
+          expect(stepIds.has(step.next), `${node.id} -> symptom-select step "${step.id}" -> next "${step.next}"`).toBe(true);
+          if (step.branchOnKey) {
+            expect(stepIds.has(step.branchOnKey.next), `${node.id} -> symptom-select step "${step.id}" -> branchOnKey.next "${step.branchOnKey.next}"`).toBe(true);
+          }
+          continue;
+        }
+        if (step.kind === 'quick-screen-result') {
+          expect(stepIds.has(step.continueNext), `${node.id} -> quick-screen-result step "${step.id}" -> continueNext "${step.continueNext}"`).toBe(true);
+          expect(stepIds.has(step.finishNext), `${node.id} -> quick-screen-result step "${step.id}" -> finishNext "${step.finishNext}"`).toBe(true);
+          continue;
+        }
+        if (step.kind === 'optional-tests-menu') {
+          expect(stepIds.has(step.skipNext), `${node.id} -> optional-tests-menu step "${step.id}" -> skipNext "${step.skipNext}"`).toBe(true);
+          for (const option of step.options) {
+            expect(stepIds.has(option.stepId), `${node.id} -> optional-tests-menu step "${step.id}" -> option "${option.label}" -> stepId "${option.stepId}"`).toBe(true);
+          }
+          continue;
+        }
+        if (step.kind === 'final-rx' || step.kind === 'binocular-summary') continue;
         for (const outcome of step.outcomes) {
           if (outcome.next) {
             expect(stepIds.has(outcome.next), `${node.id} -> step "${step.id}" -> outcome "${outcome.label}" -> next "${outcome.next}"`).toBe(true);
