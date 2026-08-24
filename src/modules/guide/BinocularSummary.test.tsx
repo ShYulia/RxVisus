@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest';
 import BinocularSummary from './BinocularSummary';
 
 describe('BinocularSummary', () => {
-  it('shows the exact no-pattern stop message and the actual recorded measurements, not just a label', () => {
+  it('shows the short no-pattern message (no symptoms sentence) when no symptoms were reported', () => {
     render(
       <BinocularSummary
         findings={{
+          symptoms: 'none',
           'distancePhoria.type': 'ortho',
           'nearPhoria.type': 'ortho',
           'npc.break': '5',
@@ -17,11 +18,33 @@ describe('BinocularSummary', () => {
       />,
     );
 
+    expect(screen.getByText('No significant binocular or accommodative dysfunction demonstrated.')).toBeInTheDocument();
+    expect(screen.queryByText(/does not explain the reported symptoms/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/break 5cm/).length).toBeGreaterThan(0);
+  });
+
+  it('appends the "does not explain the reported symptoms" sentence when symptoms actually were reported', () => {
+    render(
+      <BinocularSummary
+        findings={{
+          symptoms: 'nearStrain',
+          'distancePhoria.type': 'ortho',
+          'nearPhoria.type': 'ortho',
+          'npc.break': '5',
+        }}
+      />,
+    );
     expect(
       screen.getByText('No significant binocular or accommodative dysfunction demonstrated. Current findings do not explain the reported symptoms.'),
     ).toBeInTheDocument();
-    expect(screen.getByText(/break 5cm/)).toBeInTheDocument();
-    expect(screen.getByText(/BI break 14/)).toBeInTheDocument();
+  });
+
+  it('renders human-readable symptom labels, never a raw recordedFindings key like "nearStrain"', () => {
+    render(<BinocularSummary findings={{ symptoms: 'nearStrain,slowRefocusNearToDistance', 'distancePhoria.type': 'ortho', 'nearPhoria.type': 'ortho' }} />);
+    expect(screen.getAllByText(/Near eye strain \/ fatigue/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Slow refocusing near/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/nearStrain/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/slowRefocusNearToDistance/)).not.toBeInTheDocument();
   });
 
   it('does not fabricate a pattern from a single recorded value', () => {
@@ -29,7 +52,7 @@ describe('BinocularSummary', () => {
     expect(screen.queryByText(/Convergence Insufficiency/)).not.toBeInTheDocument();
   });
 
-  it('shows the actual measurements alongside a matched pattern, not just its label', () => {
+  it('shows the actual measurements alongside a matched pattern, not just its label, and a "What next?" section', () => {
     render(
       <BinocularSummary
         findings={{
@@ -42,7 +65,30 @@ describe('BinocularSummary', () => {
       />,
     );
     expect(screen.getAllByText(/Convergence Insufficiency/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Near phoria/)).toBeInTheDocument();
-    expect(screen.getByText(/10Δ exo/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Near phoria/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/10Δ exo/).length).toBeGreaterThan(0);
+    expect(screen.getByText('What next?')).toBeInTheDocument();
+    expect(screen.getAllByText(/therapy/).length).toBeGreaterThan(0);
+    expect(screen.getByText('How to manage →')).toBeInTheDocument();
+  });
+
+  it('shows a reassurance line for a single accommodative pattern, and vice versa for a single vergence pattern', () => {
+    render(<BinocularSummary findings={{ 'age.value': '20', 'aa.OD': '4', 'aa.OS': '4', 'distancePhoria.type': 'ortho' }} />);
+    expect(screen.getByText('No significant associated vergence dysfunction demonstrated.')).toBeInTheDocument();
+  });
+
+  it('splits measurements into a compact "Key measurements" view and a collapsed "All measurements"', () => {
+    render(
+      <BinocularSummary
+        findings={{
+          'distancePhoria.type': 'ortho',
+          'nearPhoria.type': 'ortho',
+          'aa.OD': '12',
+          'aa.OS': '12',
+        }}
+      />,
+    );
+    expect(screen.getByText('Key measurements')).toBeInTheDocument();
+    expect(screen.getByText('All measurements')).toBeInTheDocument();
   });
 });

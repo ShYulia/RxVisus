@@ -19,6 +19,8 @@ export interface Phoria {
 
 export interface VergenceFinding {
   blur?: number;
+  /** True when the clinician explicitly recorded "no blur point" rather than leaving blur untested — a genuine clinical result, distinct from missing data. */
+  blurAbsent?: boolean;
   break?: number;
   recovery?: number;
 }
@@ -77,19 +79,23 @@ function parsePhoria(findings: Record<string, string>, typeKey: string, amountKe
   return { type, amount: type === 'ortho' ? undefined : num(findings, amountKey) };
 }
 
+/** Sentinel recorded for a field explicitly marked as having no numeric result (e.g. TextEntryForm's "No blur" toggle) — see NO_BLUR_VALUE. */
+export const NO_BLUR_VALUE = 'none';
+
+function parseVergenceFinding(findings: Record<string, string>, prefix: string): VergenceFinding {
+  return {
+    blur: num(findings, `${prefix}.blur`),
+    blurAbsent: str(findings, `${prefix}.blur`) === NO_BLUR_VALUE,
+    break: num(findings, `${prefix}.break`),
+    recovery: num(findings, `${prefix}.recovery`),
+  };
+}
+
 function parseVergence(findings: Record<string, string>, prefix: string): VergencePair | undefined {
-  const bi: VergenceFinding = {
-    blur: num(findings, `${prefix}.bi.blur`),
-    break: num(findings, `${prefix}.bi.break`),
-    recovery: num(findings, `${prefix}.bi.recovery`),
-  };
-  const bo: VergenceFinding = {
-    blur: num(findings, `${prefix}.bo.blur`),
-    break: num(findings, `${prefix}.bo.break`),
-    recovery: num(findings, `${prefix}.bo.recovery`),
-  };
-  const hasBi = bi.blur !== undefined || bi.break !== undefined || bi.recovery !== undefined;
-  const hasBo = bo.blur !== undefined || bo.break !== undefined || bo.recovery !== undefined;
+  const bi = parseVergenceFinding(findings, `${prefix}.bi`);
+  const bo = parseVergenceFinding(findings, `${prefix}.bo`);
+  const hasBi = bi.blur !== undefined || bi.blurAbsent || bi.break !== undefined || bi.recovery !== undefined;
+  const hasBo = bo.blur !== undefined || bo.blurAbsent || bo.break !== undefined || bo.recovery !== undefined;
   if (!hasBi && !hasBo) return undefined;
   return { bi: hasBi ? bi : undefined, bo: hasBo ? bo : undefined };
 }

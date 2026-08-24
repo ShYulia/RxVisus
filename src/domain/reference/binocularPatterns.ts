@@ -47,7 +47,7 @@ const checkConvergenceInsufficiency: PatternCheck = (data, nearSheard) => {
   return { id: 'ci', label: 'Convergence Insufficiency', confidence: supporting.length > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
 };
 
-const checkConvergenceExcess: PatternCheck = (data) => {
+const checkConvergenceExcess: PatternCheck = (data, nearSheard) => {
   const near = data.nearPhoria;
   if (!near || near.type !== 'eso' || near.amount === undefined) return null;
   const distanceEso = data.distancePhoria?.type === 'eso' ? (data.distancePhoria.amount ?? 0) : 0;
@@ -56,6 +56,9 @@ const checkConvergenceExcess: PatternCheck = (data) => {
   const supporting = [`Near esophoria (${near.amount}Δ) greater than distance (${distanceEso}Δ)`];
   const nearSymptomatic = ['nearStrain', 'headache', 'nearBlur'].some((k) => data.symptoms.has(k));
   if (nearSymptomatic) supporting.push('Near-specific symptoms reported');
+  if (nearSheard.applicable && nearSheard.compensatingDirection === 'bi' && nearSheard.pass === false) {
+    supporting.push(`Near Sheard's criterion failed (BI ${nearSheard.reserveSource} ${nearSheard.reserveUsed}Δ)`);
+  }
   if (data.acaGradient !== undefined && data.acaGradient > BINOCULAR_NORMS.acaHighAboveRatio) {
     supporting.push(`Elevated AC/A ratio (${data.acaGradient}Δ/D)`);
   }
@@ -94,6 +97,14 @@ const checkDivergenceExcess: PatternCheck = (data, nearSheard) => {
   return { id: 'de', label: 'Divergence Excess', confidence: supporting.length > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
 };
 
+/**
+ * Basic Exo/Esophoria requires more than "distance and near roughly match, and the patient has
+ * symptoms" — a small, well-compensated phoria is often physiologic/incidental, and symptoms
+ * may be fully explained by another demonstrated dysfunction instead. Require independent
+ * evidence the phoria itself is clinically relevant: either it fails Sheard's (poorly
+ * compensated) or its magnitude meets the same "notable" bar Quick Screen itself uses — being
+ * symptomatic is never enough on its own to cross that line.
+ */
 function checkBasicPhoria(data: ParsedBinocularData, type: 'exo' | 'eso', nearSheard: SheardResult): PatternMatch | null {
   const near = data.nearPhoria;
   const distance = data.distancePhoria;
@@ -101,12 +112,30 @@ function checkBasicPhoria(data: ParsedBinocularData, type: 'exo' | 'eso', nearSh
   if (!distance || distance.type !== type || distance.amount === undefined) return null;
   if (Math.abs(near.amount - distance.amount) > BINOCULAR_NORMS.phoriaSimilarMarginDelta) return null;
 
+  const sheardFailed = nearSheard.applicable && nearSheard.pass === false;
+  const notableMagnitude = near.amount >= BINOCULAR_NORMS.nearPhoriaNotableDelta;
+  if (!sheardFailed && !notableMagnitude) return null;
+
   const label = type === 'exo' ? 'Basic Exophoria' : 'Basic Esophoria';
   const supporting = [`Similar ${type}phoria at distance (${distance.amount}Δ) and near (${near.amount}Δ)`];
-  if (data.symptoms.size > 0 && !data.symptoms.has('none')) supporting.push('Symptomatic');
-  if (nearSheard.applicable && nearSheard.pass === false) supporting.push("Near Sheard's criterion failed");
+  // Corroboration count is separate from the gate itself: satisfying the gate one way (e.g.
+  // magnitude alone, with no Sheard data and no symptoms) stays "possible" — confidence only
+  // rises to "consistent" once a second, independent piece of evidence lines up too.
+  let corroboration = 0;
+  if (sheardFailed) {
+    supporting.push(`Near Sheard's criterion failed (${nearSheard.compensatingDirection?.toUpperCase()} ${nearSheard.reserveSource} ${nearSheard.reserveUsed}Δ)`);
+    corroboration++;
+  }
+  if (notableMagnitude) {
+    supporting.push(`Near phoria (${near.amount}Δ) meets the notable-magnitude threshold`);
+    corroboration++;
+  }
+  if (data.symptoms.size > 0 && !data.symptoms.has('none')) {
+    supporting.push('Symptomatic');
+    corroboration++;
+  }
 
-  return { id: type === 'exo' ? 'basic-exo' : 'basic-eso', label, confidence: supporting.length > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
+  return { id: type === 'exo' ? 'basic-exo' : 'basic-eso', label, confidence: corroboration > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
 }
 
 const checkFusionalVergenceDysfunction: PatternCheck = (data) => {
@@ -144,16 +173,20 @@ function checkAccommodativeInsufficiency(data: ParsedBinocularData): PatternMatc
   const supporting: string[] = [];
   if (odLow) supporting.push(`AA OD ${data.aaOD}D below age-expected minimum (~${minExpected.toFixed(1)}D)`);
   if (osLow) supporting.push(`AA OS ${data.aaOS}D below age-expected minimum (~${minExpected.toFixed(1)}D)`);
-  if (data.maf?.difficulty === 'minus' || data.maf?.difficulty === 'both') supporting.push('Difficulty clearing minus lenses (MAF)');
+  if (data.maf?.difficulty === 'minus' || data.maf?.difficulty === 'both') supporting.push('Difficulty clearing −2.00 D on MAF');
+  if (data.baf?.difficulty === 'minus' || data.baf?.difficulty === 'both') supporting.push('Difficulty clearing −2.00 D on BAF');
 
   return { id: 'ai', label: 'Accommodative Insufficiency', confidence: odLow && osLow ? 'consistent' : 'possible', supportingFindings: supporting };
 }
 
 function checkAccommodativeExcess(data: ParsedBinocularData): PatternMatch | null {
-  const plusDifficulty = data.maf?.difficulty === 'plus' || data.maf?.difficulty === 'both' || data.baf?.difficulty === 'plus' || data.baf?.difficulty === 'both';
-  if (!plusDifficulty) return null;
+  const mafPlus = data.maf?.difficulty === 'plus' || data.maf?.difficulty === 'both';
+  const bafPlus = data.baf?.difficulty === 'plus' || data.baf?.difficulty === 'both';
+  if (!mafPlus && !bafPlus) return null;
 
-  const supporting = ['Difficulty clearing plus lenses'];
+  const supporting: string[] = [];
+  if (mafPlus) supporting.push('Difficulty clearing +2.00 D on MAF');
+  if (bafPlus) supporting.push('Difficulty clearing +2.00 D on BAF');
   if (data.symptoms.has('nearBlur') || data.symptoms.has('headache')) supporting.push('Near blur/headache symptoms reported');
 
   return { id: 'ae', label: 'Accommodative Excess', confidence: supporting.length > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
@@ -220,23 +253,34 @@ export function interpretBinocularAssessment(data: ParsedBinocularData): Binocul
     };
   }
 
+  const patternHeadline = (match: PatternMatch) => (match.confidence === 'consistent' ? `Findings consistent with ${match.label}` : `Possible ${match.label}`);
+
   if (vergenceMatches.length === 1 && accommodativeMatches.length === 1) {
-    return { category: 'mixed', headline: 'Mixed binocular/accommodative findings', patterns: [vergenceMatches[0], accommodativeMatches[0]] };
+    const v = vergenceMatches[0];
+    const a = accommodativeMatches[0];
+    // "Mixed" is reserved for independently meaningful, concordant evidence of BOTH a vergence
+    // and an accommodative dysfunction — a weakly-supported ('possible') match on one side
+    // (e.g. an incidental, borderline-compensated phoria) must not turn a well-supported single
+    // dysfunction into a mixed diagnosis. Prefer the single better-supported pattern instead.
+    if (v.confidence === 'consistent' && a.confidence === 'consistent') {
+      return { category: 'mixed', headline: 'Mixed binocular/accommodative findings', patterns: [v, a] };
+    }
+    const primary = v.confidence === 'consistent' ? v : a.confidence === 'consistent' ? a : v.supportingFindings.length >= a.supportingFindings.length ? v : a;
+    return { category: 'pattern', headline: `${patternHeadline(primary)} pattern`, patterns: [primary] };
   }
   if (vergenceMatches.length === 1) {
-    const match = vergenceMatches[0];
-    const prefix = match.confidence === 'consistent' ? 'Findings consistent with' : 'Possible';
-    return { category: 'pattern', headline: `${prefix} ${match.label} pattern`, patterns: [match] };
+    return { category: 'pattern', headline: `${patternHeadline(vergenceMatches[0])} pattern`, patterns: vergenceMatches };
   }
   if (accommodativeMatches.length === 1) {
-    const match = accommodativeMatches[0];
-    const prefix = match.confidence === 'consistent' ? 'Findings consistent with' : 'Possible';
-    return { category: 'pattern', headline: `${prefix} ${match.label}`, patterns: [match] };
+    return { category: 'pattern', headline: patternHeadline(accommodativeMatches[0]), patterns: accommodativeMatches };
   }
 
+  const hasSymptoms = data.symptoms.size > 0 && !data.symptoms.has('none');
   return {
     category: 'no-pattern',
-    headline: 'No significant binocular or accommodative dysfunction demonstrated. Current findings do not explain the reported symptoms.',
+    headline: hasSymptoms
+      ? 'No significant binocular or accommodative dysfunction demonstrated. Current findings do not explain the reported symptoms.'
+      : 'No significant binocular or accommodative dysfunction demonstrated.',
     patterns: [],
   };
 }

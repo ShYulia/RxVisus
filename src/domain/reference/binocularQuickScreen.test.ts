@@ -65,6 +65,17 @@ describe('evaluateQuickScreen', () => {
     const data = parseBinocularFindings({ symptoms: 'none', 'maf.difficulty': 'minus' });
     const result = evaluateQuickScreen(data);
     expect(result.recommendFullAssessment).toBe(true);
-    expect(result.objectiveReasons).toEqual(['Difficulty clearing MAF flipper']);
+    expect(result.objectiveReasons).toEqual(['Difficulty clearing −2.00 D (MAF)']);
+  });
+
+  it('MAF reasons are clinically explicit about which lens, not a generic "flipper" mention', () => {
+    const minus = evaluateQuickScreen(parseBinocularFindings({ 'maf.difficulty': 'minus' }));
+    expect(minus.objectiveReasons).toContain('Difficulty clearing −2.00 D (MAF)');
+
+    const plus = evaluateQuickScreen(parseBinocularFindings({ 'maf.difficulty': 'plus' }));
+    expect(plus.objectiveReasons).toContain('Difficulty clearing +2.00 D (MAF)');
+
+    const both = evaluateQuickScreen(parseBinocularFindings({ 'maf.difficulty': 'both' }));
+    expect(both.objectiveReasons).toContain('Difficulty clearing both +2.00 D and −2.00 D (MAF)');
   });
 });

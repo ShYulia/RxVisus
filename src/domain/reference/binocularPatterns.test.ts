@@ -46,16 +46,33 @@ describe('interpretBinocularAssessment', () => {
     expect(ci).toBeUndefined();
   });
 
-  it('a near/distance exophoria within the similarity margin is Basic Exophoria, not Convergence Insufficiency', () => {
+  it('a near/distance exophoria within the similarity margin is Basic Exophoria when the magnitude is clinically notable, not Convergence Insufficiency', () => {
     const data = parseBinocularFindings({
       'distancePhoria.type': 'exo',
-      'distancePhoria.amount': '6',
+      'distancePhoria.amount': '9',
       'nearPhoria.type': 'exo',
-      'nearPhoria.amount': '7',
+      'nearPhoria.amount': '10',
     });
     const result = interpretBinocularAssessment(data);
     expect(result.patterns.find((p) => p.id === 'basic-exo')).toBeDefined();
     expect(result.patterns.find((p) => p.id === 'ci')).toBeUndefined();
+  });
+
+  it('does NOT classify a small, well-compensated phoria as Basic Exophoria merely because the patient is symptomatic', () => {
+    // 1Δ exo distance + 2-3Δ exo near + normal NPC + good BO reserve + Sheard PASS must not
+    // become "Basic Exophoria" just because near symptoms are reported.
+    const data = parseBinocularFindings({
+      symptoms: 'nearStrain',
+      'distancePhoria.type': 'exo',
+      'distancePhoria.amount': '1',
+      'nearPhoria.type': 'exo',
+      'nearPhoria.amount': '2',
+      'npc.break': '5',
+      'nearVergence.bo.blur': '18',
+      'nearVergence.bo.break': '24',
+    });
+    const result = interpretBinocularAssessment(data);
+    expect(result.patterns.find((p) => p.id === 'basic-exo')).toBeUndefined();
   });
 
   it('Divergence Insufficiency requires distance eso greater than near', () => {
@@ -117,8 +134,45 @@ describe('interpretBinocularAssessment', () => {
     expect(result.patterns.length).toBe(2);
   });
 
-  it('stops with the exact "no significant dysfunction" message when a full assessment finds no pattern', () => {
+  it('does NOT call it "mixed" when only one side is independently well-supported — prefers the single primary pattern', () => {
+    // Genuine (consistent) Accommodative Insufficiency, plus a same-type distance/near
+    // exophoria that only barely clears the Basic Exophoria gate (possible, single supporting
+    // finding) — the weak vergence match should not demote a well-supported accommodative
+    // finding to "mixed".
     const data = parseBinocularFindings({
+      'distancePhoria.type': 'exo',
+      'distancePhoria.amount': '8',
+      'nearPhoria.type': 'exo',
+      'nearPhoria.amount': '9',
+      'age.value': '20',
+      'aa.OD': '4',
+      'aa.OS': '4',
+    });
+    const result = interpretBinocularAssessment(data);
+    expect(result.category).toBe('pattern');
+    expect(result.patterns.length).toBe(1);
+    expect(result.patterns[0].id).toBe('ai');
+  });
+
+  it('stops with the short "no significant dysfunction" message (no symptoms sentence) when there are no reported symptoms', () => {
+    const data = parseBinocularFindings({
+      symptoms: 'none',
+      'distancePhoria.type': 'ortho',
+      'nearPhoria.type': 'ortho',
+      'npc.break': '5',
+      'npc.recovery': '8',
+      'nearVergence.bi.break': '14',
+      'nearVergence.bo.break': '22',
+    });
+    const result = interpretBinocularAssessment(data);
+    expect(result.category).toBe('no-pattern');
+    expect(result.headline).toBe('No significant binocular or accommodative dysfunction demonstrated.');
+    expect(result.patterns).toEqual([]);
+  });
+
+  it('appends the "does not explain the reported symptoms" sentence only when symptoms were actually reported', () => {
+    const data = parseBinocularFindings({
+      symptoms: 'nearStrain',
       'distancePhoria.type': 'ortho',
       'nearPhoria.type': 'ortho',
       'npc.break': '5',
@@ -129,7 +183,6 @@ describe('interpretBinocularAssessment', () => {
     const result = interpretBinocularAssessment(data);
     expect(result.category).toBe('no-pattern');
     expect(result.headline).toBe('No significant binocular or accommodative dysfunction demonstrated. Current findings do not explain the reported symptoms.');
-    expect(result.patterns).toEqual([]);
   });
 
   it('never produces a "Diagnosis:" style headline', () => {

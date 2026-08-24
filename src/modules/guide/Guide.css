@@ -204,6 +204,13 @@
   color: var(--rx-text-secondary);
 }
 
+/* Test Card: a single supplementary illustration above the "How to" flow. */
+.rx-testcard-diagram {
+  display: flex;
+  justify-content: center;
+  margin: 4px 4px 16px;
+}
+
 /* Test Card: compact single-line setup summary (e.g. "40 cm • BINOCULAR • BEST CORRECTION"). */
 .rx-testcard-meta {
   text-align: center;
@@ -434,6 +441,24 @@
   line-height: 1.5;
 }
 
+/* Collapsed breadcrumb — used on terminal (Summary/Final Rx) steps so the clinical result is
+   the dominant element, not a long history trail. */
+.rx-wizard-trail-collapsed {
+  margin: 0 4px 16px;
+}
+
+.rx-wizard-trail-collapsed summary {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--rx-text-secondary);
+  cursor: pointer;
+}
+
+.rx-wizard-trail-nested {
+  margin: 10px 0 0;
+}
+
 /* Pathway wizard: one question/action at a time. */
 .rx-wizard-trail {
   display: flex;
@@ -521,6 +546,30 @@
 
 .rx-rxentry-form .rx-list-section-label:first-child {
   margin-top: 0;
+}
+
+.rx-textentry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rx-textentry-absent-toggle {
+  align-self: flex-start;
+  border: 1px solid var(--rx-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rx-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.rx-textentry-absent-toggle-active {
+  border-color: var(--rx-iris-deep);
+  color: var(--rx-iris-deep);
+  background: var(--rx-iris-tint, rgba(99, 91, 255, 0.08));
 }
 
 /* Non-blocking clinical consistency check. */
@@ -612,6 +661,15 @@
   line-height: 1.35;
 }
 
+.rx-quickscreen-why {
+  margin: 0 4px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--rx-text-tertiary);
+}
+
 .rx-quickscreen-reasons {
   margin: 0 4px 18px;
   padding-left: 20px;
@@ -626,30 +684,52 @@
   line-height: 1.5;
 }
 
-/* Optional/targeted tests menu. */
-.rx-optional-hints {
-  margin: 0 4px 16px;
+/* Guided targeted-testing menu. */
+.rx-guided-recs {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 14px;
+  margin: 0 4px 18px;
 }
 
-.rx-optional-hint {
-  margin: 0;
-  font-size: 13.5px;
+.rx-guided-rec {
+  border: 1px solid var(--rx-border);
+  border-radius: var(--rx-radius);
+  padding: 14px 16px;
+}
+
+.rx-guided-rec-label {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--rx-text);
+}
+
+.rx-guided-rec-reason {
+  margin: 0 0 10px;
+  font-size: 13px;
   color: var(--rx-text-secondary);
   line-height: 1.5;
 }
 
+.rx-guided-rec .rx-wizard-choice {
+  padding: 10px 14px;
+}
+
+.rx-guided-other {
+  margin-top: 20px;
+}
+
 .rx-optional-skip {
-  margin-top: 14px;
+  margin-top: 16px;
   width: 100%;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--rx-text-secondary);
-  background: none;
-  border: none;
-  padding: 10px 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--rx-text);
+  background: var(--rx-surface);
+  border: 1px solid var(--rx-border);
+  border-radius: var(--rx-radius);
+  padding: 14px 16px;
   cursor: pointer;
   text-align: center;
 }
@@ -661,6 +741,43 @@
   color: var(--rx-text);
   margin: 4px 4px 16px;
   line-height: 1.35;
+}
+
+.rx-summary-headline-dominant {
+  font-size: 19px;
+  font-weight: 800;
+  padding: 14px 16px;
+  margin: 4px 4px 16px;
+  background: var(--rx-iris-tint);
+  border-radius: var(--rx-radius);
+  color: var(--rx-iris-deep);
+}
+
+.rx-summary-reassurance {
+  margin: 0 4px 14px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--rx-text-secondary);
+}
+
+.rx-summary-whatnext {
+  margin: 4px 4px 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rx-border);
+}
+
+.rx-summary-whatnext ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rx-summary-whatnext li {
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.5;
 }
 
 .rx-summary-pattern {

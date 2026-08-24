@@ -45,8 +45,17 @@ describe('parseBinocularFindings', () => {
       'nearVergence.bo.break': '20',
       'nearVergence.bo.recovery': '10',
     });
-    expect(data.nearVergence?.bi).toEqual({ blur: undefined, break: 10, recovery: undefined });
-    expect(data.nearVergence?.bo).toEqual({ blur: 14, break: 20, recovery: 10 });
+    expect(data.nearVergence?.bi).toEqual({ blur: undefined, blurAbsent: false, break: 10, recovery: undefined });
+    expect(data.nearVergence?.bo).toEqual({ blur: 14, blurAbsent: false, break: 20, recovery: 10 });
+  });
+
+  it('marks blur as explicitly absent (e.g. "No blur" entered) without treating it as missing data', () => {
+    const data = parseBinocularFindings({
+      'nearVergence.bi.blur': 'none',
+      'nearVergence.bi.break': '18',
+      'nearVergence.bi.recovery': '12',
+    });
+    expect(data.nearVergence?.bi).toEqual({ blur: undefined, blurAbsent: true, break: 18, recovery: 12 });
   });
 
   it('leaves vergence undefined when no fields are present', () => {

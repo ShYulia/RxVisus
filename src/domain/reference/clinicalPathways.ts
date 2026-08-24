@@ -1,3 +1,5 @@
+import { NO_BLUR_VALUE } from './binocularFindings';
+
 /**
  * Clinical pathways: symptom/problem-first navigation into the canonical
  * test cards in clinicalTests.ts. A node is either a branch (more choices)
@@ -122,6 +124,15 @@ export interface MeasurementStep {
 export interface TextEntryField {
   key: string;
   label: string;
+  /** Must be filled (or satisfied via `absentOption`) before Continue is enabled — for clinically necessary results only, never context fields like age. */
+  required?: boolean;
+  /**
+   * Lets this field be satisfied by an explicit non-numeric clinical result instead of forcing a
+   * fake number — e.g. fusional vergence blur may genuinely never be reached. Rendered as a small
+   * toggle; when set, the field's recorded value becomes `value` (see NO_BLUR_VALUE) rather than a
+   * number, and the numeric input is disabled.
+   */
+  absentOption?: { label: string; value: string };
 }
 
 /** A short free-text recording point (e.g. best-corrected VA per eye) — context only, never a branch. */
@@ -136,6 +147,13 @@ export interface TextEntryStep {
   helperText?: string;
   /** Test(s) relevant to this entry, if any — shown as reference chip(s) before the fields. */
   testIds?: string[];
+  /**
+   * True for an optional/targeted test the clinician may decline entirely (e.g. reached from the
+   * optional-tests menu) — offers an explicit "Skip test" action that discards whatever was typed
+   * and jumps straight to `next` without recording anything. Never set on core screening steps:
+   * those block on missing required fields instead, with no way around them.
+   */
+  skippable?: boolean;
   /** Id of the step to continue to once submitted. */
   next: string;
 }
@@ -782,7 +800,7 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         kind: 'text-entry',
         id: 'distance-phoria-amount',
         question: 'Distance phoria amount',
-        fields: [{ key: 'distancePhoria.amount', label: 'Amount (Δ)' }],
+        fields: [{ key: 'distancePhoria.amount', label: 'Amount (Δ)', required: true }],
         next: 'near-phoria-type',
       },
       {
@@ -801,7 +819,7 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         kind: 'text-entry',
         id: 'near-phoria-amount',
         question: 'Near phoria amount',
-        fields: [{ key: 'nearPhoria.amount', label: 'Amount (Δ)' }],
+        fields: [{ key: 'nearPhoria.amount', label: 'Amount (Δ)', required: true }],
         next: 'npc',
       },
       {
@@ -809,8 +827,8 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         id: 'npc',
         question: 'Near Point of Convergence',
         fields: [
-          { key: 'npc.break', label: 'Break (cm)' },
-          { key: 'npc.recovery', label: 'Recovery (cm)' },
+          { key: 'npc.break', label: 'Break (cm)', required: true },
+          { key: 'npc.recovery', label: 'Recovery (cm)', required: true },
         ],
         testIds: ['npc-test'],
         next: 'maf-cycles',
@@ -820,8 +838,8 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         id: 'maf-cycles',
         question: 'Monocular Accommodative Facility',
         fields: [
-          { key: 'maf.OD', label: 'OD (cycles/min)' },
-          { key: 'maf.OS', label: 'OS (cycles/min)' },
+          { key: 'maf.OD', label: 'OD (cycles/min)', required: true },
+          { key: 'maf.OS', label: 'OS (cycles/min)', required: true },
         ],
         testIds: ['monocular-accommodative-facility-test'],
         next: 'maf-difficulty',
@@ -853,18 +871,18 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         id: 'near-vergence',
         question: 'Near Fusional Vergence Ranges',
         fields: [
-          { key: 'nearVergence.bi.blur', label: 'Blur' },
-          { key: 'nearVergence.bi.break', label: 'Break' },
-          { key: 'nearVergence.bi.recovery', label: 'Recovery' },
-          { key: 'nearVergence.bo.blur', label: 'Blur' },
-          { key: 'nearVergence.bo.break', label: 'Break' },
-          { key: 'nearVergence.bo.recovery', label: 'Recovery' },
+          { key: 'nearVergence.bi.blur', label: 'Blur', required: true, absentOption: { label: 'No blur', value: NO_BLUR_VALUE } },
+          { key: 'nearVergence.bi.break', label: 'Break', required: true },
+          { key: 'nearVergence.bi.recovery', label: 'Recovery', required: true },
+          { key: 'nearVergence.bo.blur', label: 'Blur', required: true, absentOption: { label: 'No blur', value: NO_BLUR_VALUE } },
+          { key: 'nearVergence.bo.break', label: 'Break', required: true },
+          { key: 'nearVergence.bo.recovery', label: 'Recovery', required: true },
         ],
         groups: [
           { label: 'BI', keys: ['nearVergence.bi.blur', 'nearVergence.bi.break', 'nearVergence.bi.recovery'] },
           { label: 'BO', keys: ['nearVergence.bo.blur', 'nearVergence.bo.break', 'nearVergence.bo.recovery'] },
         ],
-        helperText: 'Δ. Leave blank whatever wasn’t recorded.',
+        helperText: 'Δ. Use "No blur" if no blur point was found.',
         testIds: ['fusional-vergence-test'],
         next: 'aa',
       },
@@ -873,8 +891,8 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         id: 'aa',
         question: 'Amplitude of Accommodation',
         fields: [
-          { key: 'aa.OD', label: 'OD (D)' },
-          { key: 'aa.OS', label: 'OS (D)' },
+          { key: 'aa.OD', label: 'OD (D)', required: true },
+          { key: 'aa.OS', label: 'OS (D)', required: true },
         ],
         testIds: ['amplitude-of-accommodation-test'],
         next: 'baf-cycles',
@@ -883,7 +901,7 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         kind: 'text-entry',
         id: 'baf-cycles',
         question: 'Binocular Accommodative Facility',
-        fields: [{ key: 'baf.cyclesPerMin', label: 'Cycles/min' }],
+        fields: [{ key: 'baf.cyclesPerMin', label: 'Cycles/min', required: true }],
         testIds: ['binocular-accommodative-facility-test'],
         next: 'baf-difficulty',
       },
@@ -919,27 +937,29 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         id: 'distance-vergence',
         question: 'Distance Fusional Vergence Ranges',
         fields: [
-          { key: 'distanceVergence.bi.blur', label: 'Blur' },
-          { key: 'distanceVergence.bi.break', label: 'Break' },
-          { key: 'distanceVergence.bi.recovery', label: 'Recovery' },
-          { key: 'distanceVergence.bo.blur', label: 'Blur' },
-          { key: 'distanceVergence.bo.break', label: 'Break' },
-          { key: 'distanceVergence.bo.recovery', label: 'Recovery' },
+          { key: 'distanceVergence.bi.blur', label: 'Blur', required: true, absentOption: { label: 'No blur', value: NO_BLUR_VALUE } },
+          { key: 'distanceVergence.bi.break', label: 'Break', required: true },
+          { key: 'distanceVergence.bi.recovery', label: 'Recovery', required: true },
+          { key: 'distanceVergence.bo.blur', label: 'Blur', required: true, absentOption: { label: 'No blur', value: NO_BLUR_VALUE } },
+          { key: 'distanceVergence.bo.break', label: 'Break', required: true },
+          { key: 'distanceVergence.bo.recovery', label: 'Recovery', required: true },
         ],
         groups: [
           { label: 'BI', keys: ['distanceVergence.bi.blur', 'distanceVergence.bi.break', 'distanceVergence.bi.recovery'] },
           { label: 'BO', keys: ['distanceVergence.bo.blur', 'distanceVergence.bo.break', 'distanceVergence.bo.recovery'] },
         ],
-        helperText: 'Δ. Leave blank whatever wasn’t recorded.',
+        helperText: 'Δ. Use "No blur" if no blur point was found.',
         testIds: ['fusional-vergence-test'],
+        skippable: true,
         next: 'optional-menu',
       },
       {
         kind: 'text-entry',
         id: 'aca-gradient',
         question: 'Gradient AC/A',
-        fields: [{ key: 'acaGradient.value', label: 'Ratio (Δ/D)' }],
+        fields: [{ key: 'acaGradient.value', label: 'Ratio (Δ/D)', required: true }],
         testIds: ['gradient-aca-test'],
+        skippable: true,
         next: 'optional-menu',
       },
       {
@@ -947,10 +967,11 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         id: 'nra-pra',
         question: 'NRA / PRA',
         fields: [
-          { key: 'nra.value', label: 'NRA (+D)' },
-          { key: 'pra.value', label: 'PRA (−D)' },
+          { key: 'nra.value', label: 'NRA (+D)', required: true },
+          { key: 'pra.value', label: 'PRA (−D)', required: true },
         ],
         testIds: ['nra-pra-test'],
+        skippable: true,
         next: 'optional-menu',
       },
       {
@@ -967,26 +988,29 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         kind: 'text-entry',
         id: 'vergence-facility',
         question: 'Vergence Facility',
-        fields: [{ key: 'vergenceFacility.cyclesPerMin', label: 'Cycles/min' }],
+        fields: [{ key: 'vergenceFacility.cyclesPerMin', label: 'Cycles/min', required: true }],
         testIds: ['vergence-facility-test'],
+        skippable: true,
         next: 'optional-menu',
       },
       {
         kind: 'text-entry',
         id: 'mem-nott',
         question: 'MEM / Nott Dynamic Retinoscopy',
-        fields: [{ key: 'memNott.value', label: 'Finding' }],
+        fields: [{ key: 'memNott.value', label: 'Finding', required: true }],
         helperText: 'e.g. "+0.50 lag OU" or "plano".',
         testIds: ['mem-retinoscopy-test', 'nott-retinoscopy-test'],
+        skippable: true,
         next: 'optional-menu',
       },
       {
         kind: 'text-entry',
         id: 'stereoacuity',
         question: 'Stereoacuity',
-        fields: [{ key: 'stereoacuity.value', label: 'Finding' }],
+        fields: [{ key: 'stereoacuity.value', label: 'Finding', required: true }],
         helperText: 'e.g. "40 arc sec".',
         testIds: ['stereoacuity-test'],
+        skippable: true,
         next: 'optional-menu',
       },
 
