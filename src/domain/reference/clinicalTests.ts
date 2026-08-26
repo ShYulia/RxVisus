@@ -838,10 +838,11 @@ export const clinicalTests: ClinicalTest[] = [
     youNeed: ['Near phoria already measured (habitual correction)', 'Loose lenses or phoropter', 'Prism bar or Maddox rod for the repeat phoria'],
     meta: ['NEAR', 'BINOCULAR', 'HABITUAL CORRECTION IN PLACE'],
     doSteps: ['Measure near phoria with habitual correction', 'Add +1.00 D (or −1.00 D) over both eyes', 'Re-measure the near phoria with the lens in place'],
-    keyAnchor: 'Δ phoria ÷ Δ lens (D) = AC/A',
+    keyAnchor: 'Gradient AC/A = change in phoria (Δ) / change in accommodative stimulus (D)',
     keyAnchorCaption: 'Change in phoria (Δ), divided by the lens power added (D).',
     whatToNote: ['Phoria before the lens', 'Phoria after the lens', 'Which lens power was used (+1.00 or −1.00)'],
-    quickInterpretReminder: 'High ratio → near findings are more accommodatively driven — relevant to Convergence Excess.',
+    quickReminder: '− lens → ↑ accommodation → expected shift toward eso. + lens → ↓ accommodation → expected shift toward exo.',
+    quickInterpretReminder: 'High ratio supports an accommodatively-driven near deviation — but alone it does not diagnose Convergence Excess; it only corroborates CE when the rest of the pattern fits, particularly a near phoria that is more esophoric/less exophoric than distance.',
     moreSections: [
       {
         heading: 'What it assesses / why we perform it',
@@ -858,7 +859,7 @@ export const clinicalTests: ClinicalTest[] = [
       {
         heading: 'Interpreting the result',
         items: [
-          "A high ratio means near phoria shifts a lot for a small accommodative change — near esophoria/reduced near exophoria driven mainly by accommodative convergence, relevant to a Convergence Excess pattern.",
+          "A high ratio means near phoria shifts a lot for a small accommodative change — near esophoria/reduced near exophoria driven mainly by accommodative convergence. This supports Convergence Excess only alongside the rest of the pattern (near more esophoric/less exophoric than distance) — a high ratio by itself is not a CE diagnosis.",
           "A low ratio means near phoria barely shifts even with an accommodative change — the near finding is not well explained by accommodation alone, which points more toward Convergence Insufficiency or a fusional/proximal cause instead.",
         ],
       },
@@ -867,6 +868,7 @@ export const clinicalTests: ClinicalTest[] = [
         items: [
           'Letting the target go blurry after the lens is added invalidates the comparison — the patient must actually be accommodating to the stated lens change, not just staring through blur; keep the target equally clear/legible before and after.',
           "Using inconsistent lens power (sometimes +1.00, sometimes −1.00) across visits changes the ratio obtained for reasons unrelated to the patient's actual accommodative-convergence relationship — stay consistent with the same lens power for a given patient.",
+          "A phoria that shifts opposite the lens's expected direction (e.g. more exo after a minus lens, more eso after a plus lens) is not a normal AC/A finding — don't fold it into a positive ratio. Flag it as check measurement / unexpected direction and re-check technique before trusting the number.",
         ],
       },
       {
