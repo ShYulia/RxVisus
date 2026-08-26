@@ -896,6 +896,26 @@
   line-height: 1.5;
 }
 
+/* A 'possible' finding shown alongside a 'consistent' primary (or on its own) reads as clearly
+   secondary/tentative — never with the same visual weight as an established finding. */
+.rx-summary-pattern-possible {
+  padding-left: 10px;
+  border-left: 2px solid var(--rx-border);
+}
+
+.rx-summary-pattern-possible .rx-summary-pattern-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rx-text-secondary);
+}
+
+.rx-summary-pattern-note {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--rx-text-tertiary);
+}
+
 .rx-summary-measurements {
   margin-top: 18px;
 }

@@ -77,6 +77,41 @@ describe('BinocularSummary', () => {
     expect(screen.getByText('No significant associated vergence dysfunction demonstrated.')).toBeInTheDocument();
   });
 
+  it('shows a consistent primary pattern with a possible secondary finding retained (visually distinct), not Mixed', () => {
+    const { container } = render(
+      <BinocularSummary
+        findings={{
+          'age.value': '19',
+          symptoms: 'nearBlur,headache',
+          'distancePhoria.type': 'exo',
+          'distancePhoria.amount': '6',
+          'nearPhoria.type': 'exo',
+          'nearPhoria.amount': '12',
+          'npc.break': '6',
+          'npc.recovery': '9',
+          'nearVergence.bi.blur': '12',
+          'nearVergence.bi.break': '18',
+          'nearVergence.bi.recovery': '12',
+          'nearVergence.bo.blur': '12',
+          'nearVergence.bo.break': '18',
+          'nearVergence.bo.recovery': '12',
+          'aa.OD': '8',
+          'aa.OS': '8',
+          'maf.OD': '12',
+          'maf.OS': '12',
+          'maf.difficulty': 'neither',
+          'baf.cyclesPerMin': '12',
+          'baf.difficulty': 'neither',
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Findings consistent with Convergence Insufficiency pattern')).toBeInTheDocument();
+    expect(screen.getAllByText(/Accommodative Insufficiency/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Confirmation recommended if clinically indicated/)).toBeInTheDocument();
+    expect(container.querySelector('.rx-summary-pattern-possible')).not.toBeNull();
+  });
+
   it('splits measurements into a compact "Key measurements" view and a collapsed "All measurements"', () => {
     render(
       <BinocularSummary

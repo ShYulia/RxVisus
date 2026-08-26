@@ -129,6 +129,47 @@ const CASE_5_AE = {
   'baf.difficulty': 'plus',
 };
 
+// 19-year-old patient reviewed during the AI-confidence CTS follow-up: bilateral reduced AA
+// with normal MAF/BAF no longer upgrades Accommodative Insufficiency to "consistent" on its
+// own — it should read as a secondary "possible" finding alongside the (independently
+// well-supported) Convergence Insufficiency primary, not "Mixed".
+const CASE_6_CI_WITH_POSSIBLE_AI = {
+  'age.value': '19',
+  symptoms: 'nearBlur,headache',
+  'distancePhoria.type': 'exo',
+  'distancePhoria.amount': '6',
+  'nearPhoria.type': 'exo',
+  'nearPhoria.amount': '12',
+  'npc.break': '6',
+  'npc.recovery': '9',
+  'nearVergence.bi.blur': '12',
+  'nearVergence.bi.break': '18',
+  'nearVergence.bi.recovery': '12',
+  'nearVergence.bo.blur': '12',
+  'nearVergence.bo.break': '18',
+  'nearVergence.bo.recovery': '12',
+  'aa.OD': '8',
+  'aa.OS': '8',
+  'maf.OD': '12',
+  'maf.OS': '12',
+  'maf.difficulty': 'neither',
+  'baf.cyclesPerMin': '12',
+  'baf.difficulty': 'neither',
+};
+
+// Isolated case (no vergence finding at all) proving bilateral reduced AA + an independent
+// accommodative corroborator (minus-side MAF/BAF difficulty) CAN still reach "consistent".
+const CASE_7_AI_UPGRADED_BY_FACILITY = {
+  'age.value': '20',
+  'distancePhoria.type': 'ortho',
+  'nearPhoria.type': 'ortho',
+  'aa.OD': '5',
+  'aa.OS': '5',
+  'maf.OD': '5',
+  'maf.OS': '5',
+  'maf.difficulty': 'minus',
+};
+
 describe('CTS regression — Case 1: normal / well-compensated', () => {
   const data = parseBinocularFindings(CASE_1_NORMAL);
 
@@ -237,5 +278,51 @@ describe('CTS regression — Case 5: Accommodative Excess', () => {
     expect(result.patterns.find((p) => p.id === 'ai')).toBeUndefined();
     expect(result.patterns.find((p) => p.id === 'basic-exo')).toBeUndefined();
     expect(result.category).not.toBe('mixed');
+  });
+});
+
+describe('CTS regression — Case 6: Convergence Insufficiency with a secondary possible Accommodative Insufficiency (not Mixed)', () => {
+  const data = parseBinocularFindings(CASE_6_CI_WITH_POSSIBLE_AI);
+
+  it('Full Assessment reports CI as the consistent primary and AI as a possible secondary finding, and does NOT classify Mixed', () => {
+    const result = interpretBinocularAssessment(data);
+    expect(result.category).toBe('pattern');
+    expect(result.category).not.toBe('mixed');
+    expect(result.headline).toBe('Findings consistent with Convergence Insufficiency pattern');
+
+    expect(result.patterns.length).toBe(2);
+    const [primary, secondary] = result.patterns;
+    expect(primary.id).toBe('ci');
+    expect(primary.confidence).toBe('consistent');
+    expect(secondary.id).toBe('ai');
+    expect(secondary.confidence).toBe('possible');
+  });
+
+  it('AI stays possible because bilateral reduced AA is the required finding, not two independent corroborators, and normal MAF/BAF supply none', () => {
+    const ai = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ai');
+    expect(ai?.supportingFindings.some((f) => /AA OD 8D below age-expected minimum \(~10\.3D\)/.test(f))).toBe(true);
+    expect(ai?.supportingFindings.some((f) => /AA OS 8D below age-expected minimum \(~10\.3D\)/.test(f))).toBe(true);
+    expect(ai?.supportingFindings.some((f) => /MAF|BAF/.test(f))).toBe(false);
+    expect(ai?.note).toMatch(/MAF\/BAF provide no additional corroborating accommodative abnormality/i);
+    expect(ai?.note).toMatch(/does not rule out Accommodative Insufficiency/i);
+  });
+
+  it('CI itself is untouched: still consistent from the phoria-delta and failed near Sheard\'s findings', () => {
+    const ci = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ci');
+    expect(ci?.confidence).toBe('consistent');
+    expect(ci?.supportingFindings.some((f) => /near exophoria.*greater than distance/i.test(f))).toBe(true);
+    expect(ci?.supportingFindings.some((f) => /Sheard.*failed.*BO/i.test(f))).toBe(true);
+  });
+});
+
+describe('CTS regression — Case 7: bilateral reduced AA upgraded to consistent by MAF corroboration', () => {
+  it('Accommodative Insufficiency reaches "consistent" when bilateral reduced AA is accompanied by minus-side MAF difficulty', () => {
+    const data = parseBinocularFindings(CASE_7_AI_UPGRADED_BY_FACILITY);
+    const result = interpretBinocularAssessment(data);
+    expect(result.category).toBe('pattern');
+    const ai = result.patterns.find((p) => p.id === 'ai');
+    expect(ai).toBeDefined();
+    expect(ai?.confidence).toBe('consistent');
+    expect(ai?.note).toBeUndefined();
   });
 });

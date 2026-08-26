@@ -119,7 +119,7 @@ describe('interpretBinocularAssessment', () => {
     expect(interpretBinocularAssessment(bothSides).patterns.find((p) => p.id === 'ainfac')).toBeDefined();
   });
 
-  it('combines a vergence pattern and an accommodative pattern as "mixed"', () => {
+  it('combines a vergence pattern and an accommodative pattern as "mixed" (AI needs facility corroboration, not just bilateral AA, to be genuinely consistent)', () => {
     const data = parseBinocularFindings({
       'distancePhoria.type': 'ortho',
       'nearPhoria.type': 'exo',
@@ -128,17 +128,19 @@ describe('interpretBinocularAssessment', () => {
       'age.value': '20',
       'aa.OD': '4',
       'aa.OS': '4',
+      'maf.difficulty': 'minus',
     });
     const result = interpretBinocularAssessment(data);
     expect(result.category).toBe('mixed');
     expect(result.patterns.length).toBe(2);
   });
 
-  it('does NOT call it "mixed" when only one side is independently well-supported — prefers the single primary pattern', () => {
-    // Genuine (consistent) Accommodative Insufficiency, plus a same-type distance/near
-    // exophoria that only barely clears the Basic Exophoria gate (possible, single supporting
-    // finding) — the weak vergence match should not demote a well-supported accommodative
-    // finding to "mixed".
+  it('does NOT call it "mixed" when only one side is independently well-supported — prefers the single primary pattern, retaining the weaker match as a secondary finding', () => {
+    // Genuine (consistent) Accommodative Insufficiency — bilateral reduced AA plus MAF
+    // corroboration — alongside a same-type distance/near exophoria that only barely clears the
+    // Basic Exophoria gate (possible, single supporting finding). The weak vergence match must
+    // not demote the well-supported accommodative finding to "mixed", but it also must not be
+    // dropped entirely — it stays visible as a secondary finding behind the primary.
     const data = parseBinocularFindings({
       'distancePhoria.type': 'exo',
       'distancePhoria.amount': '8',
@@ -147,11 +149,78 @@ describe('interpretBinocularAssessment', () => {
       'age.value': '20',
       'aa.OD': '4',
       'aa.OS': '4',
+      'maf.difficulty': 'minus',
     });
     const result = interpretBinocularAssessment(data);
     expect(result.category).toBe('pattern');
-    expect(result.patterns.length).toBe(1);
+    expect(result.patterns.length).toBe(2);
     expect(result.patterns[0].id).toBe('ai');
+    expect(result.patterns[0].confidence).toBe('consistent');
+    expect(result.patterns[1].id).toBe('basic-exo');
+    expect(result.patterns[1].confidence).toBe('possible');
+  });
+
+  describe('Accommodative Insufficiency confidence — bilateral AA is the required finding, not two independent corroborators', () => {
+    it('bilateral reduced AA alone (no MAF/BAF corroboration) is only "possible", with a note explaining why', () => {
+      const data = parseBinocularFindings({ 'age.value': '20', 'aa.OD': '4', 'aa.OS': '4', 'distancePhoria.type': 'ortho' });
+      const ai = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ai');
+      expect(ai?.confidence).toBe('possible');
+      expect(ai?.note).toMatch(/MAF\/BAF provide no additional corroborating/i);
+    });
+
+    it('bilateral reduced AA + MAF minus/both difficulty upgrades to "consistent"', () => {
+      const data = parseBinocularFindings({
+        'age.value': '20',
+        'aa.OD': '4',
+        'aa.OS': '4',
+        'distancePhoria.type': 'ortho',
+        'maf.difficulty': 'minus',
+      });
+      const ai = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ai');
+      expect(ai?.confidence).toBe('consistent');
+      expect(ai?.note).toBeUndefined();
+    });
+
+    it('bilateral reduced AA + BAF minus/both difficulty also upgrades to "consistent"', () => {
+      const data = parseBinocularFindings({
+        'age.value': '20',
+        'aa.OD': '4',
+        'aa.OS': '4',
+        'distancePhoria.type': 'ortho',
+        'baf.difficulty': 'both',
+      });
+      const ai = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ai');
+      expect(ai?.confidence).toBe('consistent');
+    });
+
+    it('normal MAF/BAF does not exclude AI — the pattern still matches, just stays "possible"', () => {
+      const data = parseBinocularFindings({
+        'age.value': '20',
+        'aa.OD': '4',
+        'aa.OS': '4',
+        'distancePhoria.type': 'ortho',
+        'maf.OD': '12',
+        'maf.OS': '12',
+        'maf.difficulty': 'neither',
+        'baf.cyclesPerMin': '12',
+        'baf.difficulty': 'neither',
+      });
+      const ai = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ai');
+      expect(ai).toBeDefined();
+      expect(ai?.confidence).toBe('possible');
+    });
+
+    it('unilateral reduced AA stays "possible" even with facility corroboration (bilaterality is still required)', () => {
+      const data = parseBinocularFindings({
+        'age.value': '20',
+        'aa.OD': '4',
+        'aa.OS': '12',
+        'distancePhoria.type': 'ortho',
+        'maf.difficulty': 'minus',
+      });
+      const ai = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ai');
+      expect(ai?.confidence).toBe('possible');
+    });
   });
 
   it('stops with the short "no significant dysfunction" message (no symptoms sentence) when there are no reported symptoms', () => {

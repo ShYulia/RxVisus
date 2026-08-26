@@ -100,7 +100,10 @@ function reassuranceLine(interpretation: BinocularInterpretation): string | unde
 }
 
 function managementFor(interpretation: BinocularInterpretation): ManagementConsiderations | undefined {
-  if (interpretation.category === 'pattern' && interpretation.patterns.length === 1) {
+  // 'pattern' always carries its primary finding first, whether it's the sole match or paired
+  // with a secondary 'possible' finding (see interpretBinocularAssessment) — management follows
+  // the primary either way.
+  if (interpretation.category === 'pattern' && interpretation.patterns.length >= 1) {
     return getManagementConsiderations(interpretation.patterns[0].id);
   }
   if (interpretation.category === 'mixed' && interpretation.patterns.length === 2) {
@@ -134,7 +137,7 @@ const BinocularSummary: React.FC<BinocularSummaryProps> = ({ findings }) => {
       <p className="rx-summary-headline rx-summary-headline-dominant">{interpretation.headline}</p>
 
       {interpretation.patterns.map((pattern) => (
-        <div key={pattern.id} className="rx-summary-pattern">
+        <div key={pattern.id} className={pattern.confidence === 'possible' ? 'rx-summary-pattern rx-summary-pattern-possible' : 'rx-summary-pattern'}>
           <p className="rx-summary-pattern-label">
             {pattern.label} <span className="rx-summary-pattern-confidence">({pattern.confidence})</span>
           </p>
@@ -143,6 +146,7 @@ const BinocularSummary: React.FC<BinocularSummaryProps> = ({ findings }) => {
               <li key={finding}>{finding}</li>
             ))}
           </ul>
+          {pattern.note && <p className="rx-summary-pattern-note">{pattern.note}</p>}
         </div>
       ))}
 

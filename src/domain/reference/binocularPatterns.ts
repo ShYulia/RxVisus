@@ -17,6 +17,12 @@ export interface PatternMatch {
   label: string;
   confidence: 'consistent' | 'possible';
   supportingFindings: string[];
+  /**
+   * Optional short, conservative caveat — distinct from the evidentiary `supportingFindings` —
+   * e.g. explaining why a match stayed "possible" rather than being promoted to "consistent".
+   * Rendered separately, never treated as an additional finding.
+   */
+  note?: string;
 }
 
 export type InterpretationCategory = 'pattern' | 'mixed' | 'no-pattern' | 'insufficient-data';
@@ -173,10 +179,24 @@ function checkAccommodativeInsufficiency(data: ParsedBinocularData): PatternMatc
   const supporting: string[] = [];
   if (odLow) supporting.push(`AA OD ${data.aaOD}D below age-expected minimum (~${minExpected.toFixed(1)}D)`);
   if (osLow) supporting.push(`AA OS ${data.aaOS}D below age-expected minimum (~${minExpected.toFixed(1)}D)`);
-  if (data.maf?.difficulty === 'minus' || data.maf?.difficulty === 'both') supporting.push('Difficulty clearing −2.00 D on MAF');
-  if (data.baf?.difficulty === 'minus' || data.baf?.difficulty === 'both') supporting.push('Difficulty clearing −2.00 D on BAF');
+  const mafCorroborates = data.maf?.difficulty === 'minus' || data.maf?.difficulty === 'both';
+  const bafCorroborates = data.baf?.difficulty === 'minus' || data.baf?.difficulty === 'both';
+  if (mafCorroborates) supporting.push('Difficulty clearing −2.00 D on MAF');
+  if (bafCorroborates) supporting.push('Difficulty clearing −2.00 D on BAF');
 
-  return { id: 'ai', label: 'Accommodative Insufficiency', confidence: odLow && osLow ? 'consistent' : 'possible', supportingFindings: supporting };
+  // Bilateral reduced AA is the required finding, not two independent corroborators — OD and OS
+  // are the same accommodative system read twice, not two different findings agreeing (true AI
+  // is characteristically symmetric). "Consistent" needs bilaterality PLUS an independent
+  // accommodative corroborator (MAF/BAF minus-side difficulty). Normal facility doesn't
+  // contradict AI — it just supplies no corroboration, so the result stays "possible" rather
+  // than being ruled out.
+  const consistent = odLow && osLow && (mafCorroborates || bafCorroborates);
+  const note =
+    !consistent && !mafCorroborates && !bafCorroborates
+      ? 'MAF/BAF provide no additional corroborating accommodative abnormality — normal facility does not rule out Accommodative Insufficiency. Confirmation recommended if clinically indicated.'
+      : undefined;
+
+  return { id: 'ai', label: 'Accommodative Insufficiency', confidence: consistent ? 'consistent' : 'possible', supportingFindings: supporting, note };
 }
 
 function checkAccommodativeExcess(data: ParsedBinocularData): PatternMatch | null {
@@ -265,7 +285,16 @@ export function interpretBinocularAssessment(data: ParsedBinocularData): Binocul
     if (v.confidence === 'consistent' && a.confidence === 'consistent') {
       return { category: 'mixed', headline: 'Mixed binocular/accommodative findings', patterns: [v, a] };
     }
-    const primary = v.confidence === 'consistent' ? v : a.confidence === 'consistent' ? a : v.supportingFindings.length >= a.supportingFindings.length ? v : a;
+    if (v.confidence === 'consistent' || a.confidence === 'consistent') {
+      // Exactly one side is well-supported: that's the primary finding. The other, weaker
+      // ('possible') match is retained as a secondary/additional finding — visible via its own
+      // 'possible' confidence — rather than silently dropped, and it must not be promoted to
+      // compete with the primary as if equally established.
+      const primary = v.confidence === 'consistent' ? v : a;
+      const secondary = v.confidence === 'consistent' ? a : v;
+      return { category: 'pattern', headline: `${patternHeadline(primary)} pattern`, patterns: [primary, secondary] };
+    }
+    const primary = v.supportingFindings.length >= a.supportingFindings.length ? v : a;
     return { category: 'pattern', headline: `${patternHeadline(primary)} pattern`, patterns: [primary] };
   }
   if (vergenceMatches.length === 1) {
