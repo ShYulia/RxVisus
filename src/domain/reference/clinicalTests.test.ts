@@ -63,6 +63,32 @@ describe('clinicalTests point-of-care shape', () => {
   });
 });
 
+describe('NRA/PRA <-> MAF direction mapping (regression: this pairing was previously inverted)', () => {
+  // Reduced PRA (can't stimulate more accommodation) corroborates MINUS-side MAF difficulty
+  // (also a stimulate-accommodation limitation) and points toward Accommodative Insufficiency —
+  // never plus-side, which is the Accommodative Excess direction instead.
+  it('nra-pra-test pairs low PRA with minus-side MAF difficulty, not plus-side', () => {
+    const test = getClinicalTest('nra-pra-test')!;
+    const allText = [test.quickInterpretReminder, ...(test.moreSections?.flatMap((s) => s.items) ?? [])].join(' ');
+    expect(allText).toMatch(/low PRA[^.]*minus-side/i);
+    expect(allText).not.toMatch(/PRA[^.]*plus-side/i);
+  });
+
+  it('percival-criterion pairs reduced PRA with minus-side MAF difficulty, not plus-side', () => {
+    const test = getClinicalTest('percival-criterion')!;
+    const allText = test.moreSections!.flatMap((s) => s.items).join(' ');
+    expect(allText).toMatch(/reduced PRA\/minus-side/i);
+    expect(allText).not.toMatch(/PRA\/plus-side/i);
+  });
+
+  it('the Monocular Accommodative Facility card itself still states the correct direction (unchanged reference point)', () => {
+    const maf = getClinicalTest('monocular-accommodative-facility-test')!;
+    const details = maf.moreSections!.flatMap((section) => section.items).join(' ');
+    expect(details).toMatch(/clearing PLUS suggests difficulty relaxing/i);
+    expect(details).toMatch(/clearing MINUS suggests difficulty stimulating/i);
+  });
+});
+
 describe('searchClinicalTests', () => {
   it('returns every test for an empty query', () => {
     expect(searchClinicalTests('')).toEqual(clinicalTests);

@@ -60,16 +60,22 @@ const checkConvergenceExcess: PatternCheck = (data, nearSheard) => {
   if (near.amount - distanceEso <= BINOCULAR_NORMS.phoriaSimilarMarginDelta) return null;
 
   const supporting = [`Near esophoria (${near.amount}Δ) greater than distance (${distanceEso}Δ)`];
+  // Symptoms are shown for context but are nonspecific — compatible with several patterns, so
+  // (like Accommodative Insufficiency) they don't count toward promoting confidence on their
+  // own. Only genuinely independent objective findings (failed Sheard's, elevated AC/A) do.
+  let corroboration = 0;
   const nearSymptomatic = ['nearStrain', 'headache', 'nearBlur'].some((k) => data.symptoms.has(k));
   if (nearSymptomatic) supporting.push('Near-specific symptoms reported');
   if (nearSheard.applicable && nearSheard.compensatingDirection === 'bi' && nearSheard.pass === false) {
     supporting.push(`Near Sheard's criterion failed (BI ${nearSheard.reserveSource} ${nearSheard.reserveUsed}Δ)`);
+    corroboration++;
   }
   if (data.acaGradient !== undefined && data.acaGradient > BINOCULAR_NORMS.acaHighAboveRatio) {
     supporting.push(`Elevated AC/A ratio (${data.acaGradient}Δ/D)`);
+    corroboration++;
   }
 
-  return { id: 'ce', label: 'Convergence Excess', confidence: supporting.length > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
+  return { id: 'ce', label: 'Convergence Excess', confidence: corroboration > 0 ? 'consistent' : 'possible', supportingFindings: supporting };
 };
 
 const checkDivergenceInsufficiency: PatternCheck = (data, _near, distanceSheard) => {
@@ -125,8 +131,10 @@ function checkBasicPhoria(data: ParsedBinocularData, type: 'exo' | 'eso', nearSh
   const label = type === 'exo' ? 'Basic Exophoria' : 'Basic Esophoria';
   const supporting = [`Similar ${type}phoria at distance (${distance.amount}Δ) and near (${near.amount}Δ)`];
   // Corroboration count is separate from the gate itself: satisfying the gate one way (e.g.
-  // magnitude alone, with no Sheard data and no symptoms) stays "possible" — confidence only
-  // rises to "consistent" once a second, independent piece of evidence lines up too.
+  // magnitude alone, with no Sheard data) stays "possible" — confidence only rises to
+  // "consistent" once the other independent, objective piece of evidence lines up too. A generic
+  // symptom is shown for context but — being symptomatic is never enough on its own to cross
+  // that line — never counts as the corroborator, matching the standard applied elsewhere.
   let corroboration = 0;
   if (sheardFailed) {
     supporting.push(`Near Sheard's criterion failed (${nearSheard.compensatingDirection?.toUpperCase()} ${nearSheard.reserveSource} ${nearSheard.reserveUsed}Δ)`);
@@ -138,7 +146,6 @@ function checkBasicPhoria(data: ParsedBinocularData, type: 'exo' | 'eso', nearSh
   }
   if (data.symptoms.size > 0 && !data.symptoms.has('none')) {
     supporting.push('Symptomatic');
-    corroboration++;
   }
 
   return { id: type === 'exo' ? 'basic-exo' : 'basic-eso', label, confidence: corroboration > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
@@ -209,7 +216,16 @@ function checkAccommodativeExcess(data: ParsedBinocularData): PatternMatch | nul
   if (bafPlus) supporting.push('Difficulty clearing +2.00 D on BAF');
   if (data.symptoms.has('nearBlur') || data.symptoms.has('headache')) supporting.push('Near blur/headache symptoms reported');
 
-  return { id: 'ae', label: 'Accommodative Excess', confidence: supporting.length > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
+  // MAF and BAF are two different procedures (monocular vs. binocular — see the BAF card's own
+  // "why the comparison against MAF is the point"), so concordant plus-side difficulty on BOTH
+  // is genuine independent corroboration. Nonspecific near symptoms are shown for context but,
+  // same standard as Accommodative Insufficiency, don't promote confidence on their own.
+  const consistent = mafPlus && bafPlus;
+  const note = !consistent
+    ? 'Only one facility direction (MAF or BAF) shows plus-side difficulty, and symptoms alone do not independently corroborate this pattern. Confirmation recommended if clinically indicated.'
+    : undefined;
+
+  return { id: 'ae', label: 'Accommodative Excess', confidence: consistent ? 'consistent' : 'possible', supportingFindings: supporting, note };
 }
 
 function checkAccommodativeInfacility(data: ParsedBinocularData): PatternMatch | null {
@@ -224,7 +240,13 @@ function checkAccommodativeInfacility(data: ParsedBinocularData): PatternMatch |
   if (data.maf?.od !== undefined && data.maf.od < BINOCULAR_NORMS.mafNotableBelowCpm) supporting.push(`Reduced MAF OD (${data.maf.od} cycles/min)`);
   if (data.maf?.os !== undefined && data.maf.os < BINOCULAR_NORMS.mafNotableBelowCpm) supporting.push(`Reduced MAF OS (${data.maf.os} cycles/min)`);
 
-  return { id: 'ainfac', label: 'Accommodative Infacility', confidence: supporting.length > 1 ? 'consistent' : 'possible', supportingFindings: supporting };
+  // Same standard as Accommodative Excess: MAF and BAF are different procedures, so both showing
+  // both-direction difficulty is genuine corroboration. Refocusing symptoms and the MAF cpm
+  // figures are shown for context but don't count — the cpm figures come from the same MAF
+  // sitting already counted via mafBoth, not an independent test.
+  const consistent = mafBoth && bafBoth;
+
+  return { id: 'ainfac', label: 'Accommodative Infacility', confidence: consistent ? 'consistent' : 'possible', supportingFindings: supporting };
 }
 
 const VERGENCE_CHECKS: PatternCheck[] = [

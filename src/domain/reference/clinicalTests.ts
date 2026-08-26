@@ -900,7 +900,7 @@ export const clinicalTests: ClinicalTest[] = [
       'PATIENT REPORTS: sustained first blur — stop, read the total power added',
     ],
     whatToNote: ['Total plus power added before sustained blur (NRA)', 'Total minus power added before sustained blur (PRA)'],
-    quickInterpretReminder: 'Low PRA with plus-side MAF difficulty tend to corroborate each other — read them together, not in isolation.',
+    quickInterpretReminder: 'Low PRA with minus-side MAF difficulty tend to corroborate each other — read them together, not in isolation.',
     moreSections: [
       {
         heading: 'What it assesses / why we perform it',
@@ -918,7 +918,7 @@ export const clinicalTests: ClinicalTest[] = [
       {
         heading: 'Interpreting the result',
         items: [
-          "Low PRA (can't stimulate much more accommodation) corroborates a plus-side Monocular Accommodative Facility difficulty and points toward Accommodative Insufficiency as the shared explanation for both findings.",
+          "Low PRA (can't stimulate much more accommodation) corroborates a minus-side Monocular Accommodative Facility difficulty and points toward Accommodative Insufficiency as the shared explanation for both findings.",
           "Low NRA (can't relax accommodation as much as expected) is associated with an Accommodative Excess pattern rather than insufficiency — the opposite direction of problem.",
           'Neither figure is diagnostic alone — the value of NRA/PRA is in how it corroborates (or fails to corroborate) other accommodative findings such as Amplitude, MAF/BAF, and Percival\'s Criterion, not as a standalone pass/fail number.',
         ],
@@ -999,7 +999,7 @@ export const clinicalTests: ClinicalTest[] = [
       'Briefly interpose a plus or minus lens (under a second)',
       'Find the power that neutralizes the reflex (motion stops)',
     ],
-    whatToNote: ['Lag or lead amount, in diopters', 'Whether OD and OS differ'],
+    whatToNote: ['Lag or lead amount, in diopters (recorded signed: + = lag, − = lead)', 'Whether OD and OS differ'],
     interpret: [
       { finding: 'With-motion (needs plus to neutralize)', meaning: 'Accommodative lag — under-accommodating for the target.' },
       { finding: 'Against-motion (needs minus to neutralize)', meaning: 'Accommodative lead — over-accommodating for the target.' },
@@ -1057,7 +1057,7 @@ export const clinicalTests: ClinicalTest[] = [
     youNeed: ['Retinoscope', 'Near target with small text', 'Working-distance scale (tape measure or marked rod)'],
     meta: ['HABITUAL CORRECTION IN PLACE', 'PATIENT READING THE TARGET ALOUD'],
     doSteps: ['Move the retinoscope toward/away from the target', 'Find the working distance where the reflex neutralizes (motion stops)', 'Read the working distance at that point'],
-    whatToNote: ['Working distance at neutral', 'Lag or lead amount'],
+    whatToNote: ['Working distance at neutral', 'Lag or lead amount (recorded signed: + = lag, − = lead)'],
     interpret: [
       { finding: 'Neutral point beyond the target', meaning: 'Accommodative lag — under-accommodating for the target.' },
       { finding: 'Neutral point short of the target', meaning: 'Accommodative lead — over-accommodating for the target.' },
@@ -1238,7 +1238,7 @@ export const clinicalTests: ClinicalTest[] = [
       {
         heading: 'Interpreting the result',
         items: [
-          'A resting point pushed toward the PRA end (little room left to stimulate further) with symptoms and reduced PRA/plus-side MAF difficulty corroborating each other points toward the near correction asking too much of a limited accommodative reserve.',
+          'A resting point pushed toward the PRA end (little room left to stimulate further) with symptoms and reduced PRA/minus-side MAF difficulty corroborating each other points toward the near correction asking too much of a limited accommodative reserve.',
           'A resting point pushed toward the NRA end likewise suggests little room left to relax accommodation further under this same range.',
           "Outside the middle third is a finding to weigh alongside symptoms and MAF/BAF — like Sheard's, it is not a standalone prescribing or treatment rule.",
         ],

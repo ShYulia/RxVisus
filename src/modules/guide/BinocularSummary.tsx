@@ -1,5 +1,5 @@
 import { getManagementConsiderations, NO_PATTERN_MANAGEMENT, type ManagementConsiderations } from '../../domain/reference/binocularManagement';
-import { parseBinocularFindings, type ParsedBinocularData, type Phoria, type VergencePair } from '../../domain/reference/binocularFindings';
+import { parseBinocularFindings, type MemNottFinding, type ParsedBinocularData, type Phoria, type VergencePair } from '../../domain/reference/binocularFindings';
 import { interpretBinocularAssessment, type BinocularInterpretation } from '../../domain/reference/binocularPatterns';
 import { SYMPTOM_LABELS } from '../../domain/reference/binocularQuickScreen';
 import { evaluateDistanceSheard, evaluateNearSheard, type SheardResult } from '../../domain/reference/binocularSheard';
@@ -34,6 +34,17 @@ function formatVergence(pair?: VergencePair): string | undefined {
 function formatSheard(label: string, sheard: SheardResult): string | undefined {
   if (!sheard.applicable) return undefined;
   return `${label} Sheard's: ${sheard.pass ? 'PASS' : 'FAIL'} (${sheard.compensatingDirection?.toUpperCase()} ${sheard.reserveSource} ${sheard.reserveUsed}Δ vs. ${sheard.phoriaAmount}Δ phoria)`;
+}
+
+function formatSignedD(value: number): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}D`;
+}
+
+/** Signed per-eye lag(+)/lead(−) — see MemNottFinding. Omits an eye that wasn't recorded. */
+function formatMemNott(finding?: MemNottFinding): string | undefined {
+  if (!finding) return undefined;
+  const parts = [finding.od !== undefined && `OD ${formatSignedD(finding.od)}`, finding.os !== undefined && `OS ${formatSignedD(finding.os)}`].filter(Boolean);
+  return parts.length > 0 ? parts.join('  ') : undefined;
 }
 
 function formatSymptoms(data: ParsedBinocularData): string | undefined {
@@ -85,7 +96,7 @@ function buildAllRows(data: ParsedBinocularData, nearSheard: SheardResult, dista
       label: 'Vergence facility',
       value: data.vergenceFacilityUnavailable ? 'Equipment not available' : data.vergenceFacilityCpm !== undefined ? `${data.vergenceFacilityCpm} cycles/min` : undefined,
     },
-    { label: 'MEM / Nott retinoscopy', value: data.memNott },
+    { label: 'MEM / Nott retinoscopy', value: formatMemNott(data.memNott) },
     { label: 'Stereoacuity', value: data.stereoacuity },
   ];
 }

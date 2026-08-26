@@ -35,6 +35,18 @@ export interface FacilityFinding {
   difficulty?: MafDifficulty;
 }
 
+/**
+ * MEM/Nott lag or lead, per eye, in diopters — signed so it can eventually be classified without
+ * regex-parsing free text: positive = lag (the neutralizing lens was plus), negative = lead (the
+ * neutralizing lens was minus), matching the sign convention on the mem-retinoscopy-test/
+ * nott-retinoscopy-test cards. Not yet consumed by the pattern-matching layer — see
+ * binocularPatterns.ts — pending a clinically validated notability threshold.
+ */
+export interface MemNottFinding {
+  od?: number;
+  os?: number;
+}
+
 export interface ParsedBinocularData {
   age?: number;
   /** Symptom keys the clinician selected — see SYMPTOM_OPTIONS in clinicalPathways.ts. */
@@ -55,7 +67,7 @@ export interface ParsedBinocularData {
   pra?: number;
   vergenceFacilityCpm?: number;
   vergenceFacilityUnavailable?: boolean;
-  memNott?: string;
+  memNott?: MemNottFinding;
   stereoacuity?: string;
   entryMode?: 'quick' | 'full';
   diplopiaNew?: boolean;
@@ -113,6 +125,10 @@ export function parseBinocularFindings(findings: Record<string, string>): Parsed
   const bafDifficulty = str(findings, 'baf.difficulty') as MafDifficulty | undefined;
   const hasBaf = bafCpm !== undefined || bafDifficulty !== undefined;
 
+  const memNottOD = num(findings, 'memNott.OD');
+  const memNottOS = num(findings, 'memNott.OS');
+  const hasMemNott = memNottOD !== undefined || memNottOS !== undefined;
+
   return {
     age: num(findings, 'age.value'),
     symptoms,
@@ -131,7 +147,7 @@ export function parseBinocularFindings(findings: Record<string, string>): Parsed
     pra: num(findings, 'pra.value'),
     vergenceFacilityCpm: num(findings, 'vergenceFacility.cyclesPerMin'),
     vergenceFacilityUnavailable: str(findings, 'vergenceFacility.status') === 'unavailable',
-    memNott: str(findings, 'memNott.value'),
+    memNott: hasMemNott ? { od: memNottOD, os: memNottOS } : undefined,
     stereoacuity: str(findings, 'stereoacuity.value'),
     entryMode: str(findings, 'entryMode') as 'quick' | 'full' | undefined,
     diplopiaNew: str(findings, 'diplopiaNew') === 'yes' ? true : str(findings, 'diplopiaNew') === 'no' ? false : undefined,

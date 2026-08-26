@@ -997,8 +997,11 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         kind: 'text-entry',
         id: 'mem-nott',
         question: 'MEM / Nott Dynamic Retinoscopy',
-        fields: [{ key: 'memNott.value', label: 'Finding', required: true }],
-        helperText: 'e.g. "+0.50 lag OU" or "plano".',
+        fields: [
+          { key: 'memNott.OD', label: 'OD (D)' },
+          { key: 'memNott.OS', label: 'OS (D)' },
+        ],
+        helperText: 'Signed lag/lead in D: + = lag (plus neutralizes), − = lead (minus neutralizes). E.g. "+0.50". Use "0" for plano/neutral; leave a field blank if that eye wasn\'t assessed separately.',
         testIds: ['mem-retinoscopy-test', 'nott-retinoscopy-test'],
         skippable: true,
         next: 'optional-menu',

@@ -223,6 +223,106 @@ describe('interpretBinocularAssessment', () => {
     });
   });
 
+  describe('Convergence Excess confidence — nonspecific near symptoms do not independently corroborate (audit fix, mirrors CI/AI standard)', () => {
+    it('near esophoria greater than distance, with only near symptoms and no objective corroboration, stays "possible"', () => {
+      const data = parseBinocularFindings({
+        symptoms: 'headache,nearBlur',
+        'distancePhoria.type': 'eso',
+        'distancePhoria.amount': '1',
+        'nearPhoria.type': 'eso',
+        'nearPhoria.amount': '10',
+      });
+      const ce = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ce');
+      expect(ce).toBeDefined();
+      expect(ce?.confidence).toBe('possible');
+      expect(ce?.supportingFindings.some((f) => /symptoms/i.test(f))).toBe(true);
+    });
+
+    it('near esophoria + a failed near Sheard\'s (BI) reaches "consistent" without needing symptoms', () => {
+      const data = parseBinocularFindings({
+        'distancePhoria.type': 'eso',
+        'distancePhoria.amount': '1',
+        'nearPhoria.type': 'eso',
+        'nearPhoria.amount': '10',
+        'nearVergence.bi.break': '8',
+      });
+      const ce = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ce');
+      expect(ce?.confidence).toBe('consistent');
+    });
+
+    it('near esophoria + an elevated Gradient AC/A reaches "consistent"', () => {
+      const data = parseBinocularFindings({
+        'distancePhoria.type': 'eso',
+        'distancePhoria.amount': '1',
+        'nearPhoria.type': 'eso',
+        'nearPhoria.amount': '10',
+        'acaGradient.value': '8',
+      });
+      const ce = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ce');
+      expect(ce?.confidence).toBe('consistent');
+    });
+  });
+
+  describe('Accommodative Excess confidence — needs MAF and BAF concordance (two different tests), not symptoms alone', () => {
+    it('plus-side difficulty on only one of MAF/BAF, even with symptoms, stays "possible" with an explanatory note', () => {
+      const data = parseBinocularFindings({ symptoms: 'nearBlur,headache', 'distancePhoria.type': 'ortho', 'maf.difficulty': 'plus' });
+      const ae = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ae');
+      expect(ae).toBeDefined();
+      expect(ae?.confidence).toBe('possible');
+      expect(ae?.note).toMatch(/symptoms alone do not independently corroborate/i);
+    });
+
+    it('plus-side difficulty on BOTH MAF and BAF reaches "consistent"', () => {
+      const data = parseBinocularFindings({ 'distancePhoria.type': 'ortho', 'maf.difficulty': 'plus', 'baf.difficulty': 'plus' });
+      const ae = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ae');
+      expect(ae?.confidence).toBe('consistent');
+      expect(ae?.note).toBeUndefined();
+    });
+  });
+
+  describe('Accommodative Infacility confidence — needs MAF and BAF concordance, not symptoms or the MAF cpm figures alone', () => {
+    it('both-direction difficulty on only MAF, even with slow-refocus symptoms, stays "possible"', () => {
+      const data = parseBinocularFindings({ symptoms: 'slowRefocusNearToDistance', 'distancePhoria.type': 'ortho', 'maf.difficulty': 'both' });
+      const ainfac = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ainfac');
+      expect(ainfac).toBeDefined();
+      expect(ainfac?.confidence).toBe('possible');
+    });
+
+    it('both-direction difficulty on BOTH MAF and BAF reaches "consistent"', () => {
+      const data = parseBinocularFindings({ 'distancePhoria.type': 'ortho', 'maf.difficulty': 'both', 'baf.difficulty': 'both' });
+      const ainfac = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ainfac');
+      expect(ainfac?.confidence).toBe('consistent');
+    });
+  });
+
+  describe('Basic Exophoria confidence — a generic symptom does not substitute for the second objective corroborator', () => {
+    it('notable magnitude alone, even with symptoms, stays "possible"', () => {
+      const data = parseBinocularFindings({
+        symptoms: 'nearStrain',
+        'distancePhoria.type': 'exo',
+        'distancePhoria.amount': '9',
+        'nearPhoria.type': 'exo',
+        'nearPhoria.amount': '10',
+      });
+      const basicExo = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'basic-exo');
+      expect(basicExo).toBeDefined();
+      expect(basicExo?.confidence).toBe('possible');
+      expect(basicExo?.supportingFindings).toContain('Symptomatic');
+    });
+
+    it('notable magnitude + a failed Sheard\'s together (no symptoms needed) reach "consistent"', () => {
+      const data = parseBinocularFindings({
+        'distancePhoria.type': 'exo',
+        'distancePhoria.amount': '9',
+        'nearPhoria.type': 'exo',
+        'nearPhoria.amount': '10',
+        'nearVergence.bo.break': '12',
+      });
+      const basicExo = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'basic-exo');
+      expect(basicExo?.confidence).toBe('consistent');
+    });
+  });
+
   it('stops with the short "no significant dysfunction" message (no symptoms sentence) when there are no reported symptoms', () => {
     const data = parseBinocularFindings({
       symptoms: 'none',

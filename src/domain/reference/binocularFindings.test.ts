@@ -71,6 +71,16 @@ describe('parseBinocularFindings', () => {
     expect(parseBinocularFindings({}).diplopiaNew).toBeUndefined();
   });
 
+  it('parses MEM/Nott as structured signed per-eye diopters, not free text', () => {
+    const data = parseBinocularFindings({ 'memNott.OD': '0.50', 'memNott.OS': '-0.25' });
+    expect(data.memNott).toEqual({ od: 0.5, os: -0.25 });
+  });
+
+  it('leaves MEM/Nott undefined when neither eye was recorded, and allows one eye alone', () => {
+    expect(parseBinocularFindings({}).memNott).toBeUndefined();
+    expect(parseBinocularFindings({ 'memNott.OD': '0.50' }).memNott).toEqual({ od: 0.5, os: undefined });
+  });
+
   it('ignores blank strings as if the field were never entered', () => {
     const data = parseBinocularFindings({ 'age.value': '', 'npc.break': '  ' });
     expect(data.age).toBeUndefined();
