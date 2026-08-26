@@ -39,7 +39,14 @@ const MaddoxRodQuickCard: React.FC = () => {
       <SegmentedControl options={AXIS_OPTIONS} value={axis} onChange={(v) => setAxis(v as 'horizontal' | 'vertical')} />
       <p className="rx-quickcard-axis-note">Grooves {axis === 'horizontal' ? 'horizontal → vertical line' : 'vertical → horizontal line'}</p>
 
-      <ActionFlow steps={['Add prism in the direction the streak is offset', 'PATIENT REPORTS: line passes through the light — stop, read the amount off the bar/lens']} />
+      <ActionFlow
+        steps={[
+          'ASK: is the light on the line, or to one side?',
+          'Add prism, base in the direction the streak is offset',
+          'PATIENT REPORTS: line passes through the light — stop',
+          'RECORD the prism amount and base direction (e.g. 6Δ BO)',
+        ]}
+      />
 
       <div className="rx-finding-rows">
         <FindingRow diagram={<LineLightDiagram axis={axis} finding="through" />} meaning="Through the light" neutralize="Endpoint" isEndpoint />

@@ -115,6 +115,36 @@
   color: var(--rx-text-tertiary);
 }
 
+/* Double Maddox Rod: BEFORE -> ADJUST -> ENDPOINT sequence. */
+.rx-torsion-sequence {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.rx-torsion-sequence-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rx-torsion-sequence-label {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--rx-text-tertiary);
+}
+
+.rx-torsion-sequence-arrow {
+  flex: none;
+  font-size: 16px;
+  color: var(--rx-text-tertiary);
+}
+
 .rx-quickcard-axis-note {
   margin: 6px 0 0;
   font-size: 12px;
@@ -246,6 +276,17 @@
   font-size: 15.5px;
   font-weight: 700;
   color: var(--rx-text);
+}
+
+.rx-actionflow-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--rx-iris-deep);
+  background: var(--rx-iris-tint);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-bottom: 2px;
 }
 
 /* Test Card: strong visual anchor for the core repeating action (e.g. "+2.00 ↔ −2.00"). */
@@ -414,6 +455,31 @@
   margin-bottom: 0;
 }
 
+/* Parks 3-Step: progressive question -> answer -> localized muscle. */
+.rx-parks-step {
+  margin-top: 18px;
+}
+
+.rx-parks-step:first-child {
+  margin-top: 0;
+}
+
+.rx-parks-reset {
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--rx-iris-deep);
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--rx-iris-deep);
+  padding: 0;
+  cursor: pointer;
+}
+
+.rx-parks-caution {
+  margin-top: 20px;
+}
+
 /* Test Card: collapsed background info. */
 .rx-more-details {
   margin: 20px 4px 0;
@@ -439,6 +505,31 @@
   font-size: 13.5px;
   color: var(--rx-text-secondary);
   line-height: 1.5;
+}
+
+/* More / Interpretation: labeled subsections (the detailed teaching layer), as opposed to the
+   flat rx-more-details bullet list used by cards not yet reworked into this shape. */
+.rx-more-section {
+  margin-top: 14px;
+}
+
+.rx-more-section:first-child {
+  margin-top: 10px;
+}
+
+.rx-more-section-heading {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rx-text);
+}
+
+.rx-more-section ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* Collapsed breadcrumb — used on terminal (Summary/Final Rx) steps so the clinical result is

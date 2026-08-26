@@ -3,10 +3,15 @@ import { IonContent, IonPage } from '@ionic/react';
 import PageHeader from '../../components/PageHeader';
 import { getClinicalTest } from '../../domain/reference/clinicalTests';
 import ActionFlow from './ActionFlow';
+import ConvergenceDiagram from './ConvergenceDiagram';
+import CoverTestQuickCard from './CoverTestQuickCard';
 import DoubleMaddoxRodQuickCard from './DoubleMaddoxRodQuickCard';
 import { BAFQuickCard, MAFQuickCard, VergenceFacilityQuickCard } from './FacilityQuickCards';
 import MaddoxRodQuickCard from './MaddoxRodQuickCard';
+import Parks3StepSelector from './Parks3StepSelector';
+import PrismGaugeDiagram from './PrismGaugeDiagram';
 import SchoberQuickCard from './SchoberQuickCard';
+import StereoDepthDiagram from './StereoDepthDiagram';
 import Worth4DotQuickCard from './Worth4DotQuickCard';
 import './Guide.css';
 
@@ -14,10 +19,13 @@ import './Guide.css';
  * Test cards with a bespoke visual quick-reference layout instead of the generic text
  * sections below. This is the general pattern for any future point-of-care Test Card that
  * needs it — see SchoberQuickCard/MaddoxRodQuickCard (recognition image, SETUP, PATIENT SEES
- * -> MEANS -> NEUTRALIZE rows) and FacilityQuickCards (flip-sequence instruction cards for
- * MAF/BAF/Vergence Facility) for two different shapes of "not the generic template."
+ * -> MEANS -> NEUTRALIZE rows), FacilityQuickCards (flip-sequence instruction cards for
+ * MAF/BAF/Vergence Facility), CoverTestQuickCard (mode toggle between two techniques that
+ * answer different clinical questions), and Parks3StepSelector (progressive decision-tree
+ * card, no recognition/finding rows at all) for different shapes of "not the generic template."
  */
 const QUICK_CARDS: Record<string, React.FC> = {
+  'cover-test': CoverTestQuickCard,
   'schober-test': SchoberQuickCard,
   'maddox-rod': MaddoxRodQuickCard,
   'double-maddox-rod': DoubleMaddoxRodQuickCard,
@@ -25,6 +33,7 @@ const QUICK_CARDS: Record<string, React.FC> = {
   'monocular-accommodative-facility-test': MAFQuickCard,
   'binocular-accommodative-facility-test': BAFQuickCard,
   'vergence-facility-test': VergenceFacilityQuickCard,
+  'parks-3-step': Parks3StepSelector,
 };
 
 /**
@@ -33,6 +42,17 @@ const QUICK_CARDS: Record<string, React.FC> = {
  * section above them, or the same information would appear twice.
  */
 const SELF_CONTAINED_QUICK_CARDS = new Set(['monocular-accommodative-facility-test', 'binocular-accommodative-facility-test', 'vergence-facility-test']);
+
+/**
+ * A single supplementary illustration for a generic (non-QuickCard) test where seeing the
+ * procedure is substantially faster than describing it — rendered inline above the "How to"
+ * flow, not a replacement for the generic template the way QUICK_CARDS is.
+ */
+const DIAGRAMS: Record<string, React.FC> = {
+  'npc-test': ConvergenceDiagram,
+  'fusional-vergence-test': PrismGaugeDiagram,
+  'stereoacuity-test': StereoDepthDiagram,
+};
 
 const Section: React.FC<{ label: string; items: string[]; ordered?: boolean }> = ({ label, items, ordered }) => {
   if (items.length === 0) return null;
@@ -56,6 +76,7 @@ const TestCard: React.FC = () => {
   const backHref = location.state?.from ?? '/guide/tests';
   const test = getClinicalTest(testId);
   const QuickCard = test ? QUICK_CARDS[test.id] : undefined;
+  const Diagram = test ? DIAGRAMS[test.id] : undefined;
 
   if (!test) {
     return (
@@ -68,7 +89,8 @@ const TestCard: React.FC = () => {
     );
   }
 
-  const hasMoreDetails = !!test.moreDetails && test.moreDetails.length > 0;
+  const hasMoreSections = !!test.moreSections && test.moreSections.length > 0;
+  const hasMoreDetails = !hasMoreSections && !!test.moreDetails && test.moreDetails.length > 0;
 
   return (
     <IonPage>
@@ -87,6 +109,12 @@ const TestCard: React.FC = () => {
         ) : (
           <>
             {(!test.meta || test.meta.length === 0) && <Section label="Setup" items={test.setup ?? []} />}
+
+            {Diagram && (
+              <div className="rx-testcard-diagram">
+                <Diagram />
+              </div>
+            )}
 
             {test.doSteps && test.doSteps.length > 0 && (
               <>
@@ -138,6 +166,22 @@ const TestCard: React.FC = () => {
 
             <Section label="Neutralize / measure" items={test.neutralize ?? []} />
           </>
+        )}
+
+        {hasMoreSections && (
+          <details className="rx-more-details">
+            <summary>More / Interpretation</summary>
+            {test.moreSections!.map((section) => (
+              <div className="rx-more-section" key={section.heading}>
+                <p className="rx-more-section-heading">{section.heading}</p>
+                <ul>
+                  {section.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </details>
         )}
 
         {hasMoreDetails && (

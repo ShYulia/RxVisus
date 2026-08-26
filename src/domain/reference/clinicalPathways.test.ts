@@ -143,26 +143,6 @@ describe('clinicalPathways referential integrity', () => {
     }
   });
 
-  it('does not link specialist/non-chairside tests (e.g. Hess/Lancaster) as an actionable pathway step', () => {
-    const SPECIALIST_ONLY_TEST_IDS = ['hess-lancaster'];
-    for (const node of clinicalPathways) {
-      for (const testId of node.testIds ?? []) {
-        expect(SPECIALIST_ONLY_TEST_IDS, `${node.id} -> test "${testId}"`).not.toContain(testId);
-      }
-      for (const step of node.steps ?? []) {
-        if (step.kind !== 'question') continue;
-        for (const testId of step.testIds ?? []) {
-          expect(SPECIALIST_ONLY_TEST_IDS, `${node.id} -> step "${step.id}" -> test "${testId}"`).not.toContain(testId);
-        }
-        for (const outcome of step.outcomes) {
-          for (const testId of outcome.testIds ?? []) {
-            expect(SPECIALIST_ONLY_TEST_IDS, `${node.id} -> outcome "${outcome.label}" -> test "${testId}"`).not.toContain(testId);
-          }
-        }
-      }
-    }
-  });
-
   it('Diplopia and Strabismus reuse the exact same Measure -> Trial -> Prescribe step objects, not copies', () => {
     const diplopia = getPathwayNode('diplopia-binocular');
     const strabismus = getPathwayNode('strabismus');

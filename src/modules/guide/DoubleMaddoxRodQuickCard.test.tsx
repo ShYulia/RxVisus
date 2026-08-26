@@ -13,4 +13,24 @@ describe('DoubleMaddoxRodQuickCard', () => {
     expect(screen.getByText('No significant torsion')).toBeInTheDocument();
     expect(screen.getByText(/Torsion present/)).toBeInTheDocument();
   });
+
+  it('documents red rod over OD and white/clear rod over OS', () => {
+    render(<DoubleMaddoxRodQuickCard />);
+    expect(screen.getByText('Red rod')).toBeInTheDocument();
+    expect(screen.getByText(/White\/clear rod/)).toBeInTheDocument();
+    expect(screen.getByText('OD', { selector: 'strong' })).toBeInTheDocument();
+    expect(screen.getByText('OS', { selector: 'strong' })).toBeInTheDocument();
+  });
+
+  it('states the excyclo=temporal / incyclo=nasal reading rule explicitly', () => {
+    render(<DoubleMaddoxRodQuickCard />);
+    expect(screen.getByText(/rotated temporally.*excyclotorsion/)).toBeInTheDocument();
+  });
+
+  it('shows the BEFORE / ADJUST / ENDPOINT sequence diagram', () => {
+    render(<DoubleMaddoxRodQuickCard />);
+    expect(screen.getByText('BEFORE')).toBeInTheDocument();
+    expect(screen.getByText('ADJUST')).toBeInTheDocument();
+    expect(screen.getByText('ENDPOINT')).toBeInTheDocument();
+  });
 });

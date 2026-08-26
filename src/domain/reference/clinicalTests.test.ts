@@ -22,6 +22,7 @@ describe('clinicalTests point-of-care shape', () => {
   // covers setup/interpretation itself — Schober/Maddox Rod with diagrams, MAF/BAF/Vergence
   // Facility with a flip-sequence instruction card — instead of the generic text fields below.
   const HAS_VISUAL_QUICK_CARD = [
+    'cover-test',
     'schober-test',
     'maddox-rod',
     'double-maddox-rod',
@@ -29,6 +30,7 @@ describe('clinicalTests point-of-care shape', () => {
     'monocular-accommodative-facility-test',
     'binocular-accommodative-facility-test',
     'vergence-facility-test',
+    'parks-3-step',
   ];
 
   it('every test lists at least one required item', () => {
@@ -55,7 +57,7 @@ describe('clinicalTests point-of-care shape', () => {
 
   it('MAF does not overclaim a mandatory starting lens in its background notes — phrased as convention, not a requirement', () => {
     const maf = getClinicalTest('monocular-accommodative-facility-test')!;
-    const details = maf.moreDetails!.join(' ');
+    const details = maf.moreSections!.flatMap((section) => section.items).join(' ');
     expect(details).toContain('not a strict requirement');
     expect(details.toLowerCase()).not.toContain('must start');
   });
