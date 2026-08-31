@@ -50,8 +50,8 @@ export const calculatorDefinitions: CalculatorDefinition[] = [
   {
     id: 'prism',
     path: '/calculate/prism',
-    title: 'Prism',
-    subtitle: "Prentice's Rule — induced prism from decentration, and the reverse",
+    title: 'Prism & Decentration',
+    subtitle: 'Induced prism and required optical-center decentration.',
     mark: 'Δ = c·F',
     component: PrismCalculator,
   },

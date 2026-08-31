@@ -344,10 +344,10 @@ const PrismCalculator: React.FC = () => {
   return (
     <IonPage>
       <PageHeader
-        title="Prism"
-        subline="Prentice's Rule"
+        title="Prism & Decentration"
+        subline="Induced prism and required optical-center decentration."
         backHref="/calculate"
-        action={<FavoriteStarButton favorite={{ type: 'calculator', id: 'prism' }} label="Prism" />}
+        action={<FavoriteStarButton favorite={{ type: 'calculator', id: 'prism' }} label="Prism & Decentration" />}
       />
       <IonContent fullscreen className="ion-padding">
         <SegmentedControl options={MODE_OPTIONS} value={mode} onChange={(v) => setMode(v as 'induced' | 'required')} />
