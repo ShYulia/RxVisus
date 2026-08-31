@@ -11,6 +11,13 @@
 export type PhoriaType = 'ortho' | 'exo' | 'eso';
 export type MafDifficulty = 'plus' | 'minus' | 'both' | 'neither';
 
+/**
+ * Cover Test, Maddox Rod, Schober Test, and the Von Graefe Technique are all valid ways to
+ * arrive at a Phoria value — the field is method-agnostic by design, so citing more than one
+ * test on the same pathway step (see 'distance-phoria-type'/'near-phoria-type' in
+ * clinicalPathways.ts) never risks double-counting: it's one number regardless of which test
+ * produced it, not multiple independent findings to add together.
+ */
 export interface Phoria {
   type: PhoriaType;
   /** Δ, undefined for ortho (no meaningful amount) or if left blank. */

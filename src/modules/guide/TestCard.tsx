@@ -12,6 +12,7 @@ import Parks3StepSelector from './Parks3StepSelector';
 import PrismGaugeDiagram from './PrismGaugeDiagram';
 import SchoberQuickCard from './SchoberQuickCard';
 import StereoDepthDiagram from './StereoDepthDiagram';
+import VonGraefeQuickCard from './VonGraefeQuickCard';
 import Worth4DotQuickCard from './Worth4DotQuickCard';
 import './Guide.css';
 
@@ -28,6 +29,7 @@ const QUICK_CARDS: Record<string, React.FC> = {
   'cover-test': CoverTestQuickCard,
   'schober-test': SchoberQuickCard,
   'maddox-rod': MaddoxRodQuickCard,
+  'von-graefe-test': VonGraefeQuickCard,
   'double-maddox-rod': DoubleMaddoxRodQuickCard,
   'worth-4-dot': Worth4DotQuickCard,
   'monocular-accommodative-facility-test': MAFQuickCard,

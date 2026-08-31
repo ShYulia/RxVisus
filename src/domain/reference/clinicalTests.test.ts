@@ -12,6 +12,10 @@ describe('getClinicalTest', () => {
     expect(getClinicalTest('schober-test')?.title).toBe('Schober Test (Cross Test)');
   });
 
+  it('finds the newly added Von Graefe Technique', () => {
+    expect(getClinicalTest('von-graefe-test')?.title).toBe('Von Graefe Technique');
+  });
+
   it('returns undefined for an unknown id', () => {
     expect(getClinicalTest('not-a-real-test')).toBeUndefined();
   });
@@ -25,6 +29,7 @@ describe('clinicalTests point-of-care shape', () => {
     'cover-test',
     'schober-test',
     'maddox-rod',
+    'von-graefe-test',
     'double-maddox-rod',
     'worth-4-dot',
     'monocular-accommodative-facility-test',
@@ -104,6 +109,11 @@ describe('searchClinicalTests', () => {
   it('matches by tag', () => {
     const results = searchClinicalTests('torsion');
     expect(results.map((t) => t.id)).toContain('double-maddox-rod');
+  });
+
+  it('matches Von Graefe by title', () => {
+    const results = searchClinicalTests('graefe');
+    expect(results.map((t) => t.id)).toContain('von-graefe-test');
   });
 
   it('returns an empty array when nothing matches', () => {

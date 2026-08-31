@@ -135,7 +135,7 @@ export const clinicalTests: ClinicalTest[] = [
       {
         heading: 'Related tests in this guide',
         items: [
-          "Maddox Rod and Schober Test measure a phoria's magnitude from the patient's subjective report of a dissociated image, rather than clinician-observed movement — useful when the movement here is too small to see reliably.",
+          "Maddox Rod, Schober Test, and the Von Graefe Technique all measure a phoria's magnitude from the patient's subjective report of a dissociated image, rather than clinician-observed movement — useful when the movement here is too small to see reliably.",
           'An incomitant finding with a vertical component is the trigger to move to Parks 3-Step Test.',
         ],
       },
@@ -189,15 +189,83 @@ export const clinicalTests: ClinicalTest[] = [
         items: [
           "A single rod measures a linear (horizontal or vertical) phoria only — it doesn't measure torsion; use Double Maddox Rod for cyclotorsion.",
           "If your clinic's convention places the rod over OS instead of OD, every left/right direction on this card must be mirrored before use — don't apply the OD rule to an OS-rod setup unreversed.",
-          'Full dissociation can occasionally read a slightly larger phoria than partial-dissociation techniques (e.g. von Graefe) — note which technique was used if comparing across visits.',
+          'Full dissociation can occasionally read a slightly larger phoria than partial-dissociation techniques (e.g. Von Graefe) — note which technique was used if comparing across visits.',
         ],
       },
       {
         heading: 'Related tests',
         items: [
           'Schober Test uses the same red/green dissociation principle with a projector target instead of a rod/light — same direction conventions, different equipment.',
+          'Von Graefe Technique measures the identical phoria in-phoropter, using Risley prisms to dissociate instead of a colored rod — interchangeable with this test; use whichever your chair is set up for.',
           'Double Maddox Rod is the torsional analogue of this same rod, used in pairs.',
           "The measured phoria feeds directly into Fusional Vergence Ranges and Sheard's Criterion.",
+        ],
+      },
+    ],
+  },
+  {
+    id: 'von-graefe-test',
+    title: 'Von Graefe Technique',
+    tags: ['diplopia', 'binocular', 'phoria', 'phoropter', 'dissociation'],
+    purpose: 'Phoropter-based subjective measurement of horizontal/vertical phoria with Risley prisms — the standard in-refraction phoria technique.',
+    youNeed: ['Phoropter with Risley prisms', 'Isolated letter target one line above the worse eye’s best-corrected acuity (distance chart or near card)'],
+    meta: ['6 M (DISTANCE) OR 40 CM (NEAR)', 'HABITUAL OR BEST-CORRECTION Rx IN PLACE'],
+    moreSections: [
+      {
+        heading: 'What is this test / what it assesses',
+        items: [
+          'A phoropter-based subjective phoria technique: two Risley (rotary) prisms dissociate the eyes and the deviation is read directly off the prism scale in diopters — the standard in-refraction way to obtain a phoria, alongside Maddox Rod and Schober Test.',
+          "Measures the same thing those two do (horizontal and vertical phoria magnitude) via a third dissociation principle — prism-induced diplopia of a single plain letter target, rather than a colored streak or a red/green cross. The three are interchangeable citations for the same distance/near phoria finding, not three separate findings.",
+        ],
+      },
+      {
+        heading: 'Prism roles: measuring vs dissociating',
+        items: [
+          'Two prisms are used together, one per eye, and their roles swap depending on which axis is being measured — this is the one thing that trips people up first learning the test.',
+          'Horizontal phoria: 12Δ base-in over OD is the MEASURING prism (varied); 6Δ base-up over OS is the DISSOCIATING prism (held fixed) — it displaces OS’s view vertically so the two eyes’ images can’t fuse horizontally, letting the horizontal deviation show as a sideways offset.',
+          'Vertical phoria: the same 6Δ prism over OS becomes the MEASURING prism (varied up/down from its 6Δ BU start); the 12Δ base-in over OD becomes the DISSOCIATING prism (held fixed) — it now separates the images sideways instead, so the vertical deviation shows as an up/down offset.',
+          "12Δ BI OD / 6Δ BU OS is the standard starting convention, not a rule with no exceptions — increase the dissociating prism further first if it doesn't fully separate the images for a given patient, before starting to vary the measuring prism.",
+        ],
+      },
+      {
+        heading: 'Procedure in detail',
+        items: [
+          'Isolated line/letter block one line above the worse eye’s best-corrected acuity, at 6 m for distance or a near card at 40 cm — habitual or best-correction Rx in place, correct PD dialed in.',
+          "Horizontal: with the 6Δ BU OS dissociator in place, reduce the OD measuring prism smoothly (roughly 2Δ/sec) while the patient watches the target; ASK them to report when the two letter blocks line up directly one under the other — ‘like buttons on a shirt’ is the classic instruction.",
+          'Vertical: swap roles — hold 12Δ BI fixed over OD, and rotate the OS prism away from its 6Δ BU start until the patient reports the two (now side-by-side) blocks are level with each other.',
+          'For a more precise endpoint, pass through alignment, let the images separate again on the far side, then bring the prism back to the endpoint a second time from that direction — average the two readings.',
+          'Repeat the whole sequence at near (40 cm) with a near vertical-line target.',
+        ],
+      },
+      {
+        heading: 'What the patient sees / what to watch',
+        items: [
+          "The patient sees one letter block, then two as the dissociating prism separates them — a concrete instruction ('tell me when they line up like buttons on a shirt' for horizontal; 'tell me when they're side by side and level' for vertical) works better than an abstract 'tell me when aligned'.",
+          'No color filters are involved — a plain letter target, unlike Maddox Rod/Schober’s colored dissociation — so this technique doesn’t depend on the patient reliably distinguishing red from green.',
+          "Suppression of one eye's image, or an inability to reliably localize the offset, means the endpoint can't be obtained this way — fall back to Maddox Rod, Schober Test, or Cover Test.",
+        ],
+      },
+      {
+        heading: 'Record & interpret',
+        items: [
+          'Record the measuring prism’s diopters and base direction at the averaged endpoint, separately for distance/near and horizontal/vertical: base-in = exophoria, base-out = esophoria; base-up/base-down on the measuring prism = a hyperphoria/hypophoria — state which eye, same eye-labeling convention as Maddox Rod and Schober Test.',
+          'Typical normal ranges (a starting reference point, not a substitute for symptoms and the rest of the exam): distance lateral phoria roughly orthophoria to 2Δ exophoria; near lateral phoria roughly 3–6Δ exophoria; vertical phoria ≤1Δ in either direction.',
+        ],
+      },
+      {
+        heading: 'Common mistakes & limitations',
+        items: [
+          "Moving the measuring prism too fast — a rushed endpoint reads differently from a deliberate one; move smoothly and wait for the patient's actual report, don't anticipate it from their expression.",
+          'Taking only one endpoint instead of bracketing and averaging two, as above — a single-pass reading is measurably less repeatable.',
+          'The phoropter setting itself can induce proximal convergence not present in free space, and reliability studies consistently find Von Graefe the least repeatable of the standard phoria techniques (though it remains a universally accepted standard) — treat one reading as an estimate, not a precise fixed number, and prefer Cover Test when the two disagree materially.',
+          'Measures the phoria only, not fusional reserves — pair with Fusional Vergence Ranges (BI/BO), typically measured next with the same Risley prisms.',
+        ],
+      },
+      {
+        heading: 'Related tests',
+        items: [
+          'Maddox Rod and Schober Test measure the identical phoria via different dissociation principles (colored streak, red/green cross) — the three are interchangeable citations for the same distance/near phoria finding, not three separate findings to add together.',
+          "The measured phoria feeds into Fusional Vergence Ranges and Sheard's/Percival's Criteria exactly as a Maddox Rod or Schober Test reading would.",
         ],
       },
     ],
@@ -540,6 +608,7 @@ export const clinicalTests: ClinicalTest[] = [
         heading: 'Related tests',
         items: [
           'Maddox Rod uses the same red/green-independent dissociation logic (a rod streak vs. a point light) rather than a projected cross/circle target — same direction conventions, different equipment; use whichever your chair has set up.',
+          'Von Graefe Technique measures the identical phoria/tropia in-phoropter with Risley prisms instead of a projector — a third interchangeable option alongside this test and Maddox Rod.',
           'Uses the identical projector slide setup as Worth 4 Dot — the two are often performed back-to-back since no equipment change is needed between them.',
           "The measured phoria/tropia here feeds into the same downstream findings as Maddox Rod's — Fusional Vergence Ranges and Sheard's Criterion.",
         ],

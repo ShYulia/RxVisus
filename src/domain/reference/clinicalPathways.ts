@@ -294,7 +294,7 @@ const sharedPrismSteps: DecisionStep[] = [
     id: 'measure',
     shortLabel: 'Measure',
     question: 'Measure deviation.',
-    testIds: ['schober-test', 'maddox-rod'],
+    testIds: ['schober-test', 'maddox-rod', 'von-graefe-test'],
     outcomes: [{ label: 'Enter measurement', action: '', next: 'record-measurement' }],
   },
   {
@@ -788,8 +788,8 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         kind: 'question',
         id: 'distance-phoria-type',
         shortLabel: 'Distance phoria',
-        question: 'Distance phoria (cover test / Maddox rod)?',
-        testIds: ['cover-test', 'maddox-rod'],
+        question: 'Distance phoria (cover test / Maddox rod / Schober / Von Graefe)?',
+        testIds: ['cover-test', 'maddox-rod', 'schober-test', 'von-graefe-test'],
         outcomes: [
           { label: 'Ortho', action: '', next: 'near-phoria-type', recordAs: { key: 'distancePhoria.type', value: 'ortho' } },
           { label: 'Exo', action: '', next: 'distance-phoria-amount', recordAs: { key: 'distancePhoria.type', value: 'exo' } },
@@ -807,8 +807,8 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         kind: 'question',
         id: 'near-phoria-type',
         shortLabel: 'Near phoria',
-        question: 'Near phoria (cover test / Maddox rod)?',
-        testIds: ['cover-test', 'maddox-rod'],
+        question: 'Near phoria (cover test / Maddox rod / Schober / Von Graefe)?',
+        testIds: ['cover-test', 'maddox-rod', 'schober-test', 'von-graefe-test'],
         outcomes: [
           { label: 'Ortho', action: '', next: 'npc', recordAs: { key: 'nearPhoria.type', value: 'ortho' } },
           { label: 'Exo', action: '', next: 'near-phoria-amount', recordAs: { key: 'nearPhoria.type', value: 'exo' } },
