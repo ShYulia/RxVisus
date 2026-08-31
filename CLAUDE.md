@@ -19,11 +19,11 @@ Capacitor `appId`, and the local-storage key namespace all still read
 ## Status
 
 MVP build in progress. Calculators (Transposition, Working Distance → ADD,
-Vertex Distance, Spherical Equivalent), Favorites (cross-module shortcut
-layer, seeded from calculators and Clinical Guide content), and the
-Clinical Guide architecture (canonical test cards, pathway navigation,
-seeded with Diplopia) are implemented; Prism calculator and most Clinical
-Guide content are still to come. See [README.md](README.md) for the
+Vertex Distance, Spherical Equivalent, Prism & Decentration), Favorites
+(cross-module shortcut layer, seeded from calculators and Clinical Guide
+content), and the Clinical Guide architecture (canonical test cards,
+pathway navigation, seeded with Diplopia) are implemented; most Clinical
+Guide content is still to come. See [README.md](README.md) for the
 product pitch and non-negotiable constraints (no AI/backend, offline-only,
 no patient-identifiable data).
 
@@ -142,15 +142,16 @@ territory while fully supporting the actual workflow.
   [docs/design.md](docs/design.md)) — simplest first to prove the pattern,
   most clinically variable last.
 - **Copy Result is shown on every calculator except Working Distance →
-  ADD and Prism.** (Revised 2026-08-23 — originally opt-in per calculator
-  with a concrete external-workflow justification; broadened after
-  product decision. Prism excluded 2026-08-23 per product decision.)
-  `ActionRow`'s `showCopy` prop (default `false`) still gates the button
-  — Transposition, Vertex Distance, and Spherical Equivalent all pass
-  `showCopy` with `copyText` set to their formatted result; Working
-  Distance → ADD and Prism render `<ActionRow onClear={...} />` with no
-  copy-related props. If you add a new calculator, default to including
-  Copy Result unless there's a specific reason (like ADD's or Prism's)
+  ADD and Prism & Decentration.** (Revised 2026-08-23 — originally
+  opt-in per calculator with a concrete external-workflow justification;
+  broadened after product decision. Prism & Decentration excluded
+  2026-08-23 per product decision.) `ActionRow`'s `showCopy` prop
+  (default `false`) still gates the button — Transposition, Vertex
+  Distance, and Spherical Equivalent all pass `showCopy` with `copyText`
+  set to their formatted result; Working Distance → ADD and Prism &
+  Decentration render `<ActionRow onClear={...} />` with no copy-related
+  props. If you add a new calculator, default to including Copy Result
+  unless there's a specific reason (like ADD's or Prism & Decentration's)
   to leave it off.
 - **Input placeholders are neutral, never realistic example values.** A
   placeholder that looks like a plausible entered Rx (`-6.50`, `1.50`,

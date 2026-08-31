@@ -114,7 +114,7 @@ the most time to validate it against real practice:
 2. **Working distance → ADD calculator** — also simple, low risk.
 3. **Vertex distance calculator** (spectacle Rx → contact lens Rx) — a
    real formula, but sign/unit handling needs care.
-4. **Prism calculator** (Prentice's rule) — well-defined, deterministic.
+4. **Prism & Decentration calculator** (Prentice's rule) — well-defined, deterministic.
 5. **Progressive fitting height calculator** — the most clinically
    variable (depends on frame, PD, lens design, often lab-specific
    convention). Build last, and validate the exact rule with the real
