@@ -9,7 +9,6 @@ export interface GuideArea {
 
 export const guideAreas: GuideArea[] = [
   { id: 'binocular-status', title: 'Binocular Status', desc: 'How to evaluate binocular vision', pathwayId: 'binocular-status' },
-  { id: 'symptom-testing', title: 'Symptom-Driven Testing', desc: 'What to check based on symptoms' },
   { id: 'diplopia', title: 'Diplopia', desc: 'Approach and key tests', pathwayId: 'diplopia' },
   { id: 'strabismus', title: 'Strabismus', desc: 'History, exam, sensory status, and prism workflow', pathwayId: 'strabismus' },
 ];

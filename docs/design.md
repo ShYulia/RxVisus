@@ -127,11 +127,11 @@ starting point for the next session, not implemented.
 
 **Clinical Guide** — guided pathway navigation and canonical test cards in
 one module (see Information architecture above). MVP pathway content:
-Binocular Status, Symptom-Driven Testing, Diplopia, Strabismus by Type —
-Diplopia is seeded first (monocular vs. binocular → vertical vs.
-horizontal → relevant tests: Cover Test, Maddox Rod, Double Maddox Rod,
-Hess/Lancaster, Parks 3-Step). The other three areas show as "coming
-soon" on the Clinical Guide hub until their content is written. Explicitly
+Binocular Status, Diplopia, Strabismus by Type — all three built. Diplopia
+was seeded first (monocular vs. binocular → vertical vs. horizontal →
+relevant tests: Cover Test, Maddox Rod, Double Maddox Rod,
+Hess/Lancaster, Parks 3-Step). Symptom-Driven Testing was scoped for the
+MVP but dropped before being built — it isn't on the hub. Explicitly
 **not** diagnostic — a memory aid for trained professionals, structured
 around ray-diagram-style reasoning where relevant (crossed vs. uncrossed
 diplopia, base IN vs. base OUT) rather than long prose.
