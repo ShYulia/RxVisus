@@ -1,0 +1,44 @@
+.rx-ack-modal {
+  --width: min(92vw, 440px);
+  --height: auto;
+  --border-radius: var(--rx-radius-lg);
+  --background: var(--rx-surface);
+}
+
+.rx-ack-inner {
+  padding: 28px 24px 24px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.rx-ack-wordmark {
+  display: block;
+  font-family: var(--rx-font-display);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--rx-text);
+  margin-bottom: 10px;
+}
+
+.rx-ack-heading {
+  font-family: var(--rx-font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--rx-text);
+  margin: 0 0 14px;
+}
+
+.rx-ack-points {
+  margin: 0 0 24px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rx-ack-points li {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--rx-text-secondary);
+}

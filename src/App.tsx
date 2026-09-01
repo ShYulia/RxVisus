@@ -3,6 +3,7 @@ import { IonApp, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Tabs from './navigation/Tabs';
 import SideRail from './navigation/SideRail';
+import FirstLaunchAcknowledgment from './components/FirstLaunchAcknowledgment';
 import { useFavoritesStore } from './store/favoritesStore';
 
 /* Core CSS required for Ionic components to work properly */
@@ -66,6 +67,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </IonReactRouter>
+      <FirstLaunchAcknowledgment />
     </IonApp>
   );
 };
