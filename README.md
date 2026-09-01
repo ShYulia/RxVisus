@@ -31,6 +31,21 @@ built to solve real problems, not as a portfolio demo dressed up as one.
   against real clinical judgment (the intended real user) before
   shipping — this app produces numbers used in real patient care.
 
+## Clinical disclaimer
+
+RxKit is a clinical reference and decision-support tool for qualified
+eye-care professionals — not a diagnostic device. It does not diagnose
+patients or replace professional clinical judgment. It helps clinicians
+measure, calculate, organize, and interpret clinical findings; the
+clinician independently verifies all findings and remains responsible
+for diagnosis, management, and treatment decisions.
+
+This is surfaced in-app in two places: a required first-launch
+acknowledgment (shown once, before the app can be used) and the About
+page (Home's profile icon → **About RxKit**). See
+[docs/legal/ACKNOWLEDGMENT_HISTORY.md](docs/legal/ACKNOWLEDGMENT_HISTORY.md)
+for the acknowledgment's exact wording and version history.
+
 ## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** — Tech stack, folder structure, data model,
@@ -38,6 +53,9 @@ built to solve real problems, not as a portfolio demo dressed up as one.
 - **[docs/design.md](docs/design.md)** — The product reasoning: what this
   has to beat, information architecture, MVP scope, and what's planned
   beyond it.
+- **[docs/legal/ACKNOWLEDGMENT_HISTORY.md](docs/legal/ACKNOWLEDGMENT_HISTORY.md)**
+  — Immutable version history of the first-launch clinical-use
+  acknowledgment's exact wording.
 
 ## Note on the name
 
