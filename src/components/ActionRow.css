@@ -1,3 +1,57 @@
+/*
+ * .rx-btn-solid / .rx-btn-outline are the app's shared primary/secondary button treatment —
+ * used both inside ActionRow (Clear / Copy Result) and standalone throughout the Clinical
+ * Guide wizards (Continue, Skip test, symptom checklist's Continue, resume/new-assessment
+ * gates). Kept unscoped so a "Continue" three screens deep gets the exact same weight and
+ * disabled treatment as a calculator's own action row, not a plainer fallback.
+ */
+.rx-btn-solid,
+.rx-btn-outline {
+  margin: 0;
+  --border-radius: var(--rx-radius-sm);
+  --box-shadow: none;
+  font-family: var(--rx-font-sans);
+  font-weight: 600;
+  font-size: 15px;
+  text-transform: none;
+  letter-spacing: 0;
+  height: 48px;
+}
+
+.rx-btn-outline {
+  --color: var(--rx-iris-deep);
+  --border-color: var(--rx-iris);
+  --background: transparent;
+  --background-hover: var(--rx-iris-tint);
+  --background-activated: var(--rx-iris-tint);
+}
+
+.rx-btn-solid {
+  --color: #ffffff;
+  --background: var(--rx-iris);
+  --background-hover: var(--rx-iris-deep);
+  --background-activated: var(--rx-iris-deep);
+}
+
+/* Explicit disabled treatment — a muted neutral fill, not just a translucent version of the
+   active button, so "nothing to do yet" reads unambiguously rather than as a softer accent. */
+.rx-btn-solid[disabled],
+.rx-btn-outline[disabled] {
+  opacity: 1;
+  cursor: default;
+}
+
+.rx-btn-solid[disabled] {
+  --background: var(--rx-muted-bg);
+  --color: var(--rx-text-tertiary);
+  --box-shadow: none;
+}
+
+.rx-btn-outline[disabled] {
+  --color: var(--rx-text-tertiary);
+  --border-color: var(--rx-border);
+}
+
 .rx-action-row {
   display: flex;
   gap: 10px;
@@ -6,28 +60,4 @@
 
 .rx-action-row ion-button {
   flex: 1;
-  margin: 0;
-  --border-radius: var(--rx-radius-sm);
-  --box-shadow: none;
-  font-family: var(--rx-font-sans);
-  font-weight: 600;
-  font-size: 14px;
-  text-transform: none;
-  letter-spacing: 0;
-  height: 44px;
-}
-
-.rx-action-row .rx-btn-outline {
-  --color: var(--rx-iris-deep);
-  --border-color: var(--rx-iris);
-  --background: transparent;
-  --background-hover: var(--rx-iris-tint);
-  --background-activated: var(--rx-iris-tint);
-}
-
-.rx-action-row .rx-btn-solid {
-  --color: #ffffff;
-  --background: var(--rx-iris);
-  --background-hover: var(--rx-iris-deep);
-  --background-activated: var(--rx-iris-deep);
 }

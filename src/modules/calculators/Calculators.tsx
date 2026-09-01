@@ -6,11 +6,11 @@ import { calculatorDefinitions } from './calculatorRegistry';
 import '../../components/PillarRow.css';
 
 const ICONS: Record<string, React.ReactNode> = {
-  transposition: <SwapArrowsIcon size={22} />,
+  transposition: <SwapArrowsIcon size={26} />,
   'working-distance-add': <span className="rx-pillar-icon-text">ADD</span>,
-  'vertex-distance': <GlassesIcon size={22} />,
+  'vertex-distance': <GlassesIcon size={26} />,
   'spherical-equivalent': <span className="rx-pillar-icon-text">SE</span>,
-  prism: <TriangleIcon size={22} />,
+  prism: <TriangleIcon size={26} />,
 };
 
 const Calculators: React.FC = () => {
@@ -18,7 +18,7 @@ const Calculators: React.FC = () => {
     <IonPage>
       <PageHeader title="Calculators" backHref="/home" />
       <IonContent fullscreen className="ion-padding">
-        <div className="rx-pillars">
+        <div className="rx-pillars rx-pillars-cards">
           {calculatorDefinitions.map((def) => (
             <PillarRow key={def.id} icon={ICONS[def.id]} title={def.title} desc={def.subtitle} routerLink={def.path} />
           ))}

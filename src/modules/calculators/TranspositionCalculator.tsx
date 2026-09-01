@@ -37,6 +37,7 @@ const TranspositionCalculator: React.FC = () => {
     <IonPage>
       <PageHeader
         title="Transposition"
+        subline="Switch between plus- and minus-cylinder notation."
         backHref="/calculate"
         action={<FavoriteStarButton favorite={{ type: 'calculator', id: 'transposition' }} label="Transposition" />}
       />

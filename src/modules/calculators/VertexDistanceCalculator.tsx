@@ -70,6 +70,7 @@ const VertexDistanceCalculator: React.FC = () => {
     <IonPage>
       <PageHeader
         title="Vertex Distance"
+        subline="Convert a prescription between two vertex distances."
         backHref="/calculate"
         action={<FavoriteStarButton favorite={{ type: 'calculator', id: 'vertex-distance' }} label="Vertex Distance" />}
       />

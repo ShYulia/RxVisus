@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { IonButton, IonContent, IonPage, useIonViewWillEnter, useIonViewWillLeave } from '@ionic/react';
 import PageHeader from '../../components/PageHeader';
 import PillarRow from '../../components/PillarRow';
-import { CompassIcon } from '../../components/icons';
+import { ChevronRightIcon, CompassIcon } from '../../components/icons';
 import { checkHorizontalDirectionConsistency, type ConsistencyWarning as ConsistencyWarningInfo } from '../../domain/reference/consistencyChecks';
 import {
   getPathwayNode,
@@ -317,7 +317,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
                   <IonButton className="rx-btn-solid" expand="block" onClick={() => setPendingResumeGate(false)}>
                     Continue Assessment
                   </IonButton>
-                  <IonButton fill="outline" expand="block" onClick={() => setConfirmingNewAssessment(true)}>
+                  <IonButton className="rx-btn-outline" fill="outline" expand="block" onClick={() => setConfirmingNewAssessment(true)}>
                     Start New Assessment
                   </IonButton>
                 </div>
@@ -329,7 +329,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
                   Current assessment data will be cleared.
                 </p>
                 <div className="rx-wizard-choices">
-                  <IonButton fill="outline" expand="block" onClick={() => setConfirmingNewAssessment(false)}>
+                  <IonButton className="rx-btn-outline" fill="outline" expand="block" onClick={() => setConfirmingNewAssessment(false)}>
                     Cancel
                   </IonButton>
                   <IonButton className="rx-btn-solid" expand="block" onClick={startNewAssessment}>
@@ -466,7 +466,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
             <IonButton className="rx-btn-solid" expand="block" onClick={restart}>
               New Patient
             </IonButton>
-            <IonButton fill="outline" expand="block" routerLink="/guide">
+            <IonButton className="rx-btn-outline" fill="outline" expand="block" routerLink="/guide">
               Back to Clinical Guide
             </IonButton>
           </div>
@@ -486,15 +486,37 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
             <TestChips testIds={currentStep.testIds} state={backState} label={currentStep.testIdsLabel} />
 
             <div className="rx-wizard-choices">
-              {currentStep.outcomes.map((outcome) => (
-                <button key={outcome.label} type="button" className="rx-wizard-choice" onClick={() => handleSelect(currentStep, outcome)}>
-                  <span>
-                    {outcome.label}
-                    {outcome.secondaryLabel && <span className="rx-wizard-choice-secondary"> ({outcome.secondaryLabel})</span>}
-                  </span>
-                  {outcome.infoTerm && <TermInfo term={outcome.infoTerm} />}
-                </button>
-              ))}
+              {currentStep.outcomes.map((outcome) =>
+                outcome.hint ? (
+                  <button
+                    key={outcome.label}
+                    type="button"
+                    className="rx-wizard-choice rx-wizard-choice-rich"
+                    onClick={() => handleSelect(currentStep, outcome)}
+                  >
+                    <span className="rx-pillar-icon">
+                      <CompassIcon size={24} />
+                    </span>
+                    <span className="rx-pillar-text">
+                      <span className="rx-pillar-title">
+                        {outcome.label}
+                        {outcome.secondaryLabel && <span className="rx-wizard-choice-secondary"> ({outcome.secondaryLabel})</span>}
+                      </span>
+                      <span className="rx-pillar-desc">{outcome.hint}</span>
+                    </span>
+                    {outcome.infoTerm && <TermInfo term={outcome.infoTerm} />}
+                    <ChevronRightIcon size={16} className="rx-pillar-chevron" />
+                  </button>
+                ) : (
+                  <button key={outcome.label} type="button" className="rx-wizard-choice" onClick={() => handleSelect(currentStep, outcome)}>
+                    <span>
+                      {outcome.label}
+                      {outcome.secondaryLabel && <span className="rx-wizard-choice-secondary"> ({outcome.secondaryLabel})</span>}
+                    </span>
+                    {outcome.infoTerm && <TermInfo term={outcome.infoTerm} />}
+                  </button>
+                ),
+              )}
             </div>
           </div>
         )}
@@ -514,7 +536,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
                   return (
                     <PillarRow
                       key={seeAlsoNode.id}
-                      icon={<CompassIcon size={22} />}
+                      icon={<CompassIcon size={23} />}
                       title={seeAlsoNode.title}
                       desc={seeAlsoNode.overview ?? ''}
                       routerLink={`/guide/pathway/${seeAlsoNode.id}`}

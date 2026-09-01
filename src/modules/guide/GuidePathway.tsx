@@ -49,14 +49,14 @@ const GuidePathway: React.FC = () => {
         {node.overview && <p className="rx-hint" style={{ marginTop: 0 }}>{node.overview}</p>}
 
         {node.kind === 'branch' && (
-          <div className="rx-pillars" style={{ marginTop: 14 }}>
+          <div className="rx-pillars rx-pillars-cards" style={{ marginTop: 14 }}>
             {(node.children ?? []).map((childId) => {
               const child = getPathwayNode(childId);
               if (!child) return null;
               return (
                 <PillarRow
                   key={child.id}
-                  icon={<CompassIcon size={22} />}
+                  icon={<CompassIcon size={26} />}
                   title={child.title}
                   desc={child.overview ?? ''}
                   routerLink={`/guide/pathway/${child.id}`}
@@ -109,7 +109,7 @@ const GuidePathway: React.FC = () => {
                   return (
                     <PillarRow
                       key={seeAlsoNode.id}
-                      icon={<CompassIcon size={22} />}
+                      icon={<CompassIcon size={23} />}
                       title={seeAlsoNode.title}
                       desc={seeAlsoNode.overview ?? ''}
                       routerLink={`/guide/pathway/${seeAlsoNode.id}`}

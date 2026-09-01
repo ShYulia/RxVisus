@@ -95,8 +95,16 @@ describe('NRA/PRA <-> MAF direction mapping (regression: this pairing was previo
 });
 
 describe('searchClinicalTests', () => {
-  it('returns every test for an empty query', () => {
-    expect(searchClinicalTests('')).toEqual(clinicalTests);
+  it('returns every performable test for an empty query, excluding interpretation criteria', () => {
+    const results = searchClinicalTests('');
+    expect(results).toEqual(clinicalTests.filter((t) => !t.interpretationCriterion));
+    expect(results.map((t) => t.id)).not.toContain('sheard-criterion');
+    expect(results.map((t) => t.id)).not.toContain('percival-criterion');
+  });
+
+  it('still finds an interpretation criterion by an explicit search', () => {
+    expect(searchClinicalTests('sheard').map((t) => t.id)).toContain('sheard-criterion');
+    expect(searchClinicalTests('percival').map((t) => t.id)).toContain('percival-criterion');
   });
 
   it('matches by title, case-insensitively', () => {

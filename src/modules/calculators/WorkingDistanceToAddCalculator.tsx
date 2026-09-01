@@ -47,6 +47,7 @@ const WorkingDistanceToAddCalculator: React.FC = () => {
     <IonPage>
       <PageHeader
         title="Working Distance → ADD"
+        subline="Convert a clinically tested ADD to a different working distance."
         backHref="/calculate"
         action={
           <FavoriteStarButton

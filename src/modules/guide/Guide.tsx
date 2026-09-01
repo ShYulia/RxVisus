@@ -18,7 +18,7 @@ const Guide: React.FC = () => {
       <PageHeader title="Clinical Guide" backHref="/home" />
       <IonContent fullscreen className="ion-padding">
         <div className="rx-search">
-          <SearchIcon size={18} className="rx-search-icon" />
+          <SearchIcon size={20} className="rx-search-icon" />
           <IonInput
             className="rx-search-input"
             placeholder="Search tests, e.g. Maddox"
@@ -33,7 +33,7 @@ const Guide: React.FC = () => {
             {results.map((test) => (
               <PillarRow
                 key={test.id}
-                icon={<SearchIcon size={20} />}
+                icon={<SearchIcon size={21} />}
                 title={test.title}
                 desc={test.purpose}
                 routerLink={`/guide/tests/${test.id}`}
@@ -44,11 +44,11 @@ const Guide: React.FC = () => {
         ) : (
           <>
             <p className="rx-section-label">Clinical pathways</p>
-            <div className="rx-pillars">
+            <div className="rx-pillars rx-pillars-cards">
               {guideAreas.map((area) => (
                 <PillarRow
                   key={area.id}
-                  icon={<CompassIcon size={22} />}
+                  icon={<CompassIcon size={26} />}
                   title={area.title}
                   desc={area.desc}
                   comingSoon={!area.pathwayId}
@@ -58,9 +58,9 @@ const Guide: React.FC = () => {
             </div>
 
             <p className="rx-section-label">Or browse directly</p>
-            <div className="rx-pillars">
+            <div className="rx-pillars rx-pillars-cards">
               <PillarRow
-                icon={<BookIcon size={22} />}
+                icon={<BookIcon size={26} />}
                 title="All Tests"
                 desc="Browse every canonical test card"
                 routerLink="/guide/tests"

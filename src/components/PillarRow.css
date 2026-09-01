@@ -1,3 +1,32 @@
+/*
+ * Three treatments share the same PillarRow markup, chosen per screen by
+ * the consumer (composition, not a forced global look — see PillarRow.tsx):
+ *
+ * .rx-pillars (default) — a dense, hairline-divided reference list, no card
+ * boundary at all. For short "see also" link lists only.
+ *
+ * .rx-pillars.rx-pillars-cards — a handful of distinct destinations, each
+ * its own card (echoing Home's FeatureCard: surface + border + resting
+ * shadow + hover lift). For hub-style pickers: Calculators, the Clinical
+ * Guide hub, Favorites, a pathway's branch choices — places where the
+ * "what are my options" list itself deserves Home-level visual weight,
+ * not a settings-style table.
+ *
+ * .rx-pillars.rx-pillars-compact-cards — the same real card boundary and
+ * visible gap as .rx-pillars-cards (never the old continuous divider-row
+ * list), just tighter padding/gap for a long, frequently-scrolled list:
+ * All Tests, live search results. Still individually bordered, shadowed,
+ * separated cards — "compact" only changes spacing, not the shape.
+ *
+ * The icon/title/desc sizing rules below are also shared (via a compound
+ * selector) with .rx-wizard-choice-rich — PathwayWizard's own "which
+ * top-level path" question choices (e.g. Quick Screen vs. Full Assessment)
+ * reuse this exact same .rx-pillar-icon/-text/-title/-desc/-chevron markup
+ * inside a <button>, not a <PillarRow>, so a major fork inside a wizard
+ * carries the same weight as a branch node's children — see Guide.css for
+ * the button-level layout rule.
+ */
+
 .rx-pillars {
   display: flex;
   flex-direction: column;
@@ -7,7 +36,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 18px 4px;
+  padding: 17px 4px;
   border-top: 1px solid var(--rx-border);
   text-decoration: none;
   color: inherit;
@@ -23,16 +52,62 @@
   border-radius: var(--rx-radius-sm);
 }
 
+.rx-pillars-cards,
+.rx-pillars-compact-cards {
+  gap: 12px;
+}
+
+.rx-pillars-compact-cards {
+  gap: 8px;
+}
+
+.rx-pillars-cards .rx-pillar,
+.rx-pillars-compact-cards .rx-pillar {
+  border: 1px solid var(--rx-border);
+  border-radius: var(--rx-radius);
+  background: var(--rx-surface);
+  box-shadow: 0 1px 2px rgba(37, 36, 42, 0.04);
+  transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.rx-pillars-cards .rx-pillar {
+  padding: 18px;
+}
+
+.rx-pillars-compact-cards .rx-pillar {
+  padding: 13px 14px;
+}
+
+.rx-pillars-cards .rx-pillar:not(.rx-pillar-static):hover,
+.rx-pillars-compact-cards .rx-pillar:not(.rx-pillar-static):hover {
+  border-color: var(--rx-iris);
+  box-shadow: 0 6px 16px rgba(87, 74, 148, 0.14);
+  transform: translateY(-1px);
+}
+
+.rx-pillars-cards .rx-pillar:not(.rx-pillar-static):active,
+.rx-pillars-compact-cards .rx-pillar:not(.rx-pillar-static):active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(87, 74, 148, 0.12);
+}
+
 .rx-pillar-icon {
   flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
   background: var(--rx-iris-tint);
   color: var(--rx-iris-deep);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.rx-pillars-cards .rx-pillar-icon,
+.rx-wizard-choice-rich .rx-pillar-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
 }
 
 .rx-pillar-icon-muted {
@@ -45,6 +120,10 @@
   font-size: 12.5px;
   font-weight: 800;
   letter-spacing: 0.01em;
+}
+
+.rx-pillars-cards .rx-pillar-icon-text {
+  font-size: 14.5px;
 }
 
 .rx-pillar-text {
@@ -64,10 +143,15 @@
 
 .rx-pillar-title {
   font-family: var(--rx-font-display);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--rx-text);
+}
+
+.rx-pillars-cards .rx-pillar-title,
+.rx-wizard-choice-rich .rx-pillar-title {
+  font-size: 18px;
 }
 
 .rx-pillar-title-muted {
@@ -86,10 +170,15 @@
 }
 
 .rx-pillar-desc {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--rx-text-secondary);
   margin-top: 2px;
-  line-height: 1.4;
+  line-height: 1.45;
+}
+
+.rx-pillars-cards .rx-pillar-desc,
+.rx-wizard-choice-rich .rx-pillar-desc {
+  font-size: 14px;
 }
 
 .rx-pillar-chevron {

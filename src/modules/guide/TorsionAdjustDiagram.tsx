@@ -1,6 +1,6 @@
 import TorsionLinesDiagram from './TorsionLinesDiagram';
 
-const RotateIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
+const RotateIcon: React.FC<{ size?: number }> = ({ size = 44 }) => (
   <svg width={size} height={size} viewBox="0 0 40 40" role="img" aria-label="Rotate the rod axis">
     <path d="M10,20 A10,10 0 1 1 12,27" fill="none" stroke="var(--rx-text-tertiary)" strokeWidth={2.5} markerEnd="url(#rx-rotate-arrow)" />
     <defs>
@@ -19,7 +19,7 @@ const RotateIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
 const TorsionAdjustDiagram: React.FC = () => (
   <div className="rx-torsion-sequence">
     <div className="rx-torsion-sequence-step">
-      <TorsionLinesDiagram mode="tilted" size={64} />
+      <TorsionLinesDiagram mode="tilted" size={68} />
       <p className="rx-torsion-sequence-label">BEFORE</p>
     </div>
     <span className="rx-torsion-sequence-arrow">&rarr;</span>
@@ -29,7 +29,7 @@ const TorsionAdjustDiagram: React.FC = () => (
     </div>
     <span className="rx-torsion-sequence-arrow">&rarr;</span>
     <div className="rx-torsion-sequence-step">
-      <TorsionLinesDiagram mode="parallel" size={64} />
+      <TorsionLinesDiagram mode="parallel" size={68} />
       <p className="rx-torsion-sequence-label">ENDPOINT</p>
     </div>
   </div>

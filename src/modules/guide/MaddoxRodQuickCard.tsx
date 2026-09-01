@@ -23,7 +23,7 @@ const MaddoxRodQuickCard: React.FC = () => {
   return (
     <div className="rx-quickcard">
       <div className="rx-quickcard-recognition">
-        <MaddoxRodIcon size={64} />
+        <MaddoxRodIcon size={72} />
         <p className="rx-quickcard-recognition-caption">Red lens, fine parallel ridges</p>
       </div>
 

@@ -18,12 +18,23 @@
 .rx-fieldbox {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   background: var(--rx-surface);
   border: 1px solid var(--rx-border);
   border-radius: var(--rx-radius);
-  padding: 12px 12px 10px;
+  padding: 13px 12px 12px;
   min-width: 0;
+}
+
+/* Disabled field (e.g. AXIS before a cylinder is entered) — muted like the rest of the app's
+   "not currently applicable" treatment (PillarRow's comingSoon, muted icons), not just a faint
+   input inside an otherwise-normal-looking box. */
+.rx-fieldbox-disabled {
+  background: var(--rx-muted-bg);
+}
+
+.rx-fieldbox-disabled .rx-fieldbox-label {
+  color: var(--rx-text-tertiary);
 }
 
 .rx-fieldbox-label {

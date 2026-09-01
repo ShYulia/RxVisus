@@ -65,6 +65,14 @@ export interface DecisionOutcome {
   /** Clinical term for this option, shown as small secondary text — never required reading to use the pathway. */
   secondaryLabel?: string;
   /**
+   * A short, purely procedural one-liner (never a clinical claim/interpretation) shown as
+   * secondary text under the label — for the rare "which top-level path" choice (e.g. Quick
+   * Screen vs. Full Assessment) that deserves the same visual weight as a branch node's
+   * children, not for ordinary in-flow answers. Presence of `hint` on any outcome switches
+   * that whole question's choices to the richer card layout (see PathwayWizard).
+   */
+  hint?: string;
+  /**
    * Short next action or interpretation, shown once this outcome ends the
    * flow (no `next`). Avoid stating a diagnosis this single finding cannot
    * establish on its own.
@@ -742,8 +750,20 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         shortLabel: 'Entry',
         question: 'How would you like to proceed?',
         outcomes: [
-          { label: 'Quick Screen', action: '', next: 'age', recordAs: { key: 'entryMode', value: 'quick' } },
-          { label: 'Full Assessment', action: '', next: 'age', recordAs: { key: 'entryMode', value: 'full' } },
+          {
+            label: 'Quick Screen',
+            hint: 'A short screening pass — ends with a recommendation on whether to continue.',
+            action: '',
+            next: 'age',
+            recordAs: { key: 'entryMode', value: 'quick' },
+          },
+          {
+            label: 'Full Assessment',
+            hint: 'The complete step-by-step workup, start to finish.',
+            action: '',
+            next: 'age',
+            recordAs: { key: 'entryMode', value: 'full' },
+          },
         ],
       },
       {

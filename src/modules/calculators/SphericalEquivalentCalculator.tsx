@@ -30,6 +30,7 @@ const SphericalEquivalentCalculator: React.FC = () => {
     <IonPage>
       <PageHeader
         title="Spherical Equivalent"
+        subline="Reduce a toric Rx to its equivalent sphere power."
         backHref="/calculate"
         action={
           <FavoriteStarButton

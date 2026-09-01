@@ -37,7 +37,7 @@ export const FieldBox: React.FC<FieldBoxProps> = ({
   disabled = false,
   onChange,
 }) => (
-  <div className="rx-fieldbox">
+  <div className={`rx-fieldbox ${disabled ? 'rx-fieldbox-disabled' : ''}`}>
     <span className="rx-fieldbox-label">{label}</span>
     <div className="rx-fieldbox-value-row">
       <IonInput

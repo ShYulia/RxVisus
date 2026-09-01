@@ -117,9 +117,9 @@ const EyeRxFields: React.FC<{
 const EyeInducedPrismPanel: React.FC<{ label: string; result: InducedPrism }> = ({ label, result }) => {
   if (!result.horizontal && !result.vertical) {
     return (
-      <div className="rx-result-panel">
+      <div className="rx-undefined">
         <div className="rx-result-panel-label">{label}</div>
-        <p className="rx-hint">No measurable prism induced.</p>
+        <p>No measurable prism induced.</p>
       </div>
     );
   }
@@ -153,17 +153,15 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
 
   if (!outcome.ok) {
     return (
-      <div className="rx-result-panel">
+      <div className="rx-undefined">
         <div className="rx-result-panel-label">{label}</div>
         <p className="rx-result-secondary-row">
           <span className="rx-result-secondary-label">Desired</span> <span className="rx-result-secondary-value">{desiredText}</span>
         </p>
-        <div className="rx-undefined">
-          <p>
-            Mathematically undefined for {label} — a principal meridian of this Rx is plano (zero power), so no decentration can
-            produce prism there.
-          </p>
-        </div>
+        <p>
+          Mathematically undefined for {label} — a principal meridian of this Rx is plano (zero power), so no decentration can
+          produce prism there.
+        </p>
       </div>
     );
   }
@@ -171,9 +169,9 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
   const { horizontal, vertical } = outcome.result;
   if (!horizontal && !vertical) {
     return (
-      <div className="rx-result-panel">
+      <div className="rx-undefined">
         <div className="rx-result-panel-label">{label}</div>
-        <p className="rx-hint">No decentration needed — the desired prism for this eye is zero.</p>
+        <p>No decentration needed — the desired prism for this eye is zero.</p>
       </div>
     );
   }
@@ -510,7 +508,7 @@ const PrismCalculator: React.FC = () => {
               </>
             ) : (
               <>
-                <p className="rx-fieldbox-label">OD</p>
+                <p className="rx-section-label">OD</p>
                 <FieldBoxGrid columns={2}>
                   <FieldBox
                     label="Horizontal"
@@ -534,7 +532,7 @@ const PrismCalculator: React.FC = () => {
                   <SegmentedControl options={VERTICAL_BASE_OPTIONS} value={odVBase} onChange={(v) => setOdVBase(v as VerticalPrismBase)} />
                 </FieldBoxGrid>
 
-                <p className="rx-fieldbox-label">OS</p>
+                <p className="rx-section-label">OS</p>
                 <FieldBoxGrid columns={2}>
                   <FieldBox
                     label="Horizontal"

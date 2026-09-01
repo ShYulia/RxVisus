@@ -28,7 +28,7 @@ const RedFlagAlert: React.FC<RedFlagAlertProps> = ({ message, title, seeAlso, on
               return (
                 <PillarRow
                   key={node.id}
-                  icon={<CompassIcon size={22} />}
+                  icon={<CompassIcon size={23} />}
                   title={node.title}
                   desc={node.overview ?? ''}
                   routerLink={`/guide/pathway/${node.id}`}

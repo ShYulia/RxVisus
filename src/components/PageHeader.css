@@ -1,8 +1,8 @@
 .rx-header ion-toolbar {
   --background: var(--rx-bg);
   --border-width: 0;
-  padding-top: 4px;
-  padding-bottom: 2px;
+  padding-top: 6px;
+  padding-bottom: 4px;
 }
 
 .rx-header-text {
@@ -10,13 +10,13 @@
   flex-direction: column;
   justify-content: center;
   min-width: 0;
-  padding: 6px 4px;
+  padding: 8px 4px;
 }
 
 .rx-header-title {
   font-family: var(--rx-font-display);
   margin: 0;
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.005em;
   line-height: 1.25;
@@ -24,8 +24,8 @@
 }
 
 .rx-header-subline {
-  margin: 1px 0 0;
-  font-size: 12px;
+  margin: 2px 0 0;
+  font-size: 12.5px;
   color: var(--rx-text-secondary);
   line-height: 1.4;
 }

@@ -17,6 +17,15 @@ export interface ClinicalTest {
   id: string;
   title: string;
   tags: string[];
+  /**
+   * True for a formula/rule applied to findings already measured by other tests (e.g. Sheard's,
+   * Percival's) rather than a technique performed on the patient. Excluded from the default
+   * "All Tests" browse listing and Clinical Guide's own default search listing (see
+   * searchClinicalTests) so it doesn't read as one more examination to perform — still fully
+   * reachable by id (getClinicalTest), by an explicit search matching its title/tags, and via
+   * the "Related tests" cross-reference on the test card(s) whose measurements it interprets.
+   */
+  interpretationCriterion?: boolean;
   /** One line: what this test is for. */
   purpose: string;
   /** Equipment, as short nouns. */
@@ -1231,6 +1240,7 @@ export const clinicalTests: ClinicalTest[] = [
     id: 'sheard-criterion',
     title: "Sheard's Criterion",
     tags: ['binocular', 'vergence', 'phoria', 'reference'],
+    interpretationCriterion: true,
     purpose: 'Reference: the compensating fusional reserve (opposite the phoria) should be at least twice the phoria — the standard check for whether a phoria is adequately compensated.',
     youNeed: ['A measured phoria (Maddox Rod/cover test)', 'The corresponding fusional vergence range'],
     doSteps: [
@@ -1286,6 +1296,7 @@ export const clinicalTests: ClinicalTest[] = [
     id: 'percival-criterion',
     title: "Percival's Criterion",
     tags: ['binocular', 'accommodation', 'vergence', 'reference'],
+    interpretationCriterion: true,
     purpose: 'Reference: the accommodative posture should sit within the middle third of the total relative accommodation range (NRA + PRA) — an accommodative analogue to Sheard’s criterion.',
     youNeed: ['NRA and PRA already measured'],
     doSteps: ['Add NRA + PRA to get the total range', 'Check whether the resting point (habitual correction) falls within the middle third of that range'],
@@ -1334,10 +1345,16 @@ export function getClinicalTest(id: string): ClinicalTest | undefined {
   return clinicalTests.find((test) => test.id === id);
 }
 
-/** Case-insensitive match against title and tags. */
+/**
+ * Case-insensitive match against title and tags. With no query, returns the default browse
+ * listing — every performable test, but not an `interpretationCriterion` entry (e.g. Sheard's,
+ * Percival's): those aren't something you do to a patient, so they don't belong in a generic
+ * "here's every test" list. An explicit query still matches them by name, same as any other
+ * test — they're still fully searchable, just not part of the unfiltered browse list.
+ */
 export function searchClinicalTests(query: string): ClinicalTest[] {
   const q = query.trim().toLowerCase();
-  if (!q) return clinicalTests;
+  if (!q) return clinicalTests.filter((test) => !test.interpretationCriterion);
   return clinicalTests.filter(
     (test) => test.title.toLowerCase().includes(q) || test.tags.some((tag) => tag.toLowerCase().includes(q)),
   );

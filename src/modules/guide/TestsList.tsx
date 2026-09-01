@@ -17,7 +17,7 @@ const TestsList: React.FC = () => {
       <PageHeader title="All Tests" backHref="/guide" />
       <IonContent fullscreen className="ion-padding">
         <div className="rx-search">
-          <SearchIcon size={18} className="rx-search-icon" />
+          <SearchIcon size={20} className="rx-search-icon" />
           <IonInput
             className="rx-search-input"
             placeholder="Search tests"
@@ -26,11 +26,11 @@ const TestsList: React.FC = () => {
           />
         </div>
 
-        <div className="rx-pillars">
+        <div className="rx-pillars rx-pillars-compact-cards">
           {results.map((test) => (
             <PillarRow
               key={test.id}
-              icon={<SearchIcon size={20} />}
+              icon={<SearchIcon size={21} />}
               title={test.title}
               desc={test.purpose}
               routerLink={`/guide/tests/${test.id}`}
