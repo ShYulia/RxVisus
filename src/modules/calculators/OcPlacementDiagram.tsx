@@ -78,13 +78,18 @@ const Eye: React.FC<{ cx: number; cy: number }> = ({ cx, cy }) => (
   </g>
 );
 
+/** The diagram-red already used for other clinical illustrations' emphasis marks (e.g. Diplopia's BREAK indicators) — reused here so the OC marker reads as the one thing on the page demanding attention. */
+const OC_COLOR = '#e5484d';
+
 /**
- * The optical point: a small purple crosshair on the lens plane — deliberately smaller and
+ * The optical point: a small red crosshair on the lens plane — deliberately smaller and
  * structurally unlike the solid round pupil (a thin gapped cross vs. a solid disc) so the two
- * are never read as the same kind of thing, even when they nearly coincide.
+ * are never read as the same kind of thing, even when they nearly coincide. Red (rather than the
+ * app's usual purple) is intentional here: this marker and its displacement from the pupil are
+ * the one thing on this diagram that must be immediately noticeable at a glance.
  */
 const OcMarker: React.FC<{ x: number; y: number }> = ({ x, y }) => (
-  <g stroke="var(--rx-iris)" strokeWidth={2} strokeLinecap="round">
+  <g stroke={OC_COLOR} strokeWidth={2} strokeLinecap="round">
     <line x1={x - 7} y1={y} x2={x - 2.5} y2={y} />
     <line x1={x + 2.5} y1={y} x2={x + 7} y2={y} />
     <line x1={x} y1={y - 7} x2={x} y2={y - 2.5} />
@@ -125,7 +130,7 @@ const EyeGroup: React.FC<{ eye: 'OD' | 'OS'; cx: number; data: EyeOcDisplacement
 
       {hasResult && (
         <>
-          {hasOffset && <line x1={cx} y1={CY} x2={ocX} y2={ocY} stroke="var(--rx-text-tertiary)" strokeWidth={1.25} strokeDasharray="2 3" />}
+          {hasOffset && <line x1={cx} y1={CY} x2={ocX} y2={ocY} stroke={OC_COLOR} strokeWidth={1.75} strokeDasharray="2 3" />}
           <OcMarker x={ocX} y={ocY} />
         </>
       )}
@@ -146,7 +151,7 @@ const EyeGroup: React.FC<{ eye: 'OD' | 'OS'; cx: number; data: EyeOcDisplacement
  * Front-view "patient wearing glasses" illustration — the clinical-dispensing alternative to an
  * abstract coordinate diagram. Each pupil is drawn fixed at its lens's geometric center (matching
  * the calculation's own frame of reference, where decentration is always described relative to
- * the fixed pupil), and a small purple crosshair marks where the calculated optical center
+ * the fixed pupil), and a small red crosshair marks where the calculated optical center
  * actually sits, joined to the pupil by a thin line when the two differ. The rimless lenses are
  * drawn close enough that their inner edges nearly meet in a shallow pinch — the bridge/nasal
  * side is legible from that geometry alone, with no "NOSE" label needed. Showing both eyes
@@ -158,7 +163,7 @@ const OcPlacementDiagram: React.FC<OcPlacementDiagramProps> = ({ od, os }) => (
   <svg
     viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
     role="img"
-    aria-label="Front-view illustration of a patient wearing glasses: each pupil stays fixed at its lens center, and a small purple crosshair marks where the manufactured optical center actually sits relative to that fixed pupil."
+    aria-label="Front-view illustration of a patient wearing glasses: each pupil stays fixed at its lens center, and a small red crosshair marks where the manufactured optical center actually sits relative to that fixed pupil."
     style={{ width: '100%', height: 'auto', display: 'block' }}
   >
     <path
