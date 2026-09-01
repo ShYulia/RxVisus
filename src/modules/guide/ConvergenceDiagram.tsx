@@ -1,5 +1,5 @@
 /** NPC patient view: the target stays single until it breaks into two closer in, then single again farther out on the way back (recovery). */
-const ConvergenceDiagram: React.FC<{ size?: number }> = ({ size = 220 }) => (
+const ConvergenceDiagram: React.FC<{ size?: number }> = ({ size = 280 }) => (
   <svg width={size} height={(size * 70) / 220} viewBox="0 0 220 70" role="img" aria-label="Target moving toward the eyes: single until it breaks into two closer in, single again farther out on the way back">
     <circle cx={200} cy={22} r={7} fill="none" stroke="var(--rx-text-tertiary)" strokeWidth={2} />
     <circle cx={200} cy={48} r={7} fill="none" stroke="var(--rx-text-tertiary)" strokeWidth={2} />

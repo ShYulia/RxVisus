@@ -1,5 +1,5 @@
 /** Illustrates the stereo-target concept: a larger red/cyan offset (coarse, easy) versus a smaller offset (fine, hard) — presented coarse to fine during the test. */
-const StereoDepthDiagram: React.FC<{ size?: number }> = ({ size = 220 }) => (
+const StereoDepthDiagram: React.FC<{ size?: number }> = ({ size = 280 }) => (
   <svg width={size} height={(size * 70) / 220} viewBox="0 0 220 70" role="img" aria-label="Coarse targets have a larger offset between the two colored images and are easy to see in depth; fine targets have a smaller offset and are harder">
     <g transform="translate(45,35)">
       <circle cx={-6} cy={0} r={16} fill="#e5484d" opacity={0.6} />

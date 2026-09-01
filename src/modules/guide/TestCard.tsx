@@ -120,7 +120,7 @@ const TestCard: React.FC = () => {
 
             {test.doSteps && test.doSteps.length > 0 && (
               <>
-                <p className="rx-list-section-label" style={{ margin: '0 4px 4px' }}>
+                <p className="rx-list-section-label" style={{ margin: '20px 4px 8px' }}>
                   How to
                 </p>
                 <ActionFlow steps={test.doSteps} />

@@ -35,7 +35,7 @@ const CoverTestQuickCard: React.FC = () => {
           </p>
 
           <div className="rx-quickcard-recognition">
-            <CoverOccluderDiagram mode="unilateral" coveredEye="OD" size={180} />
+            <CoverOccluderDiagram mode="unilateral" coveredEye="OD" size={210} />
             <p className="rx-quickcard-recognition-caption">Cover OD, watch OS — then repeat covering OS, watching OD</p>
           </div>
 
@@ -68,7 +68,7 @@ const CoverTestQuickCard: React.FC = () => {
           </p>
 
           <div className="rx-quickcard-recognition">
-            <CoverOccluderDiagram mode="alternate" size={180} />
+            <CoverOccluderDiagram mode="alternate" size={210} />
             <p className="rx-quickcard-recognition-caption">Occluder swings eye to eye — neither eye is ever left uncovered together</p>
           </div>
 

@@ -8,7 +8,7 @@ const Eye: React.FC<{ cx: number; cy: number; label: string }> = ({ cx, cy, labe
   <g>
     <circle cx={cx} cy={cy} r={EYE_R} fill="none" stroke="var(--rx-text-tertiary)" strokeWidth={2} />
     <circle cx={cx} cy={cy} r={5} fill="var(--rx-text-tertiary)" />
-    <text x={cx} y={cy + EYE_R + 14} fontSize={10} fontWeight={700} textAnchor="middle" fill="var(--rx-text-secondary)">
+    <text x={cx} y={cy + EYE_R + 14} fontSize={13} fontWeight={700} textAnchor="middle" fill="var(--rx-text-secondary)">
       {label}
     </text>
   </g>
@@ -57,7 +57,7 @@ const CoverOccluderDiagram: React.FC<{ mode: CoverDiagramMode; coveredEye?: 'OD'
       <Eye cx={OS.x} cy={OS.y} label="OS" />
       <Occluder cx={covered.x} cy={covered.y} />
       <WatchRing cx={watched.x} cy={watched.y} />
-      <text x={watched.x} y={watched.y - EYE_R - 12} fontSize={9} fontWeight={700} textAnchor="middle" fill="#2fa84f">
+      <text x={watched.x} y={watched.y - EYE_R - 12} fontSize={12} fontWeight={700} textAnchor="middle" fill="#2fa84f">
         WATCH
       </text>
     </svg>

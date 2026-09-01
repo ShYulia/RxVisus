@@ -1,5 +1,5 @@
 /** Fusional vergence patient view: as prism increases, the target blurs, then breaks (doubles); reducing prism brings it back to single (recovery). */
-const PrismGaugeDiagram: React.FC<{ size?: number }> = ({ size = 220 }) => (
+const PrismGaugeDiagram: React.FC<{ size?: number }> = ({ size = 280 }) => (
   <svg width={size} height={(size * 60) / 220} viewBox="0 0 220 60" role="img" aria-label="As prism increases the target blurs, then breaks into two; reducing prism brings it back to single">
     <line x1={10} y1={15} x2={210} y2={15} stroke="var(--rx-border)" strokeWidth={3} />
     <text x={10} y={8} fontSize={9} fill="var(--rx-text-tertiary)">
