@@ -19,7 +19,7 @@ function renderTestCard(testId: string) {
   );
 }
 
-describe('TestCard: Cover Test and Parks 3-Step integration', () => {
+describe('TestCard: Cover Test integration', () => {
   it('Cover Test still shows the generic Equipment section above its bespoke quick card', async () => {
     renderTestCard('cover-test');
     await waitForIonicReact();
@@ -33,12 +33,5 @@ describe('TestCard: Cover Test and Parks 3-Step integration', () => {
     await waitForIonicReact();
     expect(screen.getByText('What is this test?')).toBeInTheDocument();
     expect(screen.getByText('Common mistakes & limitations')).toBeInTheDocument();
-  });
-
-  it('Parks 3-Step shows Step 1 of the interactive selector and the isolated-palsy caution', async () => {
-    renderTestCard('parks-3-step');
-    await waitForIonicReact();
-    expect(screen.getByText(/Step 1 — Which eye is hypertropic/)).toBeInTheDocument();
-    expect(screen.getByText(/Valid only for a single, isolated cyclovertical muscle palsy/)).toBeInTheDocument();
   });
 });

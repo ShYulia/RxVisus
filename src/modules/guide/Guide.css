@@ -456,31 +456,6 @@
   margin-bottom: 0;
 }
 
-/* Parks 3-Step: progressive question -> answer -> localized muscle. */
-.rx-parks-step {
-  margin-top: 18px;
-}
-
-.rx-parks-step:first-child {
-  margin-top: 0;
-}
-
-.rx-parks-reset {
-  margin-top: 10px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--rx-iris-deep);
-  background: none;
-  border: none;
-  border-bottom: 1px dashed var(--rx-iris-deep);
-  padding: 0;
-  cursor: pointer;
-}
-
-.rx-parks-caution {
-  margin-top: 20px;
-}
-
 /* Test Card: collapsed background info. */
 .rx-more-details {
   margin: 20px 4px 0;

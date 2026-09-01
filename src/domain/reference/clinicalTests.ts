@@ -138,14 +138,13 @@ export const clinicalTests: ClinicalTest[] = [
           'Doing Alternate Cover before Cover-Uncover — alternating first can mask the manifest/latent distinction, since it never isolates the tropia alone. Always do Cover-Uncover first.',
           'Covering too briefly for a full refixation, or letting the patient peek — both understate the deviation.',
           "A blurry, too-small, or non-accommodative fixation target lets attention drift, producing an inconsistent result.",
-          "Cover test alone doesn't measure torsion or identify which specific muscle is at fault in an incomitant finding — see Double Maddox Rod and Parks 3-Step Test.",
+          "Cover test alone doesn't measure torsion or identify which specific muscle is at fault in an incomitant finding — see Double Maddox Rod.",
         ],
       },
       {
         heading: 'Related tests in this guide',
         items: [
           "Maddox Rod, Schober Test, and the Von Graefe Technique all measure a phoria's magnitude from the patient's subjective report of a dissociated image, rather than clinician-observed movement — useful when the movement here is too small to see reliably.",
-          'An incomitant finding with a vertical component is the trigger to move to Parks 3-Step Test.',
         ],
       },
     ],
@@ -290,7 +289,7 @@ export const clinicalTests: ClinicalTest[] = [
         heading: 'What is this test / what it assesses',
         items: [
           'Measures cyclotorsion — a rotational misalignment around the visual axis (excyclotorsion or incyclotorsion) — rather than a linear (horizontal/vertical) deviation.',
-          'Most useful when a vertical deviation doesn\'t fully explain the symptoms, or as part of localizing a suspected superior oblique palsy alongside Parks 3-Step Test.',
+          'Most useful when a vertical deviation doesn\'t fully explain the symptoms.',
         ],
       },
       {
@@ -329,75 +328,14 @@ export const clinicalTests: ClinicalTest[] = [
         items: [
           'Checking only one gaze position — repeat in more than one if the history suggests a variable deviation.',
           'Not considering the red-rod attribution bias noted above when a result seems inconsistent with the rest of the exam.',
-          "Measures torsion only — it doesn't localize which muscle is responsible; pair it with Parks 3-Step Test when a vertical component is also present.",
+          "Measures torsion only — it doesn't localize which muscle is responsible.",
         ],
       },
       {
         heading: 'Related tests',
         items: [
           'Single Maddox Rod is the same optical principle applied to a linear phoria rather than torsion.',
-          "Torsion findings here are typically interpreted alongside Cover Test's vertical finding and Parks 3-Step Test's muscle localization, not in isolation.",
-        ],
-      },
-    ],
-  },
-  {
-    id: 'parks-3-step',
-    title: 'Parks 3-Step Test',
-    tags: ['diplopia', 'vertical', 'muscle-palsy'],
-    purpose: 'Localize a single cyclovertical (vertical) muscle palsy — not valid for horizontal-only or combined palsies.',
-    youNeed: ['Cover test findings in primary gaze, right gaze, left gaze, right head tilt, and left head tilt (already on hand)'],
-    moreSections: [
-      {
-        heading: 'What is this test / why the 3 steps work',
-        items: [
-          'A stepwise elimination: primary-gaze hypertropia narrows the weak muscle to 4 candidates (the higher eye\'s two depressors, or the lower eye\'s two elevators); gaze position narrows those 4 to 2; head tilt narrows the 2 to 1. Each step exploits a different piece of extraocular-muscle physiology, not an arbitrary rule.',
-        ],
-      },
-      {
-        heading: 'Step 1 — why primary-gaze hypertropia narrows to 4 muscles',
-        items: [
-          'A hypertropia means the higher eye is under-depressed, or the lower eye is under-elevated (or both) — so the weak muscle must be one of the higher eye\'s two depressors (inferior rectus, superior oblique) or the lower eye\'s two elevators (superior rectus, inferior oblique).',
-        ],
-      },
-      {
-        heading: 'Step 2 — why gaze position narrows to 2 muscles',
-        items: [
-          'The vertical recti (superior/inferior rectus) generate their strongest vertical pull with the eye ABDUCTED (looking away from the nose); the obliques (superior/inferior oblique) generate theirs with the eye ADDUCTED (looking toward the nose). Whichever gaze direction worsens the hypertropia identifies which pair — recti-dominant or oblique-dominant — is doing the vertical work in that gaze, narrowing Step 1\'s 4 candidates to 2.',
-        ],
-      },
-      {
-        heading: 'Step 3 — why head tilt (Bielschowsky) resolves the final muscle',
-        items: [
-          'Tilting the head engages a reflex torsional response to keep the retinal image upright: the eye on the side of the tilt intorts (via its superior rectus + superior oblique); the other eye extorts (via its inferior rectus + inferior oblique).',
-          'When one of a pair of torting muscles is weak, its partner overacts to complete the torsional duty, adding an unwanted vertical deviation on that tilt — so a superior-muscle palsy (superior rectus or superior oblique) worsens on head tilt TOWARD the affected eye, and an inferior-muscle palsy (inferior rectus or inferior oblique) worsens on head tilt AWAY from the affected eye. That rule is what the interactive selector above applies to reach the final muscle.',
-        ],
-      },
-      {
-        heading: 'Verification status of the muscle table — please read',
-        items: [
-          "Steps 1–3's underlying mechanism (vertical-rectus-in-abduction/oblique-in-adduction; head-tilt torsional pairing) is confirmed against two independent reputable sources (AAO EyeWiki and Wikipedia, cross-checked against each other) and is standard, non-controversial physiology.",
-          "The specific 8-row lookup table the selector above uses was deduced by applying that verified mechanism systematically, then checked for internal self-consistency and left/right mirror symmetry (see parksThreeStep.test.ts) — it was not copied verbatim from a single published table, since no source fetched during verification published the full 8-row table as plain text. Cross-check it against a primary reference (e.g. a textbook plate) before relying on it clinically, even though the mechanism it's built from is solid.",
-        ],
-      },
-      {
-        heading: 'Common abnormal pattern — classic example',
-        items: [
-          'Right hypertropia in primary gaze, worse in left gaze, worse on right head tilt → localizes to the right superior oblique — the single most common presentation this test is used for (classic superior oblique palsy).',
-        ],
-      },
-      {
-        heading: 'Common mistakes & limitations',
-        items: [
-          'Applying the test to a deviation that isn\'t a single isolated cyclovertical palsy — it becomes unreliable with more than one paretic muscle, restrictive strabismus (e.g. thyroid eye disease, orbital fracture), skew deviation, myasthenia gravis, prior strabismus surgery, or a long-standing/decompensated deviation where the pattern may have spread or normalized (per AAO EyeWiki and StatPearls).',
-          'Forcing an answer from a borderline or inconsistent gaze/tilt measurement — repeat the measurement rather than guessing which position was "worse."',
-        ],
-      },
-      {
-        heading: 'Related tests',
-        items: [
-          "Cover Test in multiple gaze and head-tilt positions is the actual source of the findings this test interprets — Parks 3-Step doesn't replace cover test, it reads the pattern cover test already produced.",
-          "Double Maddox Rod's torsion finding (excyclotorsion of the hyper eye) often corroborates the muscle this test localizes, particularly for superior oblique palsy.",
+          "Torsion findings here are typically interpreted alongside Cover Test's vertical finding, not in isolation.",
         ],
       },
     ],

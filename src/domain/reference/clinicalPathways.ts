@@ -511,7 +511,7 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
             infoTerm: 'incomitant',
             action:
               'Gaze-dependent deviation can make permanent prism management less straightforward. Consider further assessment/referral according to the overall presentation.',
-            testIds: ['parks-3-step', 'double-maddox-rod'],
+            testIds: ['double-maddox-rod'],
           },
           { label: 'No', secondaryLabel: 'comitant', infoTerm: 'comitant', action: '', next: 'sensory-check' },
           { label: 'Not sure', action: '', next: 'gaze-instruction' },
@@ -698,7 +698,7 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         shortLabel: 'Gaze-dependent noted',
         question:
           "One fixed prism may not work equally well in every gaze position. Trial for the patient's relevant functional viewing position (e.g. primary gaze), and verify comfort/single vision before prescribing.",
-        testIds: ['parks-3-step', 'double-maddox-rod'],
+        testIds: ['double-maddox-rod'],
         testIdsLabel: 'Additional tests (optional)',
         outcomes: [{ label: 'Continue', action: '', next: 'sensory-check' }],
       },

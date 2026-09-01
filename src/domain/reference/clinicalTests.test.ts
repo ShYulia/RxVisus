@@ -35,7 +35,6 @@ describe('clinicalTests point-of-care shape', () => {
     'monocular-accommodative-facility-test',
     'binocular-accommodative-facility-test',
     'vergence-facility-test',
-    'parks-3-step',
   ];
 
   it('every test lists at least one required item', () => {

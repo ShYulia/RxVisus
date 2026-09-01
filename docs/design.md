@@ -130,7 +130,7 @@ one module (see Information architecture above). MVP pathway content:
 Binocular Status, Diplopia, Strabismus by Type — all three built. Diplopia
 was seeded first (monocular vs. binocular → vertical vs. horizontal →
 relevant tests: Cover Test, Maddox Rod, Double Maddox Rod,
-Hess/Lancaster, Parks 3-Step). Symptom-Driven Testing was scoped for the
+Hess/Lancaster). Symptom-Driven Testing was scoped for the
 MVP but dropped before being built — it isn't on the hub. Explicitly
 **not** diagnostic — a memory aid for trained professionals, structured
 around ray-diagram-style reasoning where relevant (crossed vs. uncrossed

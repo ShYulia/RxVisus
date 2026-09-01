@@ -8,7 +8,6 @@ import CoverTestQuickCard from './CoverTestQuickCard';
 import DoubleMaddoxRodQuickCard from './DoubleMaddoxRodQuickCard';
 import { BAFQuickCard, MAFQuickCard, VergenceFacilityQuickCard } from './FacilityQuickCards';
 import MaddoxRodQuickCard from './MaddoxRodQuickCard';
-import Parks3StepSelector from './Parks3StepSelector';
 import PrismGaugeDiagram from './PrismGaugeDiagram';
 import SchoberQuickCard from './SchoberQuickCard';
 import StereoDepthDiagram from './StereoDepthDiagram';
@@ -21,9 +20,8 @@ import './Guide.css';
  * sections below. This is the general pattern for any future point-of-care Test Card that
  * needs it — see SchoberQuickCard/MaddoxRodQuickCard (recognition image, SETUP, PATIENT SEES
  * -> MEANS -> NEUTRALIZE rows), FacilityQuickCards (flip-sequence instruction cards for
- * MAF/BAF/Vergence Facility), CoverTestQuickCard (mode toggle between two techniques that
- * answer different clinical questions), and Parks3StepSelector (progressive decision-tree
- * card, no recognition/finding rows at all) for different shapes of "not the generic template."
+ * MAF/BAF/Vergence Facility), and CoverTestQuickCard (mode toggle between two techniques that
+ * answer different clinical questions) for different shapes of "not the generic template."
  */
 const QUICK_CARDS: Record<string, React.FC> = {
   'cover-test': CoverTestQuickCard,
@@ -35,7 +33,6 @@ const QUICK_CARDS: Record<string, React.FC> = {
   'monocular-accommodative-facility-test': MAFQuickCard,
   'binocular-accommodative-facility-test': BAFQuickCard,
   'vergence-facility-test': VergenceFacilityQuickCard,
-  'parks-3-step': Parks3StepSelector,
 };
 
 /**
