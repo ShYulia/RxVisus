@@ -4,6 +4,8 @@ import './CalculatorResult.css';
 export interface CalculatorResultProps {
   primaryLabel: string;
   primaryValue: string;
+  /** Small tertiary line directly under the primary value — e.g. clarifying what the value is measured relative to. */
+  primaryCaption?: string;
   secondaryLabel?: string;
   secondaryValue?: string;
   /** Calm clinical-caution message (never styled as an error). */
@@ -20,6 +22,7 @@ export interface CalculatorResultProps {
 const CalculatorResult: React.FC<CalculatorResultProps> = ({
   primaryLabel,
   primaryValue,
+  primaryCaption,
   secondaryLabel,
   secondaryValue,
   caution,
@@ -28,6 +31,7 @@ const CalculatorResult: React.FC<CalculatorResultProps> = ({
   <div className="rx-result">
     <div className="rx-result-label">{primaryLabel}</div>
     <div className="rx-result-value">{primaryValue}</div>
+    {primaryCaption && <p className="rx-result-panel-caption">{primaryCaption}</p>}
 
     {secondaryLabel && secondaryValue && (
       <div className="rx-result-secondary-row">

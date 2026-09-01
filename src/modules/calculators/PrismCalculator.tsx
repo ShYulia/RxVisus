@@ -16,13 +16,28 @@ import {
 } from '../../domain/calculators/prism';
 import { formatDecentrationMm, formatPrismDiopters } from './formatPrism';
 import { formatDiopter, parseSphereInput } from './formatDiopter';
+import OcPlacementDiagram from './OcPlacementDiagram';
 import PageHeader from '../../components/PageHeader';
 import FavoriteStarButton from '../../components/FavoriteStarButton';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import CalculatorResult from '../../components/CalculatorResult';
+import CautionBox from '../../components/CautionBox';
 import Disclosure from '../../components/Disclosure';
 import ActionRow from '../../components/ActionRow';
 import SegmentedControl from '../../components/SegmentedControl';
+
+/**
+ * Above this resultant OC displacement (mm), a "large required decentration" caution is shown.
+ * One named constant so the threshold can be tuned later without hunting through the render
+ * logic. Kept as a UI-layer judgment call, not a domain calculation — the math itself is valid
+ * at any magnitude; this is purely a practical fabrication/frame-fit heads-up.
+ */
+const LARGE_DECENTRATION_MM = 10;
+
+/** Resultant OC displacement across both axes — sqrt(horizontal² + vertical²) — used only to judge practicality, never to change the reported horizontal/vertical components themselves. */
+function resultantDecentrationMm(horizontalMm: number, verticalMm: number): number {
+  return Math.sqrt(horizontalMm * horizontalMm + verticalMm * verticalMm);
+}
 
 const MODE_OPTIONS = [
   { value: 'induced', label: 'Induced Prism' },
@@ -162,9 +177,13 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
     );
   }
 
+  const hasDefinedResult = Boolean(horizontalDefined || verticalDefined);
+  const resultantMm = resultantDecentrationMm(horizontalDefined?.mm ?? 0, verticalDefined?.mm ?? 0);
+  const isLargeDecentration = hasDefinedResult && resultantMm > LARGE_DECENTRATION_MM;
+
   return (
     <CalculatorResult
-      primaryLabel={label}
+      primaryLabel={`${label} — Optical center`}
       primaryValue={
         horizontalDefined
           ? `${formatDecentrationMm(horizontalDefined.mm)} ${horizontalDefined.direction}`
@@ -172,6 +191,7 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
             ? `${formatDecentrationMm(verticalDefined.mm)} ${verticalDefined.direction}`
             : 'Undefined'
       }
+      primaryCaption={hasDefinedResult ? 'relative to pupil / patient PD' : undefined}
       secondaryLabel={horizontalDefined && verticalDefined ? 'Vertical' : undefined}
       secondaryValue={horizontalDefined && verticalDefined ? `${formatDecentrationMm(verticalDefined.mm)} ${verticalDefined.direction}` : undefined}
       caution={caution}
@@ -198,13 +218,32 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
       )}
       {orderingPdMm !== undefined && (
         <div className="rx-result-secondary-row">
-          <span className="rx-result-secondary-label">Ordering PD</span>
+          <span className="rx-result-secondary-label">Target OC</span>
           <span className="rx-result-secondary-value">{orderingPdMm.toFixed(1)} mm</span>
         </div>
+      )}
+
+      {isLargeDecentration && (
+        <CautionBox className="rx-result-caution">
+          <p className="rx-caution-text">
+            <strong>Large required decentration.</strong> This may exceed practical frame/lens limits. Consider prescribed/surfaced prism rather
+            than obtaining the full prism through OC decentration alone.
+          </p>
+        </CautionBox>
       )}
     </CalculatorResult>
   );
 };
+
+/** Narrows a horizontal-axis result to the {mm, direction} shape OcPlacementDiagram needs, or undefined when there's nothing to show for that axis. */
+function definedHorizontal(result: EyeRequiredDecentrationResult['horizontal']) {
+  return result.kind === 'defined' ? { mm: result.mm, direction: result.direction } : undefined;
+}
+
+/** Same as definedHorizontal, for the vertical axis. */
+function definedVertical(result: EyeRequiredDecentrationResult['vertical']) {
+  return result.kind === 'defined' ? { mm: result.mm, direction: result.direction } : undefined;
+}
 
 const VerticalRelationshipPanel: React.FC<{ relationship: VerticalPrismRelationship }> = ({ relationship }) => {
   if (!relationship.imbalance && !relationship.yoked) return null;
@@ -537,6 +576,18 @@ const PrismCalculator: React.FC = () => {
                 <EyeRequiredDecentrationPanel label="OD" result={requiredResult.od} />
                 <EyeRequiredDecentrationPanel label="OS" result={requiredResult.os} />
                 {requiredResult.verticalRelationship && <VerticalRelationshipPanel relationship={requiredResult.verticalRelationship} />}
+
+                {(definedHorizontal(requiredResult.od.horizontal) ||
+                  definedVertical(requiredResult.od.vertical) ||
+                  definedHorizontal(requiredResult.os.horizontal) ||
+                  definedVertical(requiredResult.os.vertical)) && (
+                  <Disclosure label="Visualize OC placement">
+                    <OcPlacementDiagram
+                      od={{ horizontal: definedHorizontal(requiredResult.od.horizontal), vertical: definedVertical(requiredResult.od.vertical) }}
+                      os={{ horizontal: definedHorizontal(requiredResult.os.horizontal), vertical: definedVertical(requiredResult.os.vertical) }}
+                    />
+                  </Disclosure>
+                )}
               </>
             ) : null}
           </>
