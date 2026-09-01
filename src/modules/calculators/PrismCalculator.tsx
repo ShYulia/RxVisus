@@ -8,11 +8,11 @@ import {
   validateBinocularRequiredDecentrationInput,
   hasBinocularInducedPrismErrors,
   hasBinocularRequiredDecentrationErrors,
+  type EyeHorizontalInducedPrismResult,
   type EyeRequiredDecentrationResult,
-  type InducedPrism,
   type HorizontalPrismBase,
   type VerticalPrismBase,
-  type VerticalDecentrationDirection,
+  type VerticalPrismRelationship,
 } from '../../domain/calculators/prism';
 import { formatDecentrationMm, formatPrismDiopters } from './formatPrism';
 import { formatDiopter, parseSphereInput } from './formatDiopter';
@@ -28,10 +28,6 @@ const MODE_OPTIONS = [
   { value: 'induced', label: 'Induced Prism' },
   { value: 'required', label: 'Required Decentration' },
 ];
-const VERTICAL_DIRECTION_OPTIONS = [
-  { value: 'UP', label: 'UP' },
-  { value: 'DOWN', label: 'DOWN' },
-];
 const HORIZONTAL_BASE_OPTIONS = [
   { value: 'BI', label: 'BI' },
   { value: 'BO', label: 'BO' },
@@ -40,7 +36,7 @@ const VERTICAL_BASE_OPTIONS = [
   { value: 'BU', label: 'BU' },
   { value: 'BD', label: 'BD' },
 ];
-const ALLOCATION_OPTIONS = [
+const HORIZONTAL_ALLOCATION_OPTIONS = [
   { value: 'total', label: 'Total (split OU)' },
   { value: 'perEye', label: 'Per eye' },
 ];
@@ -114,60 +110,50 @@ const EyeRxFields: React.FC<{
   );
 };
 
-const EyeInducedPrismPanel: React.FC<{ label: string; result: InducedPrism }> = ({ label, result }) => {
-  if (!result.horizontal && !result.vertical) {
+// --- Mode 1: Induced Prism ---------------------------------------------
+
+const EyeInducedPrismPanel: React.FC<{ label: string; result: EyeHorizontalInducedPrismResult }> = ({ label, result }) => {
+  if (!result.prism) {
     return (
       <div className="rx-undefined">
         <div className="rx-result-panel-label">{label}</div>
-        <p>No measurable prism induced.</p>
+        <p>No measurable horizontal prism induced.</p>
       </div>
     );
   }
   return (
-    <CalculatorResult
-      primaryLabel={label}
-      primaryValue={
-        result.horizontal
-          ? `${formatPrismDiopters(result.horizontal.diopters)} ${result.horizontal.base}`
-          : `${formatPrismDiopters(result.vertical!.diopters)} ${result.vertical!.base}`
-      }
-      secondaryLabel={result.horizontal && result.vertical ? 'Vertical' : undefined}
-      secondaryValue={
-        result.horizontal && result.vertical ? `${formatPrismDiopters(result.vertical.diopters)} ${result.vertical.base}` : undefined
-      }
-    />
+    <CalculatorResult primaryLabel={label} primaryValue={`${formatPrismDiopters(result.prism.diopters)} ${result.prism.base}`}>
+      <div className="rx-result-secondary-row">
+        <span className="rx-result-secondary-label">Decentration</span>
+        <span className="rx-result-secondary-value">
+          {formatDecentrationMm(result.decentration.mm)} {result.decentration.direction}
+        </span>
+      </div>
+      <div className="rx-result-secondary-row">
+        <span className="rx-result-secondary-label">F180 (horizontal power used)</span>
+        <span className="rx-result-secondary-value">{formatDiopter(result.f180)} D</span>
+      </div>
+    </CalculatorResult>
   );
 };
 
+// --- Mode 2: Required Decentration --------------------------------------
+
 const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequiredDecentrationResult }> = ({ label, result }) => {
-  const { allocatedTarget, relevantPower, outcome, orderingPdMm, caution } = result;
+  const { allocatedHorizontal, relevantPower, horizontal, vertical, orderingPdMm, caution } = result;
 
   const desiredParts: string[] = [];
-  if (allocatedTarget.horizontalDiopters > 0) {
-    desiredParts.push(`${formatPrismDiopters(allocatedTarget.horizontalDiopters)} ${allocatedTarget.horizontalBase}`);
-  }
-  if (allocatedTarget.verticalDiopters > 0) {
-    desiredParts.push(`${formatPrismDiopters(allocatedTarget.verticalDiopters)} ${allocatedTarget.verticalBase}`);
+  if (allocatedHorizontal && allocatedHorizontal.diopters > 0) {
+    desiredParts.push(`${formatPrismDiopters(allocatedHorizontal.diopters)} ${allocatedHorizontal.base}`);
   }
   const desiredText = desiredParts.length > 0 ? desiredParts.join('  +  ') : 'None';
 
-  if (!outcome.ok) {
-    return (
-      <div className="rx-undefined">
-        <div className="rx-result-panel-label">{label}</div>
-        <p className="rx-result-secondary-row">
-          <span className="rx-result-secondary-label">Desired</span> <span className="rx-result-secondary-value">{desiredText}</span>
-        </p>
-        <p>
-          Mathematically undefined for {label} — a principal meridian of this Rx is plano (zero power), so no decentration can
-          produce prism there.
-        </p>
-      </div>
-    );
-  }
+  const horizontalSingular = horizontal.kind === 'singularity';
+  const verticalSingular = vertical.kind === 'singularity';
+  const horizontalDefined = horizontal.kind === 'defined' ? horizontal : undefined;
+  const verticalDefined = vertical.kind === 'defined' ? vertical : undefined;
 
-  const { horizontal, vertical } = outcome.result;
-  if (!horizontal && !vertical) {
+  if (!horizontalDefined && !verticalDefined && !horizontalSingular && !verticalSingular) {
     return (
       <div className="rx-undefined">
         <div className="rx-result-panel-label">{label}</div>
@@ -179,25 +165,35 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
   return (
     <CalculatorResult
       primaryLabel={label}
-      primaryValue={horizontal ? `${formatDecentrationMm(horizontal.mm)} ${horizontal.direction}` : `${formatDecentrationMm(vertical!.mm)} ${vertical!.direction}`}
-      secondaryLabel={horizontal && vertical ? 'Vertical' : undefined}
-      secondaryValue={horizontal && vertical ? `${formatDecentrationMm(vertical.mm)} ${vertical.direction}` : undefined}
+      primaryValue={
+        horizontalDefined
+          ? `${formatDecentrationMm(horizontalDefined.mm)} ${horizontalDefined.direction}`
+          : verticalDefined
+            ? `${formatDecentrationMm(verticalDefined.mm)} ${verticalDefined.direction}`
+            : 'Undefined'
+      }
+      secondaryLabel={horizontalDefined && verticalDefined ? 'Vertical' : undefined}
+      secondaryValue={horizontalDefined && verticalDefined ? `${formatDecentrationMm(verticalDefined.mm)} ${verticalDefined.direction}` : undefined}
       caution={caution}
     >
       <div className="rx-result-secondary-row">
         <span className="rx-result-secondary-label">Desired</span>
         <span className="rx-result-secondary-value">{desiredText}</span>
       </div>
-      {horizontal && (
+      {horizontalSingular && (
+        <p className="rx-hint">Horizontal decentration is mathematically undefined for {label} — the horizontal (180°) meridian is plano.</p>
+      )}
+      {verticalSingular && <p className="rx-hint">Vertical decentration is mathematically undefined for {label} — the vertical (90°) meridian is plano.</p>}
+      {(horizontalDefined || horizontalSingular) && (
         <div className="rx-result-secondary-row">
-          <span className="rx-result-secondary-label">Relevant power (horizontal)</span>
-          <span className="rx-result-secondary-value">{formatDiopter(relevantPower.horizontal)} D</span>
+          <span className="rx-result-secondary-label">F180 (horizontal power used)</span>
+          <span className="rx-result-secondary-value">{formatDiopter(relevantPower.f180)} D</span>
         </div>
       )}
-      {vertical && (
+      {(verticalDefined || verticalSingular) && (
         <div className="rx-result-secondary-row">
-          <span className="rx-result-secondary-label">Relevant power (vertical)</span>
-          <span className="rx-result-secondary-value">{formatDiopter(relevantPower.vertical)} D</span>
+          <span className="rx-result-secondary-label">F90 (vertical power used)</span>
+          <span className="rx-result-secondary-value">{formatDiopter(relevantPower.f90)} D</span>
         </div>
       )}
       {orderingPdMm !== undefined && (
@@ -206,6 +202,30 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
           <span className="rx-result-secondary-value">{orderingPdMm.toFixed(1)} mm</span>
         </div>
       )}
+    </CalculatorResult>
+  );
+};
+
+const VerticalRelationshipPanel: React.FC<{ relationship: VerticalPrismRelationship }> = ({ relationship }) => {
+  if (!relationship.imbalance && !relationship.yoked) return null;
+  return (
+    <CalculatorResult
+      primaryLabel="Vertical imbalance between the eyes"
+      primaryValue={relationship.imbalance ? `${formatPrismDiopters(relationship.imbalance.diopters)} (more BU in ${relationship.imbalance.moreBuEye})` : 'None — fully yoked'}
+    >
+      {relationship.yoked && (
+        <div className="rx-result-secondary-row">
+          <span className="rx-result-secondary-label">Common (yoked) component</span>
+          <span className="rx-result-secondary-value">
+            {formatPrismDiopters(relationship.yoked.diopters)} {relationship.yoked.base}
+          </span>
+        </div>
+      )}
+      <p className="rx-hint">
+        {relationship.yoked
+          ? 'The yoked component shifts both eyes’ view together and is not a source of vertical diplopia. Only the imbalance above is the relative demand between the eyes.'
+          : 'This is the net relative vertical prism between the eyes — the figure relevant to vertical diplopia/fusion, not a simple OD + OS sum.'}
+      </p>
     </CalculatorResult>
   );
 };
@@ -220,49 +240,41 @@ const PrismCalculator: React.FC = () => {
   const [odPatientPdStr, setOdPatientPdStr] = useState('');
   const [osPatientPdStr, setOsPatientPdStr] = useState('');
 
-  // Mode 1 only: where the lenses were actually manufactured/ground.
+  // Mode 1 only: where the lenses were actually manufactured/ground — horizontal only.
   const [odOcDistanceStr, setOdOcDistanceStr] = useState('');
   const [osOcDistanceStr, setOsOcDistanceStr] = useState('');
-  const [odVMmStr, setOdVMmStr] = useState('');
-  const [odVDir, setOdVDir] = useState<VerticalDecentrationDirection>('UP');
-  const [osVMmStr, setOsVMmStr] = useState('');
-  const [osVDir, setOsVDir] = useState<VerticalDecentrationDirection>('UP');
 
   // Mode 2 only.
-  const [allocationMode, setAllocationMode] = useState<'perEye' | 'total'>('total');
+  const [horizontalAllocationMode, setHorizontalAllocationMode] = useState<'perEye' | 'total'>('total');
   const [odHDeltaStr, setOdHDeltaStr] = useState('');
   const [odHBase, setOdHBase] = useState<HorizontalPrismBase>('BI');
-  const [odVDeltaStr, setOdVDeltaStr] = useState('');
-  const [odVBase, setOdVBase] = useState<VerticalPrismBase>('BU');
   const [osHDeltaStr, setOsHDeltaStr] = useState('');
   const [osHBase, setOsHBase] = useState<HorizontalPrismBase>('BI');
-  const [osVDeltaStr, setOsVDeltaStr] = useState('');
-  const [osVBase, setOsVBase] = useState<VerticalPrismBase>('BU');
   const [totalHDeltaStr, setTotalHDeltaStr] = useState('');
   const [totalHBase, setTotalHBase] = useState<HorizontalPrismBase>('BI');
-  const [totalVDeltaStr, setTotalVDeltaStr] = useState('');
-  const [totalVBase, setTotalVBase] = useState<VerticalPrismBase>('BU');
   const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal');
   const [odShareStr, setOdShareStr] = useState('50');
+  const [odVDeltaStr, setOdVDeltaStr] = useState('');
+  const [odVBase, setOdVBase] = useState<VerticalPrismBase>('BU');
+  const [osVDeltaStr, setOsVDeltaStr] = useState('');
+  const [osVBase, setOsVBase] = useState<VerticalPrismBase>('BU');
 
   const num = (raw: string) => (raw.trim() === '' ? 0 : parseFloat(raw));
   const numOrUndefined = (raw: string) => (raw.trim() === '' ? undefined : parseFloat(raw));
 
-  // --- Mode 1: Induced Prism ---
+  // --- Mode 1: Induced Prism (horizontal only) ---
   const inducedInput = useMemo(
     () => ({
       od: {
         rx: { sphere: od.rx.sphere, cylinder: od.rx.cylinder, axis: od.rx.axis },
-        horizontalPosition: { patientPdMm: parseFloat(odPatientPdStr), ocDistanceMm: parseFloat(odOcDistanceStr) },
-        vertical: { mm: num(odVMmStr), direction: odVDir },
+        position: { patientPdMm: parseFloat(odPatientPdStr), ocDistanceMm: parseFloat(odOcDistanceStr) },
       },
       os: {
         rx: { sphere: os.rx.sphere, cylinder: os.rx.cylinder, axis: os.rx.axis },
-        horizontalPosition: { patientPdMm: parseFloat(osPatientPdStr), ocDistanceMm: parseFloat(osOcDistanceStr) },
-        vertical: { mm: num(osVMmStr), direction: osVDir },
+        position: { patientPdMm: parseFloat(osPatientPdStr), ocDistanceMm: parseFloat(osOcDistanceStr) },
       },
     }),
-    [od.rx.sphere, od.rx.cylinder, od.rx.axis, os.rx.sphere, os.rx.cylinder, os.rx.axis, odPatientPdStr, odOcDistanceStr, odVMmStr, odVDir, osPatientPdStr, osOcDistanceStr, osVMmStr, osVDir],
+    [od.rx.sphere, od.rx.cylinder, od.rx.axis, os.rx.sphere, os.rx.cylinder, os.rx.axis, odPatientPdStr, odOcDistanceStr, osPatientPdStr, osOcDistanceStr],
   );
   const inducedErrors = useMemo(() => validateBinocularInducedPrismInput(inducedInput), [inducedInput]);
   const inducedResult = useMemo(() => {
@@ -274,29 +286,25 @@ const PrismCalculator: React.FC = () => {
   const requiredInput = useMemo(() => {
     const odPatientPd = numOrUndefined(odPatientPdStr);
     const osPatientPd = numOrUndefined(osPatientPdStr);
-    const allocation =
-      allocationMode === 'perEye'
-        ? {
-            mode: 'perEye' as const,
-            od: { horizontalDiopters: num(odHDeltaStr), horizontalBase: odHBase, verticalDiopters: num(odVDeltaStr), verticalBase: odVBase },
-            os: { horizontalDiopters: num(osHDeltaStr), horizontalBase: osHBase, verticalDiopters: num(osVDeltaStr), verticalBase: osVBase },
-          }
+    const horizontal =
+      horizontalAllocationMode === 'perEye'
+        ? { mode: 'perEye' as const, od: { diopters: num(odHDeltaStr), base: odHBase }, os: { diopters: num(osHDeltaStr), base: osHBase } }
         : {
             mode: 'total' as const,
-            total: { horizontalDiopters: num(totalHDeltaStr), horizontalBase: totalHBase, verticalDiopters: num(totalVDeltaStr), verticalBase: totalVBase },
-            horizontalSplit: { odFraction: splitMode === 'equal' ? 0.5 : num(odShareStr) / 100 },
-            verticalSplit: { odFraction: splitMode === 'equal' ? 0.5 : num(odShareStr) / 100 },
+            total: { diopters: num(totalHDeltaStr), base: totalHBase },
+            split: { odFraction: splitMode === 'equal' ? 0.5 : num(odShareStr) / 100 },
           };
     return {
-      od: { rx: { sphere: od.rx.sphere, cylinder: od.rx.cylinder, axis: od.rx.axis }, patientPdMm: odPatientPd },
-      os: { rx: { sphere: os.rx.sphere, cylinder: os.rx.cylinder, axis: os.rx.axis }, patientPdMm: osPatientPd },
-      allocation,
+      od: { rx: { sphere: od.rx.sphere, cylinder: od.rx.cylinder, axis: od.rx.axis }, patientPdMm: odPatientPd, vertical: { diopters: num(odVDeltaStr), base: odVBase } },
+      os: { rx: { sphere: os.rx.sphere, cylinder: os.rx.cylinder, axis: os.rx.axis }, patientPdMm: osPatientPd, vertical: { diopters: num(osVDeltaStr), base: osVBase } },
+      horizontal,
     };
   }, [
     od.rx.sphere, od.rx.cylinder, od.rx.axis, os.rx.sphere, os.rx.cylinder, os.rx.axis,
-    odPatientPdStr, osPatientPdStr, allocationMode,
-    odHDeltaStr, odHBase, odVDeltaStr, odVBase, osHDeltaStr, osHBase, osVDeltaStr, osVBase,
-    totalHDeltaStr, totalHBase, totalVDeltaStr, totalVBase, splitMode, odShareStr,
+    odPatientPdStr, osPatientPdStr, horizontalAllocationMode,
+    odHDeltaStr, odHBase, osHDeltaStr, osHBase,
+    totalHDeltaStr, totalHBase, splitMode, odShareStr,
+    odVDeltaStr, odVBase, osVDeltaStr, osVBase,
   ]);
   const requiredErrors = useMemo(() => validateBinocularRequiredDecentrationInput(requiredInput), [requiredInput]);
   const requiredResult = useMemo(() => {
@@ -313,31 +321,22 @@ const PrismCalculator: React.FC = () => {
     setOsPatientPdStr('');
     setOdOcDistanceStr('');
     setOsOcDistanceStr('');
-    setOdVMmStr('');
-    setOdVDir('UP');
-    setOsVMmStr('');
-    setOsVDir('UP');
-    setAllocationMode('total');
+    setHorizontalAllocationMode('total');
     setOdHDeltaStr('');
     setOdHBase('BI');
-    setOdVDeltaStr('');
-    setOdVBase('BU');
     setOsHDeltaStr('');
     setOsHBase('BI');
-    setOsVDeltaStr('');
-    setOsVBase('BU');
     setTotalHDeltaStr('');
     setTotalHBase('BI');
-    setTotalVDeltaStr('');
-    setTotalVBase('BU');
     setSplitMode('equal');
     setOdShareStr('50');
+    setOdVDeltaStr('');
+    setOdVBase('BU');
+    setOsVDeltaStr('');
+    setOsVBase('BU');
   };
 
-  const horizontalMismatch =
-    inducedResult?.od.horizontal && inducedResult?.os.horizontal && inducedResult.od.horizontal.base !== inducedResult.os.horizontal.base;
-  const verticalMismatch =
-    inducedResult?.od.vertical && inducedResult?.os.vertical && inducedResult.od.vertical.base !== inducedResult.os.vertical.base;
+  const horizontalMismatch = inducedResult?.od.prism && inducedResult?.os.prism && inducedResult.od.prism.base !== inducedResult.os.prism.base;
 
   return (
     <IonPage>
@@ -355,6 +354,10 @@ const PrismCalculator: React.FC = () => {
 
         {mode === 'induced' ? (
           <>
+            <p className="rx-hint" style={{ marginTop: 0 }}>
+              What horizontal prism does the patient actually experience, given how the lenses were manufactured?
+            </p>
+
             <p className="rx-section-label">Patient's PD (distance from bridge to pupil)</p>
             <FieldBoxGrid columns={2}>
               <FieldBox
@@ -375,7 +378,7 @@ const PrismCalculator: React.FC = () => {
               />
             </FieldBoxGrid>
 
-            <p className="rx-section-label">Manufactured optical center (distance from bridge)</p>
+            <p className="rx-section-label">Manufactured monocular optical center (distance from bridge)</p>
             <FieldBoxGrid columns={2}>
               <FieldBox
                 label="OD"
@@ -395,22 +398,6 @@ const PrismCalculator: React.FC = () => {
               />
             </FieldBoxGrid>
 
-            <p className="rx-section-label">Vertical decentration</p>
-            <FieldBoxGrid columns={2}>
-              <FieldBox label="OD" unit="mm" placeholder="0" value={odVMmStr} onChange={setOdVMmStr} />
-              <FieldBox label="OS" unit="mm" placeholder="0" value={osVMmStr} onChange={setOsVMmStr} />
-            </FieldBoxGrid>
-            <FieldBoxGrid columns={2}>
-              <div>
-                <span className="rx-fieldbox-label">OD direction</span>
-                <SegmentedControl options={VERTICAL_DIRECTION_OPTIONS} value={odVDir} onChange={(v) => setOdVDir(v as VerticalDecentrationDirection)} />
-              </div>
-              <div>
-                <span className="rx-fieldbox-label">OS direction</span>
-                <SegmentedControl options={VERTICAL_DIRECTION_OPTIONS} value={osVDir} onChange={(v) => setOsVDir(v as VerticalDecentrationDirection)} />
-              </div>
-            </FieldBoxGrid>
-
             {noRxYet ? (
               <p className="rx-hint">Enter OD and OS sphere to calculate the induced prism. Add cylinder and axis for a toric Rx.</p>
             ) : inducedResult ? (
@@ -418,39 +405,24 @@ const PrismCalculator: React.FC = () => {
                 <EyeInducedPrismPanel label="OD" result={inducedResult.od} />
                 <EyeInducedPrismPanel label="OS" result={inducedResult.os} />
 
-                {(inducedResult.combinedHorizontal || inducedResult.combinedVertical) && (
+                {inducedResult.totalHorizontal && (
                   <CalculatorResult
-                    primaryLabel="Combined Binocular Effect"
-                    primaryValue={
-                      inducedResult.combinedHorizontal
-                        ? `${formatPrismDiopters(inducedResult.combinedHorizontal.diopters)} ${inducedResult.combinedHorizontal.base}`
-                        : `${formatPrismDiopters(inducedResult.combinedVertical!.diopters)} ${inducedResult.combinedVertical!.base}`
-                    }
-                    secondaryLabel={inducedResult.combinedHorizontal && inducedResult.combinedVertical ? 'Vertical' : undefined}
-                    secondaryValue={
-                      inducedResult.combinedHorizontal && inducedResult.combinedVertical
-                        ? `${formatPrismDiopters(inducedResult.combinedVertical.diopters)} ${inducedResult.combinedVertical.base}`
-                        : undefined
-                    }
+                    primaryLabel="Total horizontal prism (OD + OS)"
+                    primaryValue={`${formatPrismDiopters(inducedResult.totalHorizontal.diopters)} ${inducedResult.totalHorizontal.base}`}
                   />
                 )}
                 {horizontalMismatch && (
                   <p className="rx-hint">OD and OS induce opposing horizontal bases — shown separately; no single total applies.</p>
                 )}
-                {verticalMismatch && (
-                  <p className="rx-hint">OD and OS induce opposing vertical bases — shown separately; no single total applies.</p>
-                )}
 
                 <Disclosure label="Calculation details">
                   <p>
-                    OD decentration: {formatDecentrationMm(Math.abs(parseFloat(odOcDistanceStr) - parseFloat(odPatientPdStr)) || 0)}{' '}
-                    {parseFloat(odOcDistanceStr) - parseFloat(odPatientPdStr) >= 0 ? 'OUT' : 'IN'} horizontal, {odVMmStr || '0'} mm {odVDir}{' '}
-                    vertical.
+                    OD: {formatDecentrationMm(inducedResult.od.decentration.mm)} {inducedResult.od.decentration.direction} horizontal decentration,
+                    F180 = {formatDiopter(inducedResult.od.f180)} D.
                   </p>
                   <p>
-                    OS decentration: {formatDecentrationMm(Math.abs(parseFloat(osOcDistanceStr) - parseFloat(osPatientPdStr)) || 0)}{' '}
-                    {parseFloat(osOcDistanceStr) - parseFloat(osPatientPdStr) >= 0 ? 'OUT' : 'IN'} horizontal, {osVMmStr || '0'} mm {osVDir}{' '}
-                    vertical.
+                    OS: {formatDecentrationMm(inducedResult.os.decentration.mm)} {inducedResult.os.decentration.direction} horizontal decentration,
+                    F180 = {formatDiopter(inducedResult.os.f180)} D.
                   </p>
                 </Disclosure>
               </>
@@ -458,37 +430,31 @@ const PrismCalculator: React.FC = () => {
           </>
         ) : (
           <>
-            <p className="rx-section-label">Desired Prism</p>
-            <SegmentedControl options={ALLOCATION_OPTIONS} value={allocationMode} onChange={(v) => setAllocationMode(v as 'perEye' | 'total')} />
+            <p className="rx-hint" style={{ marginTop: 0 }}>
+              A particular prism is wanted. How much optical-center decentration is required to produce it?
+            </p>
 
-            {allocationMode === 'total' ? (
+            <p className="rx-section-label">Desired horizontal prism</p>
+            <SegmentedControl
+              options={HORIZONTAL_ALLOCATION_OPTIONS}
+              value={horizontalAllocationMode}
+              onChange={(v) => setHorizontalAllocationMode(v as 'perEye' | 'total')}
+            />
+
+            {horizontalAllocationMode === 'total' ? (
               <>
                 <FieldBoxGrid columns={2}>
                   <FieldBox
-                    label="Total horizontal"
+                    label="Total horizontal (both eyes)"
                     unit="Δ"
                     placeholder="0.00"
                     value={totalHDeltaStr}
                     onChange={setTotalHDeltaStr}
-                    error={requiredErrors.total?.horizontalDiopters}
+                    error={requiredErrors.totalHorizontal?.diopters}
                   />
-                  <FieldBox
-                    label="Total vertical"
-                    unit="Δ"
-                    placeholder="0.00"
-                    value={totalVDeltaStr}
-                    onChange={setTotalVDeltaStr}
-                    error={requiredErrors.total?.verticalDiopters}
-                  />
-                </FieldBoxGrid>
-                <FieldBoxGrid columns={2}>
                   <div>
-                    <span className="rx-fieldbox-label">Horizontal base</span>
+                    <span className="rx-fieldbox-label">Base</span>
                     <SegmentedControl options={HORIZONTAL_BASE_OPTIONS} value={totalHBase} onChange={(v) => setTotalHBase(v as HorizontalPrismBase)} />
-                  </div>
-                  <div>
-                    <span className="rx-fieldbox-label">Vertical base</span>
-                    <SegmentedControl options={VERTICAL_BASE_OPTIONS} value={totalVBase} onChange={(v) => setTotalVBase(v as VerticalPrismBase)} />
                   </div>
                 </FieldBoxGrid>
 
@@ -502,61 +468,47 @@ const PrismCalculator: React.FC = () => {
                     value={odShareStr}
                     onChange={setOdShareStr}
                     helperText="OS receives the remainder."
-                    error={requiredErrors.horizontalSplit ?? requiredErrors.verticalSplit}
+                    error={requiredErrors.horizontalSplit}
                   />
                 )}
               </>
             ) : (
               <>
-                <p className="rx-section-label">OD</p>
+                <p className="rx-section-label">OD horizontal</p>
                 <FieldBoxGrid columns={2}>
-                  <FieldBox
-                    label="Horizontal"
-                    unit="Δ"
-                    placeholder="0.00"
-                    value={odHDeltaStr}
-                    onChange={setOdHDeltaStr}
-                    error={requiredErrors.odTarget?.horizontalDiopters}
-                  />
-                  <FieldBox
-                    label="Vertical"
-                    unit="Δ"
-                    placeholder="0.00"
-                    value={odVDeltaStr}
-                    onChange={setOdVDeltaStr}
-                    error={requiredErrors.odTarget?.verticalDiopters}
-                  />
-                </FieldBoxGrid>
-                <FieldBoxGrid columns={2}>
-                  <SegmentedControl options={HORIZONTAL_BASE_OPTIONS} value={odHBase} onChange={(v) => setOdHBase(v as HorizontalPrismBase)} />
-                  <SegmentedControl options={VERTICAL_BASE_OPTIONS} value={odVBase} onChange={(v) => setOdVBase(v as VerticalPrismBase)} />
+                  <FieldBox label="Prism" unit="Δ" placeholder="0.00" value={odHDeltaStr} onChange={setOdHDeltaStr} error={requiredErrors.odHorizontal?.diopters} />
+                  <div>
+                    <span className="rx-fieldbox-label">Base</span>
+                    <SegmentedControl options={HORIZONTAL_BASE_OPTIONS} value={odHBase} onChange={(v) => setOdHBase(v as HorizontalPrismBase)} />
+                  </div>
                 </FieldBoxGrid>
 
-                <p className="rx-section-label">OS</p>
+                <p className="rx-section-label">OS horizontal</p>
                 <FieldBoxGrid columns={2}>
-                  <FieldBox
-                    label="Horizontal"
-                    unit="Δ"
-                    placeholder="0.00"
-                    value={osHDeltaStr}
-                    onChange={setOsHDeltaStr}
-                    error={requiredErrors.osTarget?.horizontalDiopters}
-                  />
-                  <FieldBox
-                    label="Vertical"
-                    unit="Δ"
-                    placeholder="0.00"
-                    value={osVDeltaStr}
-                    onChange={setOsVDeltaStr}
-                    error={requiredErrors.osTarget?.verticalDiopters}
-                  />
-                </FieldBoxGrid>
-                <FieldBoxGrid columns={2}>
-                  <SegmentedControl options={HORIZONTAL_BASE_OPTIONS} value={osHBase} onChange={(v) => setOsHBase(v as HorizontalPrismBase)} />
-                  <SegmentedControl options={VERTICAL_BASE_OPTIONS} value={osVBase} onChange={(v) => setOsVBase(v as VerticalPrismBase)} />
+                  <FieldBox label="Prism" unit="Δ" placeholder="0.00" value={osHDeltaStr} onChange={setOsHDeltaStr} error={requiredErrors.osHorizontal?.diopters} />
+                  <div>
+                    <span className="rx-fieldbox-label">Base</span>
+                    <SegmentedControl options={HORIZONTAL_BASE_OPTIONS} value={osHBase} onChange={(v) => setOsHBase(v as HorizontalPrismBase)} />
+                  </div>
                 </FieldBoxGrid>
               </>
             )}
+
+            <p className="rx-section-label">Desired vertical prism (always per eye)</p>
+            <FieldBoxGrid columns={2}>
+              <FieldBox label="OD prism" unit="Δ" placeholder="0.00" value={odVDeltaStr} onChange={setOdVDeltaStr} error={requiredErrors.od.verticalDiopters} />
+              <FieldBox label="OS prism" unit="Δ" placeholder="0.00" value={osVDeltaStr} onChange={setOsVDeltaStr} error={requiredErrors.os.verticalDiopters} />
+            </FieldBoxGrid>
+            <FieldBoxGrid columns={2}>
+              <div>
+                <span className="rx-fieldbox-label">OD base</span>
+                <SegmentedControl options={VERTICAL_BASE_OPTIONS} value={odVBase} onChange={(v) => setOdVBase(v as VerticalPrismBase)} />
+              </div>
+              <div>
+                <span className="rx-fieldbox-label">OS base</span>
+                <SegmentedControl options={VERTICAL_BASE_OPTIONS} value={osVBase} onChange={(v) => setOsVBase(v as VerticalPrismBase)} />
+              </div>
+            </FieldBoxGrid>
 
             <p className="rx-section-label">Patient's PD (optional — enables an ordering-PD result)</p>
             <FieldBoxGrid columns={2}>
@@ -584,6 +536,7 @@ const PrismCalculator: React.FC = () => {
               <>
                 <EyeRequiredDecentrationPanel label="OD" result={requiredResult.od} />
                 <EyeRequiredDecentrationPanel label="OS" result={requiredResult.os} />
+                {requiredResult.verticalRelationship && <VerticalRelationshipPanel relationship={requiredResult.verticalRelationship} />}
               </>
             ) : null}
           </>

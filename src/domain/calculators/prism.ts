@@ -1,80 +1,28 @@
 import type { Prescription } from './transposition';
 
 /**
- * Below this, a determinant/component is treated as zero — the reverse calculation would
- * require infinite decentration (mathematically undefined), not a clinical caution.
- */
-const SINGULARITY_EPSILON = 1e-6;
-
-/**
- * Below this, a computed prism/decentration component is reported as absent, not "0.00".
- * Set well above float noise, not just above zero: chaining a reverse solve into a forward
- * check (as the round-trip tests do) can leave residues around 1e-6 from the intermediate
- * cleanFloat rounding, which a tighter epsilon would misreport as a real component.
+ * Below this, a computed prism/decentration component is reported as absent, not "0.00" —
+ * set well above float noise, not just above zero.
  */
 const ZERO_EPSILON = 1e-4;
+
+/**
+ * Below this, a meridional power is treated as plano for the purpose of inverse-Prentice
+ * (Δ / F): solving for the decentration that would produce a nonzero prism through a
+ * zero-power meridian is mathematically undefined (infinite decentration), not a clinical
+ * caution.
+ */
+const SINGULARITY_EPSILON = 1e-6;
 
 export type HorizontalDecentrationDirection = 'IN' | 'OUT';
 export type VerticalDecentrationDirection = 'UP' | 'DOWN';
 export type HorizontalPrismBase = 'BI' | 'BO';
 export type VerticalPrismBase = 'BU' | 'BD';
 
-export interface Decentration {
-  horizontalMm: number;
-  horizontalDirection: HorizontalDecentrationDirection;
-  verticalMm: number;
-  verticalDirection: VerticalDecentrationDirection;
-}
-
-export interface InducedPrism {
-  /** Omitted when there's no horizontal component (within floating-point tolerance) to report. */
-  horizontal?: { diopters: number; base: HorizontalPrismBase };
-  /** Omitted when there's no vertical component (within floating-point tolerance) to report. */
-  vertical?: { diopters: number; base: VerticalPrismBase };
-}
-
-export interface TargetPrism {
-  horizontalDiopters: number;
-  horizontalBase: HorizontalPrismBase;
-  verticalDiopters: number;
-  verticalBase: VerticalPrismBase;
-}
-
-export interface RequiredDecentration {
-  /** Omitted when no horizontal decentration is needed to reach the target. */
-  horizontal?: { mm: number; direction: HorizontalDecentrationDirection };
-  /** Omitted when no vertical decentration is needed to reach the target. */
-  vertical?: { mm: number; direction: VerticalDecentrationDirection };
-}
-
-export type RequiredDecentrationResult =
-  | { ok: true; result: RequiredDecentration }
-  | { ok: false; reason: 'singularity' };
-
-export interface InducedPrismInput {
-  rx: Prescription;
-  decentration: Decentration;
-}
-
-export interface RequiredDecentrationInput {
-  rx: Prescription;
-  target: TargetPrism;
-}
-
 export interface PrismRxValidationErrors {
   sphere?: string;
   cylinder?: string;
   axis?: string;
-}
-
-export interface InducedPrismValidationErrors extends PrismRxValidationErrors {
-  horizontalMm?: string;
-  verticalMm?: string;
-}
-
-export interface RequiredDecentrationValidationErrors extends PrismRxValidationErrors {
-  horizontalDiopters?: string;
-  verticalDiopters?: string;
 }
 
 function validateSphere(sphere: number): string | undefined {
@@ -110,34 +58,17 @@ function validateRx(rx: Prescription): PrismRxValidationErrors {
   return errors;
 }
 
-function validateMm(mm: number): string | undefined {
-  if (Number.isNaN(mm)) return 'Enter a decentration amount.';
-  if (mm < 0) return 'Decentration cannot be negative — use the direction toggle instead.';
-  return undefined;
-}
-
 function validateDiopters(value: number): string | undefined {
   if (Number.isNaN(value)) return 'Enter a prism amount.';
   if (value < 0) return 'Prism cannot be negative — use the base direction toggle instead.';
   return undefined;
 }
 
-export function validateInducedPrismInput(input: InducedPrismInput): InducedPrismValidationErrors {
-  const errors: InducedPrismValidationErrors = validateRx(input.rx);
-  const horizontalError = validateMm(input.decentration.horizontalMm);
-  if (horizontalError) errors.horizontalMm = horizontalError;
-  const verticalError = validateMm(input.decentration.verticalMm);
-  if (verticalError) errors.verticalMm = verticalError;
-  return errors;
-}
-
-export function validateRequiredDecentrationInput(input: RequiredDecentrationInput): RequiredDecentrationValidationErrors {
-  const errors: RequiredDecentrationValidationErrors = validateRx(input.rx);
-  const horizontalError = validateDiopters(input.target.horizontalDiopters);
-  if (horizontalError) errors.horizontalDiopters = horizontalError;
-  const verticalError = validateDiopters(input.target.verticalDiopters);
-  if (verticalError) errors.verticalDiopters = verticalError;
-  return errors;
+function validatePatientPdMm(mm: number | undefined): string | undefined {
+  if (mm === undefined) return undefined;
+  if (Number.isNaN(mm)) return "Enter the patient's monocular PD.";
+  if (mm < 0) return 'PD cannot be negative.';
+  return undefined;
 }
 
 /** Fixes float noise without imposing a clinical rounding rule. */
@@ -145,114 +76,55 @@ function cleanFloat(value: number): number {
   return Math.round(value * 1e6) / 1e6;
 }
 
-interface PowerMatrix {
-  fxx: number;
-  fyy: number;
-  fxy: number;
-}
-
-/**
- * The sphero-cylindrical dioptric power matrix (Long's power-matrix formulation), equivalent
- * to the sine-squared cross-cylinder formula Fθ = S + C·sin²(θ − axis) but expressed in the
- * horizontal/vertical (x/y) basis so it can be combined with an arbitrary (horizontal +
- * vertical) decentration vector in one step. Its eigenvalues are exactly the two principal
- * meridian powers (S and S+C), and it is invariant under transposition to plus-cylinder form.
- *
- * Cylinder = 0 is handled directly (bypassing axis) rather than falling through the general
- * formula, since axis may legitimately be NaN for a spherical-only Rx.
- */
-function powerMatrix(rx: Prescription): PowerMatrix {
-  if (rx.cylinder === 0) {
-    return { fxx: rx.sphere, fyy: rx.sphere, fxy: 0 };
-  }
-  const axisRad = (rx.axis * Math.PI) / 180;
-  const sin = Math.sin(axisRad);
-  const cos = Math.cos(axisRad);
-  return {
-    fxx: rx.sphere + rx.cylinder * sin * sin,
-    fyy: rx.sphere + rx.cylinder * cos * cos,
-    fxy: -rx.cylinder * sin * cos,
-  };
-}
-
-/**
- * Induced prism from decentering a sphero-cylindrical lens (vector/matrix generalization of
- * Prentice's Rule: Δ = F·c). Decentration is the lens's optical center relative to the
- * pupil — OUT/UP are the positive directions — which is exactly the sign convention needed
- * for the result's sign to read directly as a base direction: a positive horizontal
- * component is BO, a positive vertical component is BU (this matches, and was verified
- * against, the standard "MOBI" teaching case: a minus lens decentered OUT induces BASE IN).
- *
- * An oblique cylinder axis couples the two meridians (Fxy ≠ 0), so a purely horizontal
- * decentration can still induce a vertical prism component — that's real optics, not a bug.
- * Assumes valid input — call validateInducedPrismInput first.
- */
-export function calculateInducedPrism(rx: Prescription, decentration: Decentration): InducedPrism {
-  const { fxx, fyy, fxy } = powerMatrix(rx);
-
-  const cx = (decentration.horizontalMm / 10) * (decentration.horizontalDirection === 'OUT' ? 1 : -1);
-  const cy = (decentration.verticalMm / 10) * (decentration.verticalDirection === 'UP' ? 1 : -1);
-
-  const deltaX = cleanFloat(fxx * cx + fxy * cy);
-  const deltaY = cleanFloat(fxy * cx + fyy * cy);
-
-  const result: InducedPrism = {};
-  if (Math.abs(deltaX) >= ZERO_EPSILON) {
-    result.horizontal = { diopters: Math.abs(deltaX), base: deltaX > 0 ? 'BO' : 'BI' };
-  }
-  if (Math.abs(deltaY) >= ZERO_EPSILON) {
-    result.vertical = { diopters: Math.abs(deltaY), base: deltaY > 0 ? 'BU' : 'BD' };
-  }
-  return result;
-}
-
-/**
- * Reverse Prentice's Rule: the decentration required to induce a desired prism (c = F⁻¹·Δ).
- * For an oblique cylinder, a purely horizontal (or vertical) target can require decentration
- * in both directions at once — the matrix inverse captures that correctly; a naive c = Δ/F
- * per axis would not.
- *
- * Undefined (singular) whenever either principal meridian is plano (det(F) = S·(S+C) = 0):
- * reaching a target that depends on a zero-power meridian would require infinite
- * decentration. This is reported as a clean "undefined" rather than a partial/pseudo-inverse
- * solution, deliberately — same policy as vertexDistance.ts's singularity handling.
- */
-export function calculateRequiredDecentration(rx: Prescription, target: TargetPrism): RequiredDecentrationResult {
-  const { fxx, fyy, fxy } = powerMatrix(rx);
-  const det = fxx * fyy - fxy * fxy;
-
-  if (Math.abs(det) < SINGULARITY_EPSILON) {
-    return { ok: false, reason: 'singularity' };
-  }
-
-  const deltaX = target.horizontalDiopters * (target.horizontalBase === 'BO' ? 1 : -1);
-  const deltaY = target.verticalDiopters * (target.verticalBase === 'BU' ? 1 : -1);
-
-  const cx = cleanFloat((fyy * deltaX - fxy * deltaY) / det);
-  const cy = cleanFloat((-fxy * deltaX + fxx * deltaY) / det);
-
-  const result: RequiredDecentration = {};
-  if (Math.abs(cx) >= ZERO_EPSILON) {
-    result.horizontal = { mm: Math.abs(cx) * 10, direction: cx > 0 ? 'OUT' : 'IN' };
-  }
-  if (Math.abs(cy) >= ZERO_EPSILON) {
-    result.vertical = { mm: Math.abs(cy) * 10, direction: cy > 0 ? 'UP' : 'DOWN' };
-  }
-  return { ok: true, result };
+function hasErrors<T extends object>(errors: T): boolean {
+  return Object.values(errors).some((v) => v !== undefined && v !== null);
 }
 
 // ---------------------------------------------------------------------------
-// Binocular layer
+// Meridional power — the sphero-cylinder sine-squared formula, evaluated only
+// at the two meridians this calculator ever needs: 180° (horizontal) and 90°
+// (vertical). Fθ = S + C·sin²(θ − axis). This is the standard formula for
+// finding lens power in an oblique meridian (e.g. American Board of
+// Opticianry / NAO "Prentice's Rule and Finding the Power of a Lens in Any
+// Meridian"; the sine-squared law is also the textbook basis for meridional
+// refraction/Conoid of Sturm treatments of sphero-cylindrical power).
+// Horizontal and vertical decentration/prism are always solved independently
+// through their own meridian's scalar power — never through a coupled 2x2
+// power matrix. A dispensing optician's Prentice's Rule table works the same
+// way: F180 for horizontal, F90 for vertical, full stop. An oblique-axis
+// lens's true peripheral (off-meridian) prismatic behavior is a distinct,
+// more advanced topic (the astigmatic power matrix) that this calculator
+// deliberately does not model, matching the standard-of-practice, purely
+// meridional way both tasks (induced prism, required decentration) are
+// actually taught and worked in dispensing/optometry.
+// ---------------------------------------------------------------------------
+
+function meridionalPower(rx: Prescription, thetaDeg: 90 | 180): number {
+  if (rx.cylinder === 0) return rx.sphere;
+  const diffRad = ((thetaDeg - rx.axis) * Math.PI) / 180;
+  return cleanFloat(rx.sphere + rx.cylinder * Math.sin(diffRad) ** 2);
+}
+
+/** Lens power in the horizontal (180°) meridian — the power that governs horizontal Prentice's Rule. */
+export function horizontalMeridionalPower(rx: Prescription): number {
+  return meridionalPower(rx, 180);
+}
+
+/** Lens power in the vertical (90°) meridian — the power that governs vertical Prentice's Rule. */
+export function verticalMeridionalPower(rx: Prescription): number {
+  return meridionalPower(rx, 90);
+}
+
+// ---------------------------------------------------------------------------
+// Mode 1 — Induced Prism (horizontal only)
 //
-// The two functions above compute one lens in isolation, which is the correct
-// unit of optical computation (Prentice's Rule always acts on a single lens's
-// own power) but not the correct unit of *clinical* computation — both real
-// tasks ("what prism does this patient actually experience", "how do I induce
-// this prism") are inherently binocular: OD and OS can carry different power,
-// so they generally require different decentration for the same prism, and a
-// binocular result has to make clear when OD/OS combine into one meaningful
-// number versus when they don't. Everything below composes the single-lens
-// functions per eye; it never re-derives or duplicates the Prentice math.
+// "The patient's PD and the manufactured optical-center position differ.
+// What horizontal prism is induced?" This is a purely horizontal dispensing
+// question: only the patient's monocular PD and the lab's manufactured
+// monocular OC position are involved, and only F180 (the horizontal
+// meridian) matters. There is no vertical input here — a required vertical
+// field would force a clinician who has no measured vertical OC error to
+// enter an arbitrary number, which would then get treated as real optics.
 // ---------------------------------------------------------------------------
 
 export interface MonocularPosition {
@@ -278,27 +150,65 @@ export interface MonocularPosition {
  * distance between the OC and the visual axis by moving the OC away from the nose, e.g.
  * ordering the lab's PD wider than the patient's PD.
  */
-export function deriveHorizontalDecentration(
-  position: MonocularPosition,
-): { mm: number; direction: HorizontalDecentrationDirection } {
+export function deriveHorizontalDecentration(position: MonocularPosition): { mm: number; direction: HorizontalDecentrationDirection } {
   const signed = cleanFloat(position.ocDistanceMm - position.patientPdMm);
   return { mm: Math.abs(signed), direction: signed >= 0 ? 'OUT' : 'IN' };
 }
 
-function combine<Base extends string>(
-  a?: { diopters: number; base: Base },
-  b?: { diopters: number; base: Base },
-): { diopters: number; base: Base } | undefined {
-  if (a && b) return a.base === b.base ? { diopters: cleanFloat(a.diopters + b.diopters), base: a.base } : undefined;
-  return a ?? b;
+export interface EyeHorizontalInducedPrismResult {
+  /** OC decentration relative to the patient's visual axis, derived from patientPdMm vs ocDistanceMm. */
+  decentration: { mm: number; direction: HorizontalDecentrationDirection };
+  /** The horizontal (180°) meridional power actually used — surfaced so a near-plano horizontal meridian visibly explains a near-zero result despite a real physical PD/OC mismatch. */
+  f180: number;
+  /** Omitted when there's no measurable horizontal prism (within ZERO_EPSILON). */
+  prism?: { diopters: number; base: HorizontalPrismBase };
 }
 
-// --- Mode 1: Induced Prism (binocular) --------------------------------------
+/**
+ * Scalar Prentice's Rule (Δ = c(cm) × F180), horizontal only.
+ *
+ * Sign convention: OUT is positive decentration. Verified against authoritative dispensing
+ * teaching (e.g. opticaltraining.com "Mastering Prentice's Rule"; the standard "MOBI" mnemonic):
+ * a MINUS lens decentered OUT (wider PD than patient) induces BASE IN; a PLUS lens decentered
+ * OUT induces BASE OUT. Equivalently: base direction matches the decentration direction for a
+ * plus lens, and is opposite the decentration direction for a minus lens. That single sign rule
+ * (positive signed prism → BO, negative → BI) reproduces both cases without a special-cased
+ * plus/minus branch.
+ */
+export function calculateHorizontalInducedPrism(rx: Prescription, position: MonocularPosition): EyeHorizontalInducedPrismResult {
+  const decentration = deriveHorizontalDecentration(position);
+  const cCm = (decentration.mm / 10) * (decentration.direction === 'OUT' ? 1 : -1);
+  const f180 = horizontalMeridionalPower(rx);
+  const deltaSigned = cleanFloat(cCm * f180);
+
+  const result: EyeHorizontalInducedPrismResult = { decentration, f180 };
+  if (Math.abs(deltaSigned) >= ZERO_EPSILON) {
+    result.prism = { diopters: Math.abs(deltaSigned), base: deltaSigned > 0 ? 'BO' : 'BI' };
+  }
+  return result;
+}
+
+export interface EyeInducedPrismValidationErrors extends PrismRxValidationErrors {
+  patientPdMm?: string;
+  ocDistanceMm?: string;
+}
+
+function validateMonocularPosition(position: MonocularPosition): Pick<EyeInducedPrismValidationErrors, 'patientPdMm' | 'ocDistanceMm'> {
+  const errors: Pick<EyeInducedPrismValidationErrors, 'patientPdMm' | 'ocDistanceMm'> = {};
+  if (Number.isNaN(position.patientPdMm)) errors.patientPdMm = "Enter the patient's monocular PD.";
+  else if (position.patientPdMm < 0) errors.patientPdMm = 'PD cannot be negative.';
+  if (Number.isNaN(position.ocDistanceMm)) errors.ocDistanceMm = 'Enter the manufactured optical center position.';
+  else if (position.ocDistanceMm < 0) errors.ocDistanceMm = 'Distance cannot be negative.';
+  return errors;
+}
 
 export interface EyeInducedPrismInput {
   rx: Prescription;
-  horizontalPosition: MonocularPosition;
-  vertical: { mm: number; direction: VerticalDecentrationDirection };
+  position: MonocularPosition;
+}
+
+function validateEyeInducedPrismInput(input: EyeInducedPrismInput): EyeInducedPrismValidationErrors {
+  return { ...validateRx(input.rx), ...validateMonocularPosition(input.position) };
 }
 
 export interface BinocularInducedPrismInput {
@@ -306,43 +216,9 @@ export interface BinocularInducedPrismInput {
   os: EyeInducedPrismInput;
 }
 
-export interface BinocularInducedPrismResult {
-  od: InducedPrism;
-  os: InducedPrism;
-  /** Present only when OD and OS induce the *same* base direction — see combine(). A mismatched pair is never collapsed into one misleading total. */
-  combinedHorizontal?: { diopters: number; base: HorizontalPrismBase };
-  combinedVertical?: { diopters: number; base: VerticalPrismBase };
-}
-
-export interface EyeInducedPrismValidationErrors extends PrismRxValidationErrors {
-  patientPdMm?: string;
-  ocDistanceMm?: string;
-  verticalMm?: string;
-}
-
 export interface BinocularInducedPrismValidationErrors {
   od: EyeInducedPrismValidationErrors;
   os: EyeInducedPrismValidationErrors;
-}
-
-function validateMonocularPosition(position: MonocularPosition): Pick<EyeInducedPrismValidationErrors, 'patientPdMm' | 'ocDistanceMm'> {
-  const errors: Pick<EyeInducedPrismValidationErrors, 'patientPdMm' | 'ocDistanceMm'> = {};
-  if (Number.isNaN(position.patientPdMm)) errors.patientPdMm = "Enter the patient's monocular PD.";
-  else if (position.patientPdMm < 0) errors.patientPdMm = 'PD cannot be negative.';
-  if (Number.isNaN(position.ocDistanceMm)) errors.ocDistanceMm = 'Enter the optical center position.';
-  else if (position.ocDistanceMm < 0) errors.ocDistanceMm = 'Distance cannot be negative.';
-  return errors;
-}
-
-function validateEyeInducedPrismInput(input: EyeInducedPrismInput): EyeInducedPrismValidationErrors {
-  const errors: EyeInducedPrismValidationErrors = { ...validateRx(input.rx), ...validateMonocularPosition(input.horizontalPosition) };
-  const verticalError = validateMm(input.vertical.mm);
-  if (verticalError) errors.verticalMm = verticalError;
-  return errors;
-}
-
-function hasEyeErrors<T extends object>(errors: T): boolean {
-  return Object.values(errors).some((v) => v !== undefined);
 }
 
 export function validateBinocularInducedPrismInput(input: BinocularInducedPrismInput): BinocularInducedPrismValidationErrors {
@@ -350,146 +226,99 @@ export function validateBinocularInducedPrismInput(input: BinocularInducedPrismI
 }
 
 export function hasBinocularInducedPrismErrors(errors: BinocularInducedPrismValidationErrors): boolean {
-  return hasEyeErrors(errors.od) || hasEyeErrors(errors.os);
-}
-
-function toDecentration(eye: EyeInducedPrismInput): Decentration {
-  const horizontal = deriveHorizontalDecentration(eye.horizontalPosition);
-  return {
-    horizontalMm: horizontal.mm,
-    horizontalDirection: horizontal.direction,
-    verticalMm: eye.vertical.mm,
-    verticalDirection: eye.vertical.direction,
-  };
+  return hasErrors(errors.od) || hasErrors(errors.os);
 }
 
 /**
- * Assumes valid input — call validateBinocularInducedPrismInput first. OD and OS are computed
- * independently from their own Rx (they may have different power); this is never a single-lens
- * calculation forced onto two eyes.
+ * OD + OS horizontal prism, present only when both eyes induce the SAME base direction. This
+ * is a real, precisely-defined quantity — not a vague "combined effect" — because horizontal
+ * prism in the same base direction is additive across the two lenses: it is exactly the total
+ * that a symmetric "Xul BI OU" prescription describes when split 50/50 between the lenses (the
+ * inverse of Mode 2's "Total, split OU" allocation). When OD and OS induce opposite bases there
+ * is no single meaningful total, so none is manufactured — the caller must show both eyes
+ * separately.
  */
+function combineHorizontal(
+  a?: { diopters: number; base: HorizontalPrismBase },
+  b?: { diopters: number; base: HorizontalPrismBase },
+): { diopters: number; base: HorizontalPrismBase } | undefined {
+  if (a && b) return a.base === b.base ? { diopters: cleanFloat(a.diopters + b.diopters), base: a.base } : undefined;
+  return a ?? b;
+}
+
+export interface BinocularInducedPrismResult {
+  od: EyeHorizontalInducedPrismResult;
+  os: EyeHorizontalInducedPrismResult;
+  /** Total horizontal prism across both lenses — see combineHorizontal(). Undefined when OD and OS induce opposing bases (no single total applies) or neither eye has a measurable component. */
+  totalHorizontal?: { diopters: number; base: HorizontalPrismBase };
+}
+
+/** Assumes valid input — call validateBinocularInducedPrismInput first. OD and OS are computed independently from their own Rx (they may have different power). */
 export function calculateBinocularInducedPrism(input: BinocularInducedPrismInput): BinocularInducedPrismResult {
-  const od = calculateInducedPrism(input.od.rx, toDecentration(input.od));
-  const os = calculateInducedPrism(input.os.rx, toDecentration(input.os));
-  return {
-    od,
-    os,
-    combinedHorizontal: combine(od.horizontal, os.horizontal),
-    combinedVertical: combine(od.vertical, os.vertical),
-  };
+  const od = calculateHorizontalInducedPrism(input.od.rx, input.od.position);
+  const os = calculateHorizontalInducedPrism(input.os.rx, input.os.position);
+  return { od, os, totalHorizontal: combineHorizontal(od.prism, os.prism) };
 }
 
-// --- Mode 2: Required Decentration (binocular) -------------------------------
+// ---------------------------------------------------------------------------
+// Mode 2 — Required Decentration
+//
+// "I want a particular (horizontal and/or vertical) prism. How much OC
+// decentration is required?" Horizontal and vertical are solved completely
+// independently, each by the inverse of the same scalar Prentice's Rule
+// (c = Δ/F) against that meridian's own power — never a coupled 2x2 solve.
+// Horizontal prism may be prescribed as a single binocular total to be
+// split between the lenses (the classic symmetric base-in/base-out
+// convergence-exercise convention) or per eye directly. Vertical prism is
+// always entered per eye — a "total vertical to split" is not a real
+// clinical concept (vertical prism is prescribed per eye against the
+// measured vertical phoria/imbalance), so that ambiguity is never offered.
+// ---------------------------------------------------------------------------
 
-export interface PrismSplit {
-  /** OD's share of the total, 0–1. OS receives the remainder (1 − odFraction). 0.5 = equal split (the default). */
-  odFraction: number;
+export interface HorizontalPrismTarget {
+  diopters: number;
+  base: HorizontalPrismBase;
 }
 
-export type BinocularRequiredDecentrationAllocation =
-  | { mode: 'perEye'; od: TargetPrism; os: TargetPrism }
-  | { mode: 'total'; total: TargetPrism; horizontalSplit?: PrismSplit; verticalSplit?: PrismSplit };
-
-export interface EyeRequiredDecentrationInput {
-  rx: Prescription;
-  /** Patient's monocular PD from the facial midline, mm. Optional — only needed to report an ordering PD. */
-  patientPdMm?: number;
+export interface VerticalPrismTarget {
+  diopters: number;
+  base: VerticalPrismBase;
 }
 
-export interface BinocularRequiredDecentrationInput {
-  od: EyeRequiredDecentrationInput;
-  os: EyeRequiredDecentrationInput;
-  allocation: BinocularRequiredDecentrationAllocation;
+export type HorizontalDecentrationResult =
+  | { kind: 'none' }
+  | { kind: 'defined'; mm: number; direction: HorizontalDecentrationDirection }
+  | { kind: 'singularity' };
+
+export type VerticalDecentrationResult =
+  | { kind: 'none' }
+  | { kind: 'defined'; mm: number; direction: VerticalDecentrationDirection }
+  | { kind: 'singularity' };
+
+/**
+ * Inverse of the scalar Prentice's Rule for one meridian: c(cm) = Δ/F, converted to mm.
+ * Singular (undefined) when F is ~plano and a nonzero prism was actually requested — reaching
+ * a target through a zero-power meridian would require infinite decentration. Reported as a
+ * clean "singularity", never a partial/pseudo-inverse guess.
+ */
+function solveHorizontalDecentration(target: HorizontalPrismTarget | undefined, f180: number): HorizontalDecentrationResult {
+  if (!target || target.diopters < ZERO_EPSILON) return { kind: 'none' };
+  if (Math.abs(f180) < SINGULARITY_EPSILON) return { kind: 'singularity' };
+  const deltaSigned = target.diopters * (target.base === 'BO' ? 1 : -1);
+  const cCm = cleanFloat(deltaSigned / f180);
+  const mm = cleanFloat(Math.abs(cCm) * 10);
+  if (mm < ZERO_EPSILON) return { kind: 'none' };
+  return { kind: 'defined', mm, direction: cCm > 0 ? 'OUT' : 'IN' };
 }
 
-export interface EyeRequiredDecentrationResult {
-  /** The prism this specific eye was allocated (either entered directly, or this eye's share of a total). */
-  allocatedTarget: TargetPrism;
-  /** Meridional power (fxx, fyy) actually used to solve this eye's decentration — surfaced so the clinician can see why, e.g., a near-plano meridian needs a large shift. */
-  relevantPower: { horizontal: number; vertical: number };
-  outcome: RequiredDecentrationResult;
-  /** Patient PD ± the required shift — where the OC should actually be ground/ordered. Present only when patientPdMm was supplied and the horizontal decentration is defined. */
-  orderingPdMm?: number;
-  /** Present when the allocated target exceeds the practical single-lens ground-in guideline (see EXTREME_PRISM_DIOPTERS). Never a rejection — the math and the lens are still valid. */
-  caution?: string;
-}
-
-export interface BinocularRequiredDecentrationResult {
-  od: EyeRequiredDecentrationResult;
-  os: EyeRequiredDecentrationResult;
-}
-
-export interface TargetPrismValidationErrors {
-  horizontalDiopters?: string;
-  verticalDiopters?: string;
-}
-
-function validateTargetPrism(target: TargetPrism): TargetPrismValidationErrors {
-  const errors: TargetPrismValidationErrors = {};
-  const h = validateDiopters(target.horizontalDiopters);
-  if (h) errors.horizontalDiopters = h;
-  const v = validateDiopters(target.verticalDiopters);
-  if (v) errors.verticalDiopters = v;
-  return errors;
-}
-
-function validatePatientPdMm(mm: number | undefined): string | undefined {
-  if (mm === undefined) return undefined;
-  if (Number.isNaN(mm)) return "Enter the patient's monocular PD.";
-  if (mm < 0) return 'PD cannot be negative.';
-  return undefined;
-}
-
-function validateSplitFraction(fraction: number | undefined): string | undefined {
-  if (fraction === undefined) return undefined;
-  if (Number.isNaN(fraction)) return 'Enter the OD share.';
-  if (fraction < 0 || fraction > 1) return 'OD share must be between 0% and 100%.';
-  return undefined;
-}
-
-export interface BinocularRequiredDecentrationValidationErrors {
-  od: PrismRxValidationErrors & { patientPdMm?: string };
-  os: PrismRxValidationErrors & { patientPdMm?: string };
-  odTarget?: TargetPrismValidationErrors;
-  osTarget?: TargetPrismValidationErrors;
-  total?: TargetPrismValidationErrors;
-  horizontalSplit?: string;
-  verticalSplit?: string;
-}
-
-export function validateBinocularRequiredDecentrationInput(
-  input: BinocularRequiredDecentrationInput,
-): BinocularRequiredDecentrationValidationErrors {
-  const errors: BinocularRequiredDecentrationValidationErrors = {
-    od: { ...validateRx(input.od.rx), patientPdMm: validatePatientPdMm(input.od.patientPdMm) },
-    os: { ...validateRx(input.os.rx), patientPdMm: validatePatientPdMm(input.os.patientPdMm) },
-  };
-  if (input.allocation.mode === 'perEye') {
-    const odTarget = validateTargetPrism(input.allocation.od);
-    const osTarget = validateTargetPrism(input.allocation.os);
-    if (hasEyeErrors(odTarget)) errors.odTarget = odTarget;
-    if (hasEyeErrors(osTarget)) errors.osTarget = osTarget;
-  } else {
-    const total = validateTargetPrism(input.allocation.total);
-    if (hasEyeErrors(total)) errors.total = total;
-    const horizontalSplitError = validateSplitFraction(input.allocation.horizontalSplit?.odFraction);
-    if (horizontalSplitError) errors.horizontalSplit = horizontalSplitError;
-    const verticalSplitError = validateSplitFraction(input.allocation.verticalSplit?.odFraction);
-    if (verticalSplitError) errors.verticalSplit = verticalSplitError;
-  }
-  return errors;
-}
-
-export function hasBinocularRequiredDecentrationErrors(errors: BinocularRequiredDecentrationValidationErrors): boolean {
-  return (
-    hasEyeErrors(errors.od) ||
-    hasEyeErrors(errors.os) ||
-    (errors.odTarget ? hasEyeErrors(errors.odTarget) : false) ||
-    (errors.osTarget ? hasEyeErrors(errors.osTarget) : false) ||
-    (errors.total ? hasEyeErrors(errors.total) : false) ||
-    Boolean(errors.horizontalSplit) ||
-    Boolean(errors.verticalSplit)
-  );
+function solveVerticalDecentration(target: VerticalPrismTarget | undefined, f90: number): VerticalDecentrationResult {
+  if (!target || target.diopters < ZERO_EPSILON) return { kind: 'none' };
+  if (Math.abs(f90) < SINGULARITY_EPSILON) return { kind: 'singularity' };
+  const deltaSigned = target.diopters * (target.base === 'BU' ? 1 : -1);
+  const cCm = cleanFloat(deltaSigned / f90);
+  const mm = cleanFloat(Math.abs(cCm) * 10);
+  if (mm < ZERO_EPSILON) return { kind: 'none' };
+  return { kind: 'defined', mm, direction: cCm > 0 ? 'UP' : 'DOWN' };
 }
 
 /**
@@ -501,57 +330,226 @@ export function hasBinocularRequiredDecentrationErrors(errors: BinocularRequired
  */
 const EXTREME_PRISM_DIOPTERS = 10;
 
-function extremeCaution(target: TargetPrism): string | undefined {
-  if (target.horizontalDiopters > EXTREME_PRISM_DIOPTERS || target.verticalDiopters > EXTREME_PRISM_DIOPTERS) {
+function extremeCaution(horizontal?: HorizontalPrismTarget, vertical?: VerticalPrismTarget): string | undefined {
+  if ((horizontal?.diopters ?? 0) > EXTREME_PRISM_DIOPTERS || (vertical?.diopters ?? 0) > EXTREME_PRISM_DIOPTERS) {
     return `This exceeds ${EXTREME_PRISM_DIOPTERS}Δ in one eye — prism this large is usually impractical to grind into a standard lens. Consider splitting the prism across both lenses, or a Fresnel press-on prism.`;
   }
   return undefined;
 }
 
-function orderingPdMm(
-  patientPdMm: number | undefined,
-  horizontal?: { mm: number; direction: HorizontalDecentrationDirection },
-): number | undefined {
+function orderingPdMm(patientPdMm: number | undefined, horizontal: HorizontalDecentrationResult): number | undefined {
   if (patientPdMm === undefined) return undefined;
-  if (!horizontal) return cleanFloat(patientPdMm);
+  if (horizontal.kind !== 'defined') return cleanFloat(patientPdMm);
   return cleanFloat(patientPdMm + (horizontal.direction === 'OUT' ? horizontal.mm : -horizontal.mm));
 }
 
-function allocateEyeTarget(eye: 'od' | 'os', allocation: BinocularRequiredDecentrationAllocation): TargetPrism {
-  if (allocation.mode === 'perEye') return eye === 'od' ? allocation.od : allocation.os;
-  const odHorizontalFraction = allocation.horizontalSplit?.odFraction ?? 0.5;
-  const odVerticalFraction = allocation.verticalSplit?.odFraction ?? 0.5;
-  const horizontalFraction = eye === 'od' ? odHorizontalFraction : 1 - odHorizontalFraction;
-  const verticalFraction = eye === 'od' ? odVerticalFraction : 1 - odVerticalFraction;
+export interface EyeRequiredDecentrationInput {
+  rx: Prescription;
+  /** Patient's monocular PD from the facial midline, mm. Optional — only needed to report an ordering PD. */
+  patientPdMm?: number;
+  horizontal?: HorizontalPrismTarget;
+  vertical?: VerticalPrismTarget;
+}
+
+export interface EyeRequiredDecentrationResult {
+  /** Meridional power (F180, F90) actually used to solve this eye's decentration — surfaced so the clinician can see why, e.g., a near-plano meridian needs a large shift. */
+  relevantPower: { f180: number; f90: number };
+  /** The horizontal target this eye was allocated (entered directly, or its share of a binocular total) — echoed back so "desired" is unambiguous next to the result. */
+  allocatedHorizontal?: HorizontalPrismTarget;
+  horizontal: HorizontalDecentrationResult;
+  vertical: VerticalDecentrationResult;
+  /** Patient PD ± the required horizontal shift — where the OC should actually be ground/ordered. Present only when patientPdMm was supplied. */
+  orderingPdMm?: number;
+  /** Present when either target exceeds the practical single-lens ground-in guideline. Never a rejection. */
+  caution?: string;
+}
+
+function calculateEyeRequiredDecentration(input: EyeRequiredDecentrationInput): EyeRequiredDecentrationResult {
+  const f180 = horizontalMeridionalPower(input.rx);
+  const f90 = verticalMeridionalPower(input.rx);
+  const horizontal = solveHorizontalDecentration(input.horizontal, f180);
+  const vertical = solveVerticalDecentration(input.vertical, f90);
   return {
-    horizontalDiopters: cleanFloat(allocation.total.horizontalDiopters * horizontalFraction),
-    horizontalBase: allocation.total.horizontalBase,
-    verticalDiopters: cleanFloat(allocation.total.verticalDiopters * verticalFraction),
-    verticalBase: allocation.total.verticalBase,
+    relevantPower: { f180, f90 },
+    allocatedHorizontal: input.horizontal,
+    horizontal,
+    vertical,
+    orderingPdMm: orderingPdMm(input.patientPdMm, horizontal),
+    caution: extremeCaution(input.horizontal, input.vertical),
   };
 }
 
-function calculateEyeRequiredDecentration(input: EyeRequiredDecentrationInput, target: TargetPrism): EyeRequiredDecentrationResult {
-  const { fxx, fyy } = powerMatrix(input.rx);
-  const outcome = calculateRequiredDecentration(input.rx, target);
-  return {
-    allocatedTarget: target,
-    relevantPower: { horizontal: fxx, vertical: fyy },
-    outcome,
-    orderingPdMm: outcome.ok ? orderingPdMm(input.patientPdMm, outcome.result.horizontal) : undefined,
-    caution: extremeCaution(target),
-  };
+export interface PrismSplit {
+  /** OD's share of the total, 0–1. OS receives the remainder (1 − odFraction). 0.5 = equal split (the default). */
+  odFraction: number;
 }
 
 /**
- * Assumes valid input — call validateBinocularRequiredDecentrationInput first. The total (when
- * allocation.mode is 'total') is split into per-eye PRISM (diopters) before either eye's own
- * inverse-Prentice solve — never split into millimeters, since OD and OS can have different
- * power and would then require different decentration for an equal diopter share.
+ * How the desired HORIZONTAL prism is specified. 'total' is the classic symmetric
+ * base-in/base-out convention (e.g. convergence-insufficiency training prism prescribed as one
+ * binocular number, split between the lenses). 'perEye' lets OD and OS be entered directly and
+ * independently, including opposing bases. There is no equivalent 'total' mode for vertical —
+ * see the module doc comment above.
+ */
+export type HorizontalPrismAllocation =
+  | { mode: 'perEye'; od: HorizontalPrismTarget; os: HorizontalPrismTarget }
+  | { mode: 'total'; total: HorizontalPrismTarget; split?: PrismSplit };
+
+export interface EyeRequiredDecentrationEntry {
+  rx: Prescription;
+  patientPdMm?: number;
+  /** Always per-eye — see the module doc comment on why vertical prism has no 'total' allocation mode. */
+  vertical?: VerticalPrismTarget;
+}
+
+export interface BinocularRequiredDecentrationInput {
+  od: EyeRequiredDecentrationEntry;
+  os: EyeRequiredDecentrationEntry;
+  horizontal: HorizontalPrismAllocation;
+}
+
+function allocateHorizontal(eye: 'od' | 'os', allocation: HorizontalPrismAllocation): HorizontalPrismTarget {
+  if (allocation.mode === 'perEye') return eye === 'od' ? allocation.od : allocation.os;
+  const odFraction = allocation.split?.odFraction ?? 0.5;
+  const fraction = eye === 'od' ? odFraction : 1 - odFraction;
+  return { diopters: cleanFloat(allocation.total.diopters * fraction), base: allocation.total.base };
+}
+
+/**
+ * The relationship between OD's and OS's independently-entered vertical prism — computed
+ * directly from what was typed for each eye, never by naively summing.
+ *
+ * - `imbalance` is the clinically meaningful "relative vertical prism" — the net anisophoria-
+ *   causing demand between the eyes (e.g. OD 4.4Δ BU + OS 4.4Δ BU → imbalance 0Δ: fully yoked,
+ *   no relative vertical prism at all; OD 4.4Δ BU + OS 4.4Δ BD → imbalance 8.8Δ: opposing
+ *   bases compound).
+ * - `yoked` is the shared same-direction component (present only when both eyes' prism points
+ *   the same way) — it shifts both retinal images together and is not a source of vertical
+ *   diplopia, so it is reported separately and is never added into `imbalance`.
+ */
+export interface VerticalPrismRelationship {
+  imbalance?: { diopters: number; moreBuEye: 'OD' | 'OS' };
+  yoked?: { diopters: number; base: VerticalPrismBase };
+}
+
+function signedVertical(target: VerticalPrismTarget | undefined): number {
+  if (!target || target.diopters < ZERO_EPSILON) return 0;
+  return target.diopters * (target.base === 'BU' ? 1 : -1);
+}
+
+function calculateVerticalPrismRelationship(od: VerticalPrismTarget | undefined, os: VerticalPrismTarget | undefined): VerticalPrismRelationship | undefined {
+  const odSigned = signedVertical(od);
+  const osSigned = signedVertical(os);
+  if (Math.abs(odSigned) < ZERO_EPSILON && Math.abs(osSigned) < ZERO_EPSILON) return undefined;
+
+  const result: VerticalPrismRelationship = {};
+  const diff = cleanFloat(odSigned - osSigned);
+  if (Math.abs(diff) >= ZERO_EPSILON) {
+    result.imbalance = { diopters: Math.abs(diff), moreBuEye: diff > 0 ? 'OD' : 'OS' };
+  }
+  const sameDirection = (odSigned > 0 && osSigned > 0) || (odSigned < 0 && osSigned < 0);
+  if (sameDirection) {
+    const yokedDiopters = cleanFloat(Math.min(Math.abs(odSigned), Math.abs(osSigned)));
+    if (yokedDiopters >= ZERO_EPSILON) {
+      result.yoked = { diopters: yokedDiopters, base: odSigned > 0 ? 'BU' : 'BD' };
+    }
+  }
+  return result;
+}
+
+export interface BinocularRequiredDecentrationResult {
+  od: EyeRequiredDecentrationResult;
+  os: EyeRequiredDecentrationResult;
+  /** Present only when at least one eye has a nonzero vertical target — see VerticalPrismRelationship. */
+  verticalRelationship?: VerticalPrismRelationship;
+}
+
+/**
+ * Assumes valid input — call validateBinocularRequiredDecentrationInput first. A horizontal
+ * total is split into per-eye PRISM (diopters) before either eye's own inverse-Prentice solve —
+ * never split into millimeters, since OD and OS can have different power and would then require
+ * different decentration for an equal diopter share.
  */
 export function calculateBinocularRequiredDecentration(input: BinocularRequiredDecentrationInput): BinocularRequiredDecentrationResult {
-  return {
-    od: calculateEyeRequiredDecentration(input.od, allocateEyeTarget('od', input.allocation)),
-    os: calculateEyeRequiredDecentration(input.os, allocateEyeTarget('os', input.allocation)),
+  const odHorizontal = allocateHorizontal('od', input.horizontal);
+  const osHorizontal = allocateHorizontal('os', input.horizontal);
+  const od = calculateEyeRequiredDecentration({ rx: input.od.rx, patientPdMm: input.od.patientPdMm, horizontal: odHorizontal, vertical: input.od.vertical });
+  const os = calculateEyeRequiredDecentration({ rx: input.os.rx, patientPdMm: input.os.patientPdMm, horizontal: osHorizontal, vertical: input.os.vertical });
+  return { od, os, verticalRelationship: calculateVerticalPrismRelationship(input.od.vertical, input.os.vertical) };
+}
+
+// --- Validation ---------------------------------------------------------
+
+export interface HorizontalPrismTargetValidationErrors {
+  diopters?: string;
+}
+
+function validateHorizontalTarget(target: HorizontalPrismTarget): HorizontalPrismTargetValidationErrors {
+  const diopters = validateDiopters(target.diopters);
+  return diopters ? { diopters } : {};
+}
+
+function validateVerticalTarget(target: VerticalPrismTarget): HorizontalPrismTargetValidationErrors {
+  const diopters = validateDiopters(target.diopters);
+  return diopters ? { diopters } : {};
+}
+
+function validateSplitFraction(fraction: number | undefined): string | undefined {
+  if (fraction === undefined) return undefined;
+  if (Number.isNaN(fraction)) return 'Enter the OD share.';
+  if (fraction < 0 || fraction > 1) return 'OD share must be between 0% and 100%.';
+  return undefined;
+}
+
+export interface EyeRequiredDecentrationValidationErrors extends PrismRxValidationErrors {
+  patientPdMm?: string;
+  verticalDiopters?: string;
+}
+
+function validateEyeRequiredDecentrationEntry(entry: EyeRequiredDecentrationEntry): EyeRequiredDecentrationValidationErrors {
+  const errors: EyeRequiredDecentrationValidationErrors = { ...validateRx(entry.rx), patientPdMm: validatePatientPdMm(entry.patientPdMm) };
+  if (entry.vertical) {
+    const vertical = validateVerticalTarget(entry.vertical);
+    if (vertical.diopters) errors.verticalDiopters = vertical.diopters;
+  }
+  return errors;
+}
+
+export interface BinocularRequiredDecentrationValidationErrors {
+  od: EyeRequiredDecentrationValidationErrors;
+  os: EyeRequiredDecentrationValidationErrors;
+  odHorizontal?: HorizontalPrismTargetValidationErrors;
+  osHorizontal?: HorizontalPrismTargetValidationErrors;
+  totalHorizontal?: HorizontalPrismTargetValidationErrors;
+  horizontalSplit?: string;
+}
+
+export function validateBinocularRequiredDecentrationInput(input: BinocularRequiredDecentrationInput): BinocularRequiredDecentrationValidationErrors {
+  const errors: BinocularRequiredDecentrationValidationErrors = {
+    od: validateEyeRequiredDecentrationEntry(input.od),
+    os: validateEyeRequiredDecentrationEntry(input.os),
   };
+  if (input.horizontal.mode === 'perEye') {
+    const odHorizontal = validateHorizontalTarget(input.horizontal.od);
+    const osHorizontal = validateHorizontalTarget(input.horizontal.os);
+    if (hasErrors(odHorizontal)) errors.odHorizontal = odHorizontal;
+    if (hasErrors(osHorizontal)) errors.osHorizontal = osHorizontal;
+  } else {
+    const totalHorizontal = validateHorizontalTarget(input.horizontal.total);
+    if (hasErrors(totalHorizontal)) errors.totalHorizontal = totalHorizontal;
+    const splitError = validateSplitFraction(input.horizontal.split?.odFraction);
+    if (splitError) errors.horizontalSplit = splitError;
+  }
+  return errors;
+}
+
+export function hasBinocularRequiredDecentrationErrors(errors: BinocularRequiredDecentrationValidationErrors): boolean {
+  return (
+    hasErrors(errors.od) ||
+    hasErrors(errors.os) ||
+    (errors.odHorizontal ? hasErrors(errors.odHorizontal) : false) ||
+    (errors.osHorizontal ? hasErrors(errors.osHorizontal) : false) ||
+    (errors.totalHorizontal ? hasErrors(errors.totalHorizontal) : false) ||
+    Boolean(errors.horizontalSplit)
+  );
 }
