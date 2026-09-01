@@ -159,6 +159,14 @@ export const EyeMarkIcon: React.FC<IconProps> = ({ size = 40, className, slot })
   );
 };
 
+export const ExternalLinkIcon: React.FC<IconProps> = (props) => (
+  <IconBase {...props} size={props.size ?? 14} viewBox="0 0 16 16">
+    <path d="M6.5 3.5H12.5V9.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12.5 3.5L6 10" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M9.5 3.5H3.5V12.5H12.5V6.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </IconBase>
+);
+
 export const StarIcon: React.FC<IconProps> = (props) => (
   <IconBase {...props} viewBox="0 0 20 20">
     <path

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { IonContent, IonPage, useIonAlert } from '@ionic/react';
+import { useHistory } from 'react-router-dom';
+import { IonContent, IonPage, useIonActionSheet, useIonAlert } from '@ionic/react';
 import { UserIcon } from '../../components/icons';
 import FeatureCard from '../../components/FeatureCard';
 import { topLevelModules } from '../../navigation/topLevelModules';
@@ -18,6 +19,8 @@ function timeOfDayGreeting(): string {
 const Home: React.FC = () => {
   const { displayName, hydrate, setDisplayName } = useProfileStore();
   const [presentAlert] = useIonAlert();
+  const [presentActionSheet] = useIonActionSheet();
+  const history = useHistory();
 
   useEffect(() => {
     hydrate();
@@ -38,6 +41,17 @@ const Home: React.FC = () => {
     });
   };
 
+  const openProfileMenu = () => {
+    presentActionSheet({
+      header: 'Profile',
+      buttons: [
+        { text: 'Edit name', handler: editDisplayName },
+        { text: 'About RxKit', handler: () => history.push('/about') },
+        { text: 'Cancel', role: 'cancel' },
+      ],
+    });
+  };
+
   return (
     <IonPage>
       <IonContent fullscreen className="ion-padding rx-home-content">
@@ -47,7 +61,7 @@ const Home: React.FC = () => {
               <div className="rx-home-wordmark">RxKit</div>
               <div className="rx-home-tagline">Clinical Tools for Optometry</div>
             </div>
-            <button type="button" className="rx-profile-btn" onClick={editDisplayName} aria-label="Edit your name">
+            <button type="button" className="rx-profile-btn" onClick={openProfileMenu} aria-label="Profile menu">
               <UserIcon size={18} />
             </button>
           </div>

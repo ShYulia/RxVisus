@@ -1,0 +1,78 @@
+.rx-about-inner {
+  max-width: 560px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+.rx-about-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 4px 4px;
+}
+
+.rx-about-wordmark {
+  font-family: var(--rx-font-display);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: var(--rx-text);
+}
+
+.rx-about-tagline {
+  font-family: var(--rx-font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--rx-text-secondary);
+}
+
+.rx-about-divider {
+  height: 1px;
+  background: var(--rx-border);
+  margin: 24px 4px;
+}
+
+.rx-about-name {
+  margin: 0;
+  font-family: var(--rx-font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--rx-text);
+}
+
+.rx-about-role {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+}
+
+.rx-about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rx-iris-deep);
+  text-decoration: none;
+}
+
+.rx-about-link:hover {
+  text-decoration: underline;
+}
+
+.rx-about-footer {
+  margin: 0 4px;
+}
+
+.rx-about-footer p {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--rx-text-tertiary);
+}
+
+.rx-about-footer p:last-child {
+  margin-bottom: 0;
+}

@@ -9,6 +9,7 @@ import GuidePathway from '../modules/guide/GuidePathway';
 import TestsList from '../modules/guide/TestsList';
 import TestCard from '../modules/guide/TestCard';
 import Favorites from '../modules/favorites/Favorites';
+import About from '../modules/about/About';
 import { topLevelModules } from './topLevelModules';
 import './Tabs.css';
 
@@ -50,6 +51,9 @@ const Tabs: React.FC = () => (
       </Route>
       <Route exact path="/favorites">
         <Favorites />
+      </Route>
+      <Route exact path="/about">
+        <About />
       </Route>
       <Route exact path="/">
         <Redirect to="/home" />
