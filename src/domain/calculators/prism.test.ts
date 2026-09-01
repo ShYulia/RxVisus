@@ -342,7 +342,7 @@ describe('calculateBinocularRequiredDecentration — horizontal', () => {
     expect(result.os.orderingPdMm).toBe(25);
   });
 
-  it('flags a target above the extreme-prism guideline with a caution, not a rejection', () => {
+  it('flags a target above the extreme-prism guideline with a caution, not a rejection, and the wording does not claim it cannot be manufactured', () => {
     const result = calculateBinocularRequiredDecentration({
       od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
       os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
@@ -350,7 +350,21 @@ describe('calculateBinocularRequiredDecentration — horizontal', () => {
     });
     expect(result.od.horizontal.kind).toBe('defined');
     expect(result.od.caution).toBeDefined();
+    expect(result.od.caution).toContain('High prescribed prism (>10Δ)');
+    expect(result.od.caution?.toLowerCase()).not.toContain('impossible');
+    expect(result.od.caution?.toLowerCase()).not.toContain('cannot be');
+    expect(result.od.caution?.toLowerCase()).not.toContain('tolerance');
     expect(result.os.caution).toBeUndefined();
+  });
+
+  it('a prism target at exactly 10Δ does not trigger the high-prism caution — only strictly above it does', () => {
+    const result = calculateBinocularRequiredDecentration({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      horizontal: { mode: 'perEye', od: { diopters: 10, base: 'BI' }, os: { diopters: 10.1, base: 'BI' } },
+    });
+    expect(result.od.caution).toBeUndefined();
+    expect(result.os.caution).toBeDefined();
   });
 
   it('round-trips through calculateHorizontalInducedPrism: required decentration, fed back in, recovers the original horizontal target', () => {

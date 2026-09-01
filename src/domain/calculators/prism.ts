@@ -322,17 +322,18 @@ function solveVerticalDecentration(target: VerticalPrismTarget | undefined, f90:
 }
 
 /**
- * Standard optical-dispensing guideline: beyond ~10Δ in one eye, grinding prism directly into a
- * lens becomes impractical (excess edge/center thickness, decentration approaching the blank's
- * usable diameter), and a Fresnel press-on prism — or splitting the prism across both lenses —
- * is the usual recommendation. Surfaced as a caution, never a rejection: below true singularity
- * the math and the lens are both perfectly valid.
+ * Standard optical-dispensing guideline: beyond ~10Δ in one eye, ground-in prism starts adding
+ * substantial edge/center thickness, and labs commonly prefer splitting the prism across both
+ * lenses or a Fresnel press-on prism instead. This is a flag to reconsider the approach, not a
+ * manufacturing limit — actual feasibility depends on the lab, the lens design/material, and the
+ * blank, none of which this calculator knows. Surfaced as a caution, never a rejection: below
+ * true singularity the math and the lens are both perfectly valid.
  */
 const EXTREME_PRISM_DIOPTERS = 10;
 
 function extremeCaution(horizontal?: HorizontalPrismTarget, vertical?: VerticalPrismTarget): string | undefined {
   if ((horizontal?.diopters ?? 0) > EXTREME_PRISM_DIOPTERS || (vertical?.diopters ?? 0) > EXTREME_PRISM_DIOPTERS) {
-    return `This exceeds ${EXTREME_PRISM_DIOPTERS}Δ in one eye — prism this large is usually impractical to grind into a standard lens. Consider splitting the prism across both lenses, or a Fresnel press-on prism.`;
+    return `High prescribed prism (>${EXTREME_PRISM_DIOPTERS}Δ). Consider laboratory feasibility, prism distribution between the lenses, or alternative prism options such as Fresnel prism where clinically appropriate.`;
   }
   return undefined;
 }

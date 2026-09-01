@@ -16,6 +16,7 @@ import {
 } from '../../domain/calculators/prism';
 import { formatDecentrationMm, formatPrismDiopters } from './formatPrism';
 import { formatDiopter, parseSphereInput } from './formatDiopter';
+import { decentrationCautionLines } from './decentrationWarnings';
 import OcPlacementDiagram from './OcPlacementDiagram';
 import PageHeader from '../../components/PageHeader';
 import FavoriteStarButton from '../../components/FavoriteStarButton';
@@ -25,19 +26,6 @@ import CautionBox from '../../components/CautionBox';
 import Disclosure from '../../components/Disclosure';
 import ActionRow from '../../components/ActionRow';
 import SegmentedControl from '../../components/SegmentedControl';
-
-/**
- * Above this resultant OC displacement (mm), a "large required decentration" caution is shown.
- * One named constant so the threshold can be tuned later without hunting through the render
- * logic. Kept as a UI-layer judgment call, not a domain calculation — the math itself is valid
- * at any magnitude; this is purely a practical fabrication/frame-fit heads-up.
- */
-const LARGE_DECENTRATION_MM = 10;
-
-/** Resultant OC displacement across both axes — sqrt(horizontal² + vertical²) — used only to judge practicality, never to change the reported horizontal/vertical components themselves. */
-function resultantDecentrationMm(horizontalMm: number, verticalMm: number): number {
-  return Math.sqrt(horizontalMm * horizontalMm + verticalMm * verticalMm);
-}
 
 const MODE_OPTIONS = [
   { value: 'induced', label: 'Induced Prism' },
@@ -178,8 +166,7 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
   }
 
   const hasDefinedResult = Boolean(horizontalDefined || verticalDefined);
-  const resultantMm = resultantDecentrationMm(horizontalDefined?.mm ?? 0, verticalDefined?.mm ?? 0);
-  const isLargeDecentration = hasDefinedResult && resultantMm > LARGE_DECENTRATION_MM;
+  const decentrationCaution = decentrationCautionLines(horizontalDefined, verticalDefined);
 
   return (
     <CalculatorResult
@@ -223,12 +210,13 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
         </div>
       )}
 
-      {isLargeDecentration && (
+      {decentrationCaution && (
         <CautionBox className="rx-result-caution">
-          <p className="rx-caution-text">
-            <strong>Large required decentration.</strong> This may exceed practical frame/lens limits. Consider prescribed/surfaced prism rather
-            than obtaining the full prism through OC decentration alone.
-          </p>
+          {decentrationCaution.map((line, i) => (
+            <p className="rx-caution-text" key={line}>
+              {i < decentrationCaution.length - 1 ? <strong>{line}</strong> : line}
+            </p>
+          ))}
         </CautionBox>
       )}
     </CalculatorResult>
