@@ -1,3 +1,4 @@
+import CautionBox from '../../components/CautionBox';
 import { getManagementConsiderations, NO_PATTERN_MANAGEMENT, type ManagementConsiderations } from '../../domain/reference/binocularManagement';
 import { parseBinocularFindings, type MemNottFinding, type ParsedBinocularData, type Phoria, type VergencePair } from '../../domain/reference/binocularFindings';
 import { interpretBinocularAssessment, type BinocularInterpretation } from '../../domain/reference/binocularPatterns';
@@ -147,6 +148,12 @@ const BinocularSummary: React.FC<BinocularSummaryProps> = ({ findings }) => {
     <div className="rx-final-rx">
       <p className="rx-summary-headline rx-summary-headline-dominant">{interpretation.headline}</p>
 
+      <div className="rx-summary-disclaimer">
+        <CautionBox>
+          Decision support, not a diagnosis — confirm and correlate clinically. You remain responsible for diagnosis and management.
+        </CautionBox>
+      </div>
+
       {interpretation.patterns.map((pattern) => (
         <div key={pattern.id} className={pattern.confidence === 'possible' ? 'rx-summary-pattern rx-summary-pattern-possible' : 'rx-summary-pattern'}>
           <p className="rx-summary-pattern-label">
@@ -166,6 +173,9 @@ const BinocularSummary: React.FC<BinocularSummaryProps> = ({ findings }) => {
       {management && (
         <div className="rx-summary-whatnext">
           <p className="rx-list-section-label">What next?</p>
+          <p className="rx-summary-whatnext-note">
+            For clinical reference — decision support only, not automatic treatment or prescribing instructions.
+          </p>
           <ul>
             {management.summary.map((line) => (
               <li key={line}>{line}</li>

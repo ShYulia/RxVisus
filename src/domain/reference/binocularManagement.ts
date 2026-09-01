@@ -13,14 +13,15 @@ export interface ManagementConsiderations {
   moreDetails?: string[];
 }
 
-const BEST_CORRECTION_NOTE = 'Confirm distance and near refractive correction is optimized before attributing findings definitively to a binocular/accommodative cause.';
+const BEST_CORRECTION_NOTE =
+  'Distance and near refractive correction should be confirmed as optimized before attributing findings definitively to a binocular/accommodative cause.';
 
 const MANAGEMENT_BY_PATTERN: Record<string, ManagementConsiderations> = {
   ci: {
     summary: [
       BEST_CORRECTION_NOTE,
       'Consider vergence/accommodative therapy as an important option, particularly in younger/symptomatic patients — prism is not the default first recommendation.',
-      'Reassess symptoms, NPC, and positive fusional (BO) reserve after a course of therapy.',
+      'Consider reassessing symptoms, NPC, and positive fusional (BO) reserve after a course of therapy.',
     ],
     moreDetails: [
       'Near base-in (BI) relieving prism may be considered for symptom relief when therapy is unsuitable, unsuccessful, or when more immediate relief is needed — not as automatic first-line treatment.',
@@ -36,7 +37,7 @@ const MANAGEMENT_BY_PATTERN: Record<string, ManagementConsiderations> = {
       'Gradient AC/A (if not already measured) helps clarify how accommodatively driven the near eso is.',
     ],
     moreDetails: [
-      'Reassess near symptoms and the near BI (compensating) reserve after any correction change or therapy.',
+      'Consider reassessing near symptoms and the near BI (compensating) reserve after any correction change or therapy.',
       'A plus addition, when appropriate, reduces the accommodative convergence demand rather than directly training a reserve.',
     ],
   },
@@ -44,7 +45,7 @@ const MANAGEMENT_BY_PATTERN: Record<string, ManagementConsiderations> = {
     summary: [BEST_CORRECTION_NOTE, 'Consider distance base-in vergence therapy where appropriate; distance prism is a symptomatic option, not a default.'],
   },
   de: {
-    summary: [BEST_CORRECTION_NOTE, 'Consider distance vergence therapy; correlate with near findings before attributing symptoms to this alone.'],
+    summary: [BEST_CORRECTION_NOTE, 'Consider distance vergence therapy; consider correlating with near findings before attributing symptoms to this alone.'],
   },
   'basic-exo': {
     summary: [
@@ -57,32 +58,35 @@ const MANAGEMENT_BY_PATTERN: Record<string, ManagementConsiderations> = {
     summary: [BEST_CORRECTION_NOTE, 'Consider vergence therapy targeting the base-in (compensating) reserve; a plus addition may also be appropriate if accommodatively driven.'],
   },
   fvd: {
-    summary: [BEST_CORRECTION_NOTE, 'Consider vergence therapy addressing both BI and BO reserves; reassess symptoms after a course of therapy before considering prism.'],
+    summary: [
+      BEST_CORRECTION_NOTE,
+      'Consider vergence therapy addressing both BI and BO reserves; consider reassessing symptoms after a course of therapy before revisiting prism.',
+    ],
   },
   ai: {
     summary: [
       BEST_CORRECTION_NOTE,
       'Consider plus lens support at near and/or accommodative therapy, guided by symptoms and near visual demands.',
-      'Reassess amplitude and MAF/BAF facility after any correction change or therapy.',
+      'Consider reassessing amplitude and MAF/BAF facility after any correction change or therapy.',
     ],
   },
   ae: {
     summary: [
       BEST_CORRECTION_NOTE,
-      'Consider accommodative therapy targeting facility/relaxation at near; review near add power and near working habits if relevant.',
+      'Consider accommodative therapy targeting facility/relaxation at near; consider reviewing near add power and near working habits if relevant.',
     ],
   },
   ainfac: {
     summary: [
       BEST_CORRECTION_NOTE,
-      'Consider accommodative facility therapy (both plus and minus sides); correlate with vergence facility if also reduced.',
+      'Consider accommodative facility therapy (both plus and minus sides); consider correlating with vergence facility if also reduced.',
     ],
   },
 };
 
 /** No pattern-specific match — still worth a short, generic note rather than nothing. */
 export const NO_PATTERN_MANAGEMENT: ManagementConsiderations = {
-  summary: ['No specific binocular/accommodative management is indicated from these findings. Reassess if symptoms persist or change.'],
+  summary: ['No specific binocular/accommodative management is indicated from these findings. Consider reassessing if symptoms persist or change.'],
 };
 
 export function getManagementConsiderations(patternId: string): ManagementConsiderations | undefined {

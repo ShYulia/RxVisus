@@ -844,6 +844,10 @@
   color: var(--rx-iris-deep);
 }
 
+.rx-summary-disclaimer {
+  margin: 0 4px 16px;
+}
+
 .rx-summary-reassurance {
   margin: 0 4px 14px;
   font-size: 13px;
@@ -855,6 +859,13 @@
   margin: 4px 4px 18px;
   padding-top: 14px;
   border-top: 1px solid var(--rx-border);
+}
+
+.rx-summary-whatnext-note {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--rx-text-tertiary);
 }
 
 .rx-summary-whatnext ul {

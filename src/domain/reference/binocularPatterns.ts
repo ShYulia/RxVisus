@@ -305,7 +305,7 @@ export function interpretBinocularAssessment(data: ParsedBinocularData): Binocul
     // (e.g. an incidental, borderline-compensated phoria) must not turn a well-supported single
     // dysfunction into a mixed diagnosis. Prefer the single better-supported pattern instead.
     if (v.confidence === 'consistent' && a.confidence === 'consistent') {
-      return { category: 'mixed', headline: 'Mixed binocular/accommodative findings', patterns: [v, a] };
+      return { category: 'mixed', headline: 'Findings consistent with mixed binocular/accommodative involvement', patterns: [v, a] };
     }
     if (v.confidence === 'consistent' || a.confidence === 'consistent') {
       // Exactly one side is well-supported: that's the primary finding. The other, weaker
