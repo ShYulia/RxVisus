@@ -112,6 +112,23 @@ describe('BinocularSummary', () => {
     expect(container.querySelector('.rx-summary-pattern-possible')).not.toBeNull();
   });
 
+  it('shows an exceeds-range Break/Recovery distinctly — never as a number, never dropped like missing data', () => {
+    render(
+      <BinocularSummary
+        findings={{
+          'distancePhoria.type': 'ortho',
+          'nearPhoria.type': 'exo',
+          'nearPhoria.amount': '10',
+          'nearVergence.bo.blur': '18',
+          'nearVergence.bo.break': 'exceeds-range',
+          'nearVergence.bo.recovery': 'exceeds-range',
+        }}
+      />,
+    );
+    expect(screen.getAllByText(/break exceeds range/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/recovery exceeds range/).length).toBeGreaterThan(0);
+  });
+
   it('splits measurements into a compact "Key measurements" view and a collapsed "All measurements"', () => {
     render(
       <BinocularSummary

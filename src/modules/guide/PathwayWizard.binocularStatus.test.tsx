@@ -197,6 +197,90 @@ describe('PathwayWizard — Binocular Status', () => {
     expect(screen.getByText('Near Point of Convergence')).toBeInTheDocument();
   });
 
+  it('non-numeric text in a core numeric field (NPC Break) is rejected with a visible error and never silently accepted', async () => {
+    renderWizard();
+    await waitForIonicReact();
+    await clickChoice('Quick Screen');
+    await skipTextEntry(); // age
+    await clickChoice('No symptoms');
+    await userEvent.click(screen.getByText('Continue'));
+    await clickChoice('Ortho'); // distance phoria
+    await clickChoice('Ortho'); // near phoria
+
+    setValue('Break (cm)', 'TTN');
+    expect(await screen.findByText('Enter a valid number.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText('Continue'));
+    // blocked — never advances to MAF with unparseable text silently accepted
+    expect(screen.getByText('Near Point of Convergence')).toBeInTheDocument();
+    expect(screen.queryByText('Monocular Accommodative Facility')).not.toBeInTheDocument();
+
+    setValue('Break (cm)', '6');
+    expect(screen.queryByText('Enter a valid number.')).not.toBeInTheDocument();
+  });
+
+  it('a fusional-vergence Break can be recorded as "Exceeds range" instead of a fabricated in-range number, and it reaches the Summary distinctly', async () => {
+    renderWizard();
+    await waitForIonicReact();
+    await completeCoreScreening('Full Assessment', 'No symptoms');
+
+    // near-vergence step: BI group filled normally, BO's Break marked "Exceeds range" instead of a number.
+    const biSection = screen.getByText('BI').closest('div')!;
+    const boSection = screen.getByText('BO').closest('div')!;
+    const setInGroup = (section: HTMLElement, label: string, value: string) => {
+      const fieldBox = within(section).getByText(label).closest('.rx-fieldbox')!;
+      fireEvent(fieldBox.querySelector('ion-input')!, new CustomEvent('ionInput', { detail: { value }, bubbles: true, composed: true }));
+    };
+    setInGroup(biSection, 'Blur', '12');
+    setInGroup(biSection, 'Break', '18');
+    setInGroup(biSection, 'Recovery', '12');
+    setInGroup(boSection, 'Blur', '18');
+    const boBreakField = within(boSection).getByText('Break').closest('.rx-textentry-field')!;
+    await userEvent.click(within(boBreakField as HTMLElement).getByText('Exceeds range'));
+    setInGroup(boSection, 'Recovery', '16');
+    await userEvent.click(screen.getByText('Continue'));
+
+    setValue('OD (D)', '12');
+    setValue('OS (D)', '12');
+    await userEvent.click(screen.getByText('Continue')); // aa
+    setValue('Cycles/min', '12');
+    await userEvent.click(screen.getByText('Continue')); // baf cycles
+    await clickChoice('Neither'); // baf difficulty
+    await userEvent.click(screen.getByText('Continue to Summary'));
+
+    expect(await screen.findByText(/break exceeds range/)).toBeInTheDocument();
+  });
+
+  it('REGRESSION: a value recorded via an absentOption toggle (e.g. "No blur") survives later text-entry steps of the same kind, instead of being silently overwritten by stale leftover form state from the earlier step', async () => {
+    renderWizard();
+    await waitForIonicReact();
+    await completeCoreScreening('Full Assessment', 'No symptoms');
+
+    // near-vergence: BI marked "No blur" instead of a number; BO filled normally.
+    await userEvent.click(screen.getAllByText('No blur')[0]);
+    const breaks = screen.getAllByText('Break');
+    fireEvent(breaks[0].closest('.rx-fieldbox')!.querySelector('ion-input')!, new CustomEvent('ionInput', { detail: { value: '18' }, bubbles: true, composed: true }));
+    const recoveries = screen.getAllByText('Recovery');
+    fireEvent(recoveries[0].closest('.rx-fieldbox')!.querySelector('ion-input')!, new CustomEvent('ionInput', { detail: { value: '12' }, bubbles: true, composed: true }));
+    fireEvent(screen.getAllByText('Blur')[1].closest('.rx-fieldbox')!.querySelector('ion-input')!, new CustomEvent('ionInput', { detail: { value: '18' }, bubbles: true, composed: true }));
+    fireEvent(breaks[1].closest('.rx-fieldbox')!.querySelector('ion-input')!, new CustomEvent('ionInput', { detail: { value: '24' }, bubbles: true, composed: true }));
+    fireEvent(recoveries[1].closest('.rx-fieldbox')!.querySelector('ion-input')!, new CustomEvent('ionInput', { detail: { value: '16' }, bubbles: true, composed: true }));
+    await userEvent.click(screen.getByText('Continue')); // near-vergence -> aa
+
+    // aa and baf-cycles are further text-entry steps right after near-vergence — reusing the
+    // same mounted TextEntryForm instance without a per-step remount would let near-vergence's
+    // own leftover (pre-substitution, empty-string) state resurface and overwrite "no blur".
+    setValue('OD (D)', '12');
+    setValue('OS (D)', '12');
+    await userEvent.click(screen.getByText('Continue')); // aa -> baf-cycles
+    setValue('Cycles/min', '12');
+    await userEvent.click(screen.getByText('Continue')); // baf cycles -> baf difficulty
+    await clickChoice('Neither');
+    await userEvent.click(screen.getByText('Continue to Summary'));
+
+    expect(await screen.findByText(/no blur/)).toBeInTheDocument();
+  });
+
   it('"New Patient" is not shown persistently during an active assessment — only "Back to Clinical Guide" is', async () => {
     renderWizard();
     await waitForIonicReact();

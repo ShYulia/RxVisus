@@ -395,10 +395,19 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
           />
         )}
 
+        {/*
+          Every step-driving form below is keyed by currentStep.id. Without a key, moving
+          between two consecutive steps of the SAME kind (e.g. two text-entry steps in a row,
+          which happens repeatedly in Binocular Status) reuses the same component instance —
+          its internal state (values/absent/etc.) survives across the "different" step and can
+          silently resubmit a stale, already-superseded value over a correctly-recorded one on
+          the next unrelated Continue. Keying by step id forces a clean remount per step.
+        */}
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'measurement' && (
           <div className="rx-wizard-step">
             <p className="rx-wizard-question">{currentStep.question}</p>
             <MeasurementForm
+              key={currentStep.id}
               initialValue={(currentStep.target ?? 'proposed') === 'proposed' ? measurement : null}
               onSubmit={(value) => commitMeasurement(currentStep, value)}
             />
@@ -409,6 +418,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
           <div className="rx-wizard-step">
             <p className="rx-wizard-question">{currentStep.question}</p>
             <TextEntryForm
+              key={currentStep.id}
               fields={currentStep.fields}
               groups={currentStep.groups}
               helperText={currentStep.helperText}
@@ -424,6 +434,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
           <div className="rx-wizard-step">
             <p className="rx-wizard-question">{currentStep.question}</p>
             <SymptomSelectForm
+              key={currentStep.id}
               options={currentStep.options}
               exclusiveKey={currentStep.exclusiveKey}
               onSubmit={(keys) => commitSymptomSelect(currentStep, keys)}
@@ -453,7 +464,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'rx-entry' && (
           <div className="rx-wizard-step">
             <p className="rx-wizard-question">{currentStep.question}</p>
-            <RxEntryForm initialValue={bestCorrection} onSubmit={(value) => commitRxEntry(currentStep, value)} />
+            <RxEntryForm key={currentStep.id} initialValue={bestCorrection} onSubmit={(value) => commitRxEntry(currentStep, value)} />
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IonButton } from '@ionic/react';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
+import { parseStrictNumber } from '../../domain/reference/binocularFindings';
 import TestChips from './TestChips';
 
 export interface TextEntryFieldDef {
@@ -10,6 +11,24 @@ export interface TextEntryFieldDef {
   required?: boolean;
   /** Lets this field be satisfied by an explicit non-numeric clinical result instead of forcing a fake number (e.g. "No blur"). */
   absentOption?: { label: string; value: string };
+  /**
+   * Marks this field as a numeric clinical measurement rather than free text: switches to a
+   * decimal numeric keyboard, and rejects non-numeric text with a visible error instead of
+   * letting it pass the (purely non-empty) `required` check only to be silently reinterpreted
+   * as "not entered" later. VA/stereoacuity-style fields deliberately omit this. `allowNegative`
+   * opts in for a signed measurement (e.g. MEM/Nott lag/lead).
+   */
+  numeric?: { allowNegative?: boolean };
+}
+
+/** Returns an error message when `raw` is non-empty but fails this field's numeric requirement — undefined otherwise (including for a genuinely blank value, which is a `required`-check concern, not a numeric one). */
+function numericError(field: TextEntryFieldDef, raw: string): string | undefined {
+  if (!field.numeric) return undefined;
+  if (raw.trim() === '') return undefined;
+  const value = parseStrictNumber(raw);
+  if (value === undefined) return 'Enter a valid number.';
+  if (!field.numeric.allowNegative && value < 0) return 'Enter a non-negative number.';
+  return undefined;
 }
 
 export interface TextEntryFormProps {
@@ -39,9 +58,13 @@ const TextEntryForm: React.FC<TextEntryFormProps> = ({ fields, groups, helperTex
   const fieldByKey = new Map(fields.map((f) => [f.key, f]));
 
   const isSatisfied = (field: TextEntryFieldDef) => {
-    if (!field.required) return true;
     if (field.absentOption && absent[field.key]) return true;
-    return (values[field.key] ?? '').trim() !== '';
+    const raw = values[field.key] ?? '';
+    // Invalid numeric text blocks Continue regardless of `required` — entered-but-unparseable
+    // data must never be accepted, let alone silently reinterpreted as "not entered".
+    if (numericError(field, raw)) return false;
+    if (!field.required) return true;
+    return raw.trim() !== '';
   };
 
   const toggleAbsent = (field: TextEntryFieldDef) => {
@@ -65,14 +88,21 @@ const TextEntryForm: React.FC<TextEntryFormProps> = ({ fields, groups, helperTex
     <FieldBoxGrid columns={defs.length <= 2 ? 2 : 3}>
       {defs.map((field) => {
         const fieldIsAbsent = !!(field.absentOption && absent[field.key]);
+        const raw = values[field.key] ?? '';
+        // A numeric error is shown as soon as it's typed (like the calculators' own progressive
+        // validation) — the clinician shouldn't have to hit Continue to find out garbage text
+        // won't be accepted. "Required" only appears after a blocked Continue attempt, and never
+        // alongside a numeric error for the same field.
+        const numError = numericError(field, raw);
+        const requiredError = submitAttempted && !isSatisfied(field) && !numError ? 'Required' : undefined;
         return (
           <div key={field.key} className="rx-textentry-field">
             <FieldBox
               label={field.label}
-              inputMode="text"
-              value={values[field.key] ?? ''}
+              inputMode={field.numeric ? 'decimal' : 'text'}
+              value={raw}
               disabled={fieldIsAbsent}
-              error={submitAttempted && !isSatisfied(field) ? 'Required' : undefined}
+              error={numError ?? requiredError}
               onChange={(v) => setValues((cur) => ({ ...cur, [field.key]: v }))}
             />
             {field.absentOption && (

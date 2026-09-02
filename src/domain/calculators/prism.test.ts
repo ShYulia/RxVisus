@@ -559,6 +559,86 @@ describe('validateBinocularRequiredDecentrationInput / hasBinocularRequiredDecen
     expect(errors.horizontalSplit).toBeDefined();
   });
 
+  it('a custom split with no OD share entered is flagged as an error, not silently allocated 0%/100%', () => {
+    const errors = validateBinocularRequiredDecentrationInput({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      horizontal: { mode: 'total', total: { diopters: 4, base: 'BI' }, split: {} },
+    });
+    expect(errors.horizontalSplit).toBe('Enter the OD share.');
+    expect(hasBinocularRequiredDecentrationErrors(errors)).toBe(true);
+
+    const result = calculateBinocularRequiredDecentration({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      horizontal: { mode: 'total', total: { diopters: 4, base: 'BI' }, split: {} },
+    });
+    // Neither eye gets an allocation manufactured out of a missing share.
+    expect(result.od.allocatedHorizontal).toBeUndefined();
+    expect(result.os.allocatedHorizontal).toBeUndefined();
+    expect(result.od.horizontal).toEqual({ kind: 'not-specified' });
+    expect(result.os.horizontal).toEqual({ kind: 'not-specified' });
+  });
+
+  it('omitting `split` altogether (not selecting custom) still defaults to an equal split, unaffected by the missing-share fix', () => {
+    const result = calculateBinocularRequiredDecentration({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      horizontal: { mode: 'total', total: { diopters: 4, base: 'BI' } },
+    });
+    expect(result.od.allocatedHorizontal?.diopters).toBe(2);
+    expect(result.os.allocatedHorizontal?.diopters).toBe(2);
+  });
+
+  it('a blank desired horizontal amount is "not specified", never reported as a real 0Δ result', () => {
+    const result = calculateBinocularRequiredDecentration({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      horizontal: { mode: 'perEye', os: { diopters: 2, base: 'BI' } }, // od omitted entirely
+    });
+    expect(result.od.horizontal).toEqual({ kind: 'not-specified' });
+    expect(result.od.allocatedHorizontal).toBeUndefined();
+    expect(result.os.horizontal.kind).toBe('defined');
+  });
+
+  it('a blank total horizontal amount is "not specified" for both eyes, distinct from an explicit 0Δ total', () => {
+    const notSpecified = calculateBinocularRequiredDecentration({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      horizontal: { mode: 'total' },
+    });
+    expect(notSpecified.od.horizontal).toEqual({ kind: 'not-specified' });
+    expect(notSpecified.os.horizontal).toEqual({ kind: 'not-specified' });
+
+    const explicitZero = calculateBinocularRequiredDecentration({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      horizontal: { mode: 'total', total: { diopters: 0, base: 'BI' } },
+    });
+    expect(explicitZero.od.horizontal).toEqual({ kind: 'none' });
+    expect(explicitZero.os.horizontal).toEqual({ kind: 'none' });
+  });
+
+  it('a blank vertical amount is "not specified", never a real 0Δ result', () => {
+    const result = calculateBinocularRequiredDecentration({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } }, // vertical omitted entirely
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN }, vertical: { diopters: 2, base: 'BU' } },
+      horizontal: { mode: 'total', total: { diopters: 0, base: 'BI' } },
+    });
+    expect(result.od.vertical).toEqual({ kind: 'not-specified' });
+    expect(result.os.vertical.kind).toBe('defined');
+  });
+
+  it('a per-eye horizontal target left blank does not trip validation — it is legitimately optional for that eye', () => {
+    const errors = validateBinocularRequiredDecentrationInput({
+      od: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      os: { rx: { sphere: -2, cylinder: 0, axis: NaN } },
+      horizontal: { mode: 'perEye', os: { diopters: 1, base: 'BI' } },
+    });
+    expect(errors.odHorizontal).toBeUndefined();
+    expect(hasBinocularRequiredDecentrationErrors(errors)).toBe(false);
+  });
+
   it('accepts an optional patientPdMm and rejects a negative one', () => {
     const validErrors = validateBinocularRequiredDecentrationInput({
       od: { rx: { sphere: -2, cylinder: 0, axis: NaN }, patientPdMm: 32 },

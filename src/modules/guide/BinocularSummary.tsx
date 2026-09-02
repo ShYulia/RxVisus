@@ -20,12 +20,15 @@ function formatPhoria(phoria?: Phoria): string | undefined {
 
 function formatVergence(pair?: VergencePair): string | undefined {
   if (!pair) return undefined;
-  const one = (label: string, f?: { blur?: number; blurAbsent?: boolean; break?: number; recovery?: number }) => {
+  const one = (
+    label: string,
+    f?: { blur?: number; blurAbsent?: boolean; break?: number; breakExceedsRange?: boolean; recovery?: number; recoveryExceedsRange?: boolean },
+  ) => {
     if (!f) return undefined;
     const parts = [
       f.blurAbsent ? 'no blur' : f.blur !== undefined && `blur ${f.blur}`,
-      f.break !== undefined && `break ${f.break}`,
-      f.recovery !== undefined && `recovery ${f.recovery}`,
+      f.breakExceedsRange ? 'break exceeds range' : f.break !== undefined && `break ${f.break}`,
+      f.recoveryExceedsRange ? 'recovery exceeds range' : f.recovery !== undefined && `recovery ${f.recovery}`,
     ].filter(Boolean);
     return parts.length > 0 ? `${label} ${parts.join('/')}` : undefined;
   };

@@ -286,23 +286,30 @@ export interface VerticalPrismTarget {
 }
 
 export type HorizontalDecentrationResult =
+  /** No horizontal target was entered at all for this eye/allocation — distinct from `'none'`, which means a target WAS entered and it resolved to (near) zero. Never rendered as "the desired prism is zero". */
+  | { kind: 'not-specified' }
   | { kind: 'none' }
   | { kind: 'defined'; mm: number; direction: HorizontalDecentrationDirection }
   | { kind: 'singularity' };
 
 export type VerticalDecentrationResult =
+  /** Same as HorizontalDecentrationResult's 'not-specified' — nothing was entered, not a computed zero. */
+  | { kind: 'not-specified' }
   | { kind: 'none' }
   | { kind: 'defined'; mm: number; direction: VerticalDecentrationDirection }
   | { kind: 'singularity' };
 
 /**
  * Inverse of the scalar Prentice's Rule for one meridian: c(cm) = Δ/F, converted to mm.
- * Singular (undefined) when F is ~plano and a nonzero prism was actually requested — reaching
- * a target through a zero-power meridian would require infinite decentration. Reported as a
- * clean "singularity", never a partial/pseudo-inverse guess.
+ * `target === undefined` means the field was left blank — reported as `'not-specified'`, never
+ * silently folded into `'none'` (a real, explicitly-entered zero) or treated as a computed
+ * result. Singular (undefined) when F is ~plano and a nonzero prism was actually requested —
+ * reaching a target through a zero-power meridian would require infinite decentration. Reported
+ * as a clean "singularity", never a partial/pseudo-inverse guess.
  */
 function solveHorizontalDecentration(target: HorizontalPrismTarget | undefined, f180: number): HorizontalDecentrationResult {
-  if (!target || target.diopters < ZERO_EPSILON) return { kind: 'none' };
+  if (!target) return { kind: 'not-specified' };
+  if (target.diopters < ZERO_EPSILON) return { kind: 'none' };
   if (Math.abs(f180) < SINGULARITY_EPSILON) return { kind: 'singularity' };
   const deltaSigned = target.diopters * (target.base === 'BO' ? 1 : -1);
   const cCm = cleanFloat(deltaSigned / f180);
@@ -312,7 +319,8 @@ function solveHorizontalDecentration(target: HorizontalPrismTarget | undefined, 
 }
 
 function solveVerticalDecentration(target: VerticalPrismTarget | undefined, f90: number): VerticalDecentrationResult {
-  if (!target || target.diopters < ZERO_EPSILON) return { kind: 'none' };
+  if (!target) return { kind: 'not-specified' };
+  if (target.diopters < ZERO_EPSILON) return { kind: 'none' };
   if (Math.abs(f90) < SINGULARITY_EPSILON) return { kind: 'singularity' };
   const deltaSigned = target.diopters * (target.base === 'BU' ? 1 : -1);
   const cCm = cleanFloat(deltaSigned / f90);
@@ -381,8 +389,13 @@ function calculateEyeRequiredDecentration(input: EyeRequiredDecentrationInput): 
 }
 
 export interface PrismSplit {
-  /** OD's share of the total, 0–1. OS receives the remainder (1 − odFraction). 0.5 = equal split (the default). */
-  odFraction: number;
+  /**
+   * OD's share of the total, 0–1. OS receives the remainder (1 − odFraction). 0.5 = equal split.
+   * `undefined` means "not yet specified" (only meaningful in a custom-split UI where the
+   * clinician hasn't typed a share yet) — this must never be treated as 0.5 nor as 0; see
+   * allocateHorizontal, which withholds an allocation entirely rather than guessing.
+   */
+  odFraction?: number;
 }
 
 /**
@@ -390,11 +403,13 @@ export interface PrismSplit {
  * base-in/base-out convention (e.g. convergence-insufficiency training prism prescribed as one
  * binocular number, split between the lenses). 'perEye' lets OD and OS be entered directly and
  * independently, including opposing bases. There is no equivalent 'total' mode for vertical —
- * see the module doc comment above.
+ * see the module doc comment above. Every target here is optional: a blank field means "not
+ * specified for this eye/allocation", never a fabricated 0Δ — see allocateHorizontal and
+ * solveHorizontalDecentration's `'not-specified'` result kind.
  */
 export type HorizontalPrismAllocation =
-  | { mode: 'perEye'; od: HorizontalPrismTarget; os: HorizontalPrismTarget }
-  | { mode: 'total'; total: HorizontalPrismTarget; split?: PrismSplit };
+  | { mode: 'perEye'; od?: HorizontalPrismTarget; os?: HorizontalPrismTarget }
+  | { mode: 'total'; total?: HorizontalPrismTarget; split?: PrismSplit };
 
 export interface EyeRequiredDecentrationEntry {
   rx: Prescription;
@@ -409,8 +424,23 @@ export interface BinocularRequiredDecentrationInput {
   horizontal: HorizontalPrismAllocation;
 }
 
-function allocateHorizontal(eye: 'od' | 'os', allocation: HorizontalPrismAllocation): HorizontalPrismTarget {
+/**
+ * Allocates this eye's share of the desired horizontal prism, or `undefined` when nothing
+ * should be allocated: 'perEye' simply echoes back whatever was (or wasn't) entered for this
+ * eye; 'total' allocates a fraction of `total` — but only once both `total` and the split
+ * fraction are actually known. A 'total' entered without a resolvable split fraction (custom
+ * split selected, share left blank) deliberately returns `undefined` for BOTH eyes rather than
+ * guessing 50/50 or 0/100 — validateBinocularRequiredDecentrationInput flags that state with a
+ * visible "Enter the OD share." error instead.
+ */
+function allocateHorizontal(eye: 'od' | 'os', allocation: HorizontalPrismAllocation): HorizontalPrismTarget | undefined {
   if (allocation.mode === 'perEye') return eye === 'od' ? allocation.od : allocation.os;
+  if (!allocation.total) return undefined;
+  // No `split` object at all means the caller isn't offering a custom fraction — default to an
+  // equal split. A `split` object that IS present but whose `odFraction` is still undefined
+  // means a custom split is in play and the clinician hasn't entered a share yet — withhold the
+  // allocation for both eyes rather than guessing 50/50 (or, worse, 0%/100% from `?? 0`).
+  if (allocation.split && allocation.split.odFraction === undefined) return undefined;
   const odFraction = allocation.split?.odFraction ?? 0.5;
   const fraction = eye === 'od' ? odFraction : 1 - odFraction;
   return { diopters: cleanFloat(allocation.total.diopters * fraction), base: allocation.total.base };
@@ -495,9 +525,16 @@ function validateVerticalTarget(target: VerticalPrismTarget): HorizontalPrismTar
   return diopters ? { diopters } : {};
 }
 
-function validateSplitFraction(fraction: number | undefined): string | undefined {
-  if (fraction === undefined) return undefined;
-  if (Number.isNaN(fraction)) return 'Enter the OD share.';
+/**
+ * Split is only relevant once a total was actually entered — nothing to validate for an
+ * unspecified total. Once a total exists, a `split` object with no `odFraction` (custom split
+ * selected, share left blank) is flagged explicitly rather than silently allocating 0%/100% —
+ * see allocateHorizontal's matching guard. Omitting `split` altogether (equal split) is fine.
+ */
+function validateSplitFraction(totalSpecified: boolean, split: PrismSplit | undefined): string | undefined {
+  if (!totalSpecified || !split) return undefined;
+  const fraction = split.odFraction;
+  if (fraction === undefined || Number.isNaN(fraction)) return 'Enter the OD share.';
   if (fraction < 0 || fraction > 1) return 'OD share must be between 0% and 100%.';
   return undefined;
 }
@@ -531,14 +568,23 @@ export function validateBinocularRequiredDecentrationInput(input: BinocularRequi
     os: validateEyeRequiredDecentrationEntry(input.os),
   };
   if (input.horizontal.mode === 'perEye') {
-    const odHorizontal = validateHorizontalTarget(input.horizontal.od);
-    const osHorizontal = validateHorizontalTarget(input.horizontal.os);
-    if (hasErrors(odHorizontal)) errors.odHorizontal = odHorizontal;
-    if (hasErrors(osHorizontal)) errors.osHorizontal = osHorizontal;
+    // A blank per-eye target is "not specified for this eye" (fine — the clinician may want
+    // prism in only one eye) rather than a validation error; only a target that WAS entered
+    // gets checked for validity.
+    if (input.horizontal.od) {
+      const odHorizontal = validateHorizontalTarget(input.horizontal.od);
+      if (hasErrors(odHorizontal)) errors.odHorizontal = odHorizontal;
+    }
+    if (input.horizontal.os) {
+      const osHorizontal = validateHorizontalTarget(input.horizontal.os);
+      if (hasErrors(osHorizontal)) errors.osHorizontal = osHorizontal;
+    }
   } else {
-    const totalHorizontal = validateHorizontalTarget(input.horizontal.total);
-    if (hasErrors(totalHorizontal)) errors.totalHorizontal = totalHorizontal;
-    const splitError = validateSplitFraction(input.horizontal.split?.odFraction);
+    if (input.horizontal.total) {
+      const totalHorizontal = validateHorizontalTarget(input.horizontal.total);
+      if (hasErrors(totalHorizontal)) errors.totalHorizontal = totalHorizontal;
+    }
+    const splitError = validateSplitFraction(!!input.horizontal.total, input.horizontal.split);
     if (splitError) errors.horizontalSplit = splitError;
   }
   return errors;

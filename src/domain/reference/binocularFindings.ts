@@ -29,7 +29,11 @@ export interface VergenceFinding {
   /** True when the clinician explicitly recorded "no blur point" rather than leaving blur untested — a genuine clinical result, distinct from missing data. */
   blurAbsent?: boolean;
   break?: number;
+  /** True when the clinician explicitly recorded "exceeds the testable range" (e.g. prism bar limit, commonly written ">40") for Break rather than a fabricated in-range number or leaving it untested — a genuine clinical result, distinct from both a numeric break and missing data. */
+  breakExceedsRange?: boolean;
   recovery?: number;
+  /** Same as breakExceedsRange, for Recovery. */
+  recoveryExceedsRange?: boolean;
 }
 
 export interface VergencePair {
@@ -80,11 +84,28 @@ export interface ParsedBinocularData {
   diplopiaNew?: boolean;
 }
 
+/**
+ * Strict numeric parse for a clinical measurement field: unlike parseFloat, this rejects
+ * trailing garbage ("6cm" is not a number) so entered-but-unparseable text can never be
+ * silently misread as a clean value. The entry-side form (TextEntryForm) is expected to block
+ * Continue on exactly this same check, so in practice this only ever sees a blank string, a
+ * clean number, or one of the field's own sentinel values (see NO_BLUR_VALUE,
+ * EXCEEDS_RANGE_VALUE) — this parser stays strict regardless, as the single source of truth for
+ * "does this look like a number", so a future entry path can't silently regress the guarantee.
+ * Returns undefined for blank/whitespace-only input (not entered) or anything that isn't a
+ * finite number — never 0, never a guess.
+ */
+export function parseStrictNumber(raw: string): number | undefined {
+  const trimmed = raw.trim();
+  if (trimmed === '') return undefined;
+  const value = Number(trimmed);
+  return Number.isFinite(value) ? value : undefined;
+}
+
 function num(findings: Record<string, string>, key: string): number | undefined {
   const raw = findings[key];
-  if (raw === undefined || raw.trim() === '') return undefined;
-  const value = parseFloat(raw);
-  return Number.isNaN(value) ? undefined : value;
+  if (raw === undefined) return undefined;
+  return parseStrictNumber(raw);
 }
 
 function str(findings: Record<string, string>, key: string): string | undefined {
@@ -101,20 +122,25 @@ function parsePhoria(findings: Record<string, string>, typeKey: string, amountKe
 /** Sentinel recorded for a field explicitly marked as having no numeric result (e.g. TextEntryForm's "No blur" toggle) — see NO_BLUR_VALUE. */
 export const NO_BLUR_VALUE = 'none';
 
+/** Sentinel recorded for a Break/Recovery field explicitly marked as having exceeded the testable range (e.g. the prism bar's limit, commonly written ">40") instead of a fabricated in-range number — see the "Exceeds range" toggle on the fusional-vergence steps. */
+export const EXCEEDS_RANGE_VALUE = 'exceeds-range';
+
 function parseVergenceFinding(findings: Record<string, string>, prefix: string): VergenceFinding {
   return {
     blur: num(findings, `${prefix}.blur`),
     blurAbsent: str(findings, `${prefix}.blur`) === NO_BLUR_VALUE,
     break: num(findings, `${prefix}.break`),
+    breakExceedsRange: str(findings, `${prefix}.break`) === EXCEEDS_RANGE_VALUE,
     recovery: num(findings, `${prefix}.recovery`),
+    recoveryExceedsRange: str(findings, `${prefix}.recovery`) === EXCEEDS_RANGE_VALUE,
   };
 }
 
 function parseVergence(findings: Record<string, string>, prefix: string): VergencePair | undefined {
   const bi = parseVergenceFinding(findings, `${prefix}.bi`);
   const bo = parseVergenceFinding(findings, `${prefix}.bo`);
-  const hasBi = bi.blur !== undefined || bi.blurAbsent || bi.break !== undefined || bi.recovery !== undefined;
-  const hasBo = bo.blur !== undefined || bo.blurAbsent || bo.break !== undefined || bo.recovery !== undefined;
+  const hasBi = bi.blur !== undefined || bi.blurAbsent || bi.break !== undefined || bi.breakExceedsRange || bi.recovery !== undefined || bi.recoveryExceedsRange;
+  const hasBo = bo.blur !== undefined || bo.blurAbsent || bo.break !== undefined || bo.breakExceedsRange || bo.recovery !== undefined || bo.recoveryExceedsRange;
   if (!hasBi && !hasBo) return undefined;
   return { bi: hasBi ? bi : undefined, bo: hasBo ? bo : undefined };
 }

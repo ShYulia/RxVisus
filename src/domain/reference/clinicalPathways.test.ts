@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clinicalPathways, getPathwayNode } from './clinicalPathways';
+import { EXCEEDS_RANGE_VALUE } from './binocularFindings';
+import { clinicalPathways, getPathwayNode, type TextEntryField } from './clinicalPathways';
 import { getClinicalTest } from './clinicalTests';
 import { getGlossaryTerm } from './glossary';
+
+function allTextEntryFields(): { nodeId: string; stepId: string; field: TextEntryField }[] {
+  return clinicalPathways.flatMap((node) =>
+    (node.steps ?? []).flatMap((step) => (step.kind === 'text-entry' ? step.fields.map((field) => ({ nodeId: node.id, stepId: step.id, field })) : [])),
+  );
+}
 
 describe('getPathwayNode', () => {
   it('finds a known node by id', () => {
@@ -163,6 +170,78 @@ describe('clinicalPathways referential integrity', () => {
       for (const step of node.steps ?? []) {
         if (step.kind !== 'measurement' || !step.consistencyCheck) continue;
         expect(recordedKeys.has(step.consistencyCheck.findingKey), `${node.id} -> step "${step.id}" -> consistencyCheck.findingKey "${step.consistencyCheck.findingKey}" has no recordAs producer`).toBe(true);
+      }
+    }
+  });
+
+  it('every numeric clinical measurement field is marked `numeric` — VA and Stereoacuity stay free text on purpose', () => {
+    const fields = allTextEntryFields();
+
+    const numericKeys = [
+      'age.value',
+      'distancePhoria.amount',
+      'nearPhoria.amount',
+      'npc.break',
+      'npc.recovery',
+      'maf.OD',
+      'maf.OS',
+      'nearVergence.bi.blur',
+      'nearVergence.bi.break',
+      'nearVergence.bi.recovery',
+      'nearVergence.bo.blur',
+      'nearVergence.bo.break',
+      'nearVergence.bo.recovery',
+      'aa.OD',
+      'aa.OS',
+      'baf.cyclesPerMin',
+      'distanceVergence.bi.blur',
+      'distanceVergence.bi.break',
+      'distanceVergence.bi.recovery',
+      'distanceVergence.bo.blur',
+      'distanceVergence.bo.break',
+      'distanceVergence.bo.recovery',
+      'acaGradient.value',
+      'nra.value',
+      'pra.value',
+      'vergenceFacility.cyclesPerMin',
+      'memNott.OD',
+      'memNott.OS',
+    ];
+    for (const key of numericKeys) {
+      const match = fields.find((f) => f.field.key === key);
+      expect(match, `expected a text-entry field for key "${key}"`).toBeDefined();
+      expect(match!.field.numeric, `field "${key}" should be marked numeric`).toBeDefined();
+    }
+
+    const freeTextKeys = ['OD', 'OS', 'stereoacuity.value']; // Strabismus VA (OD/OS) and Stereoacuity — notation varies, never parsed as a number.
+    for (const key of freeTextKeys) {
+      const match = fields.find((f) => f.field.key === key);
+      expect(match, `expected a text-entry field for key "${key}"`).toBeDefined();
+      expect(match!.field.numeric, `field "${key}" should stay free text`).toBeUndefined();
+    }
+  });
+
+  it('MEM/Nott allows a negative (signed lag/lead) value; every other numeric field is a non-negative magnitude', () => {
+    const fields = allTextEntryFields();
+    const memNott = fields.filter((f) => f.field.key === 'memNott.OD' || f.field.key === 'memNott.OS');
+    expect(memNott.length).toBe(2);
+    for (const f of memNott) expect(f.field.numeric?.allowNegative).toBe(true);
+
+    const others = fields.filter((f) => f.field.numeric && f.field.key !== 'memNott.OD' && f.field.key !== 'memNott.OS');
+    expect(others.length).toBeGreaterThan(0);
+    for (const f of others) expect(f.field.numeric?.allowNegative).toBeFalsy();
+  });
+
+  it('every Break/Recovery fusional-vergence field offers "Exceeds range", distinct from Blur\'s "No blur"', () => {
+    const fields = allTextEntryFields();
+    for (const prefix of ['nearVergence', 'distanceVergence']) {
+      for (const side of ['bi', 'bo']) {
+        for (const measure of ['break', 'recovery']) {
+          const field = fields.find((f) => f.field.key === `${prefix}.${side}.${measure}`)!.field;
+          expect(field.absentOption, `${prefix}.${side}.${measure} should offer an "Exceeds range" toggle`).toEqual({ label: 'Exceeds range', value: EXCEEDS_RANGE_VALUE });
+        }
+        const blurField = fields.find((f) => f.field.key === `${prefix}.${side}.blur`)!.field;
+        expect(blurField.absentOption?.label).toBe('No blur');
       }
     }
   });

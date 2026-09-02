@@ -11,8 +11,10 @@ import {
   type EyeHorizontalInducedPrismResult,
   type EyeRequiredDecentrationResult,
   type HorizontalPrismBase,
+  type HorizontalPrismTarget,
   type VerticalPrismBase,
   type VerticalPrismRelationship,
+  type VerticalPrismTarget,
 } from '../../domain/calculators/prism';
 import { formatDecentrationMm, formatPrismDiopters } from './formatPrism';
 import { formatDiopter, parseSphereInput } from './formatDiopter';
@@ -157,10 +159,13 @@ const EyeRequiredDecentrationPanel: React.FC<{ label: string; result: EyeRequire
   const verticalDefined = vertical.kind === 'defined' ? vertical : undefined;
 
   if (!horizontalDefined && !verticalDefined && !horizontalSingular && !verticalSingular) {
+    // Distinguish "nothing was entered for this eye" from "something was entered and it
+    // genuinely resolved to zero" — a blank field must never be reported as an explicit zero.
+    const nothingSpecified = horizontal.kind === 'not-specified' && vertical.kind === 'not-specified';
     return (
       <div className="rx-undefined">
         <div className="rx-result-panel-label">{label}</div>
-        <p>No decentration needed — the desired prism for this eye is zero.</p>
+        <p>{nothingSpecified ? 'No horizontal or vertical prism specified for this eye.' : 'No decentration needed — the desired prism for this eye is zero.'}</p>
       </div>
     );
   }
@@ -286,8 +291,14 @@ const PrismCalculator: React.FC = () => {
   const [osVDeltaStr, setOsVDeltaStr] = useState('');
   const [osVBase, setOsVBase] = useState<VerticalPrismBase>('BU');
 
-  const num = (raw: string) => (raw.trim() === '' ? 0 : parseFloat(raw));
   const numOrUndefined = (raw: string) => (raw.trim() === '' ? undefined : parseFloat(raw));
+  // A blank amount field means "not specified" for that component, never a fabricated 0Δ — see
+  // the domain layer's HorizontalDecentrationResult/VerticalDecentrationResult 'not-specified'
+  // kind and allocateHorizontal, both of which rely on receiving `undefined` here rather than 0.
+  const buildHorizontalTarget = (raw: string, base: HorizontalPrismBase): HorizontalPrismTarget | undefined =>
+    raw.trim() === '' ? undefined : { diopters: parseFloat(raw), base };
+  const buildVerticalTarget = (raw: string, base: VerticalPrismBase): VerticalPrismTarget | undefined =>
+    raw.trim() === '' ? undefined : { diopters: parseFloat(raw), base };
 
   // --- Mode 1: Induced Prism (horizontal only) ---
   const inducedInput = useMemo(
@@ -313,17 +324,20 @@ const PrismCalculator: React.FC = () => {
   const requiredInput = useMemo(() => {
     const odPatientPd = numOrUndefined(odPatientPdStr);
     const osPatientPd = numOrUndefined(osPatientPdStr);
+    // Equal split omits `split` entirely (the domain layer's own default), so it's never
+    // confused with "custom split chosen but share not yet entered" — see allocateHorizontal.
+    const odShareValue = numOrUndefined(odShareStr);
     const horizontal =
       horizontalAllocationMode === 'perEye'
-        ? { mode: 'perEye' as const, od: { diopters: num(odHDeltaStr), base: odHBase }, os: { diopters: num(osHDeltaStr), base: osHBase } }
+        ? { mode: 'perEye' as const, od: buildHorizontalTarget(odHDeltaStr, odHBase), os: buildHorizontalTarget(osHDeltaStr, osHBase) }
         : {
             mode: 'total' as const,
-            total: { diopters: num(totalHDeltaStr), base: totalHBase },
-            split: { odFraction: splitMode === 'equal' ? 0.5 : num(odShareStr) / 100 },
+            total: buildHorizontalTarget(totalHDeltaStr, totalHBase),
+            split: splitMode === 'equal' ? undefined : { odFraction: odShareValue !== undefined ? odShareValue / 100 : undefined },
           };
     return {
-      od: { rx: { sphere: od.rx.sphere, cylinder: od.rx.cylinder, axis: od.rx.axis }, patientPdMm: odPatientPd, vertical: { diopters: num(odVDeltaStr), base: odVBase } },
-      os: { rx: { sphere: os.rx.sphere, cylinder: os.rx.cylinder, axis: os.rx.axis }, patientPdMm: osPatientPd, vertical: { diopters: num(osVDeltaStr), base: osVBase } },
+      od: { rx: { sphere: od.rx.sphere, cylinder: od.rx.cylinder, axis: od.rx.axis }, patientPdMm: odPatientPd, vertical: buildVerticalTarget(odVDeltaStr, odVBase) },
+      os: { rx: { sphere: os.rx.sphere, cylinder: os.rx.cylinder, axis: os.rx.axis }, patientPdMm: osPatientPd, vertical: buildVerticalTarget(osVDeltaStr, osVBase) },
       horizontal,
     };
   }, [

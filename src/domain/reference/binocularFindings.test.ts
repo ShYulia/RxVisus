@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseBinocularFindings } from './binocularFindings';
+import { EXCEEDS_RANGE_VALUE, parseBinocularFindings, parseStrictNumber } from './binocularFindings';
 
 describe('parseBinocularFindings', () => {
   it('returns an empty-ish shape for no data', () => {
@@ -45,8 +45,8 @@ describe('parseBinocularFindings', () => {
       'nearVergence.bo.break': '20',
       'nearVergence.bo.recovery': '10',
     });
-    expect(data.nearVergence?.bi).toEqual({ blur: undefined, blurAbsent: false, break: 10, recovery: undefined });
-    expect(data.nearVergence?.bo).toEqual({ blur: 14, blurAbsent: false, break: 20, recovery: 10 });
+    expect(data.nearVergence?.bi).toEqual({ blur: undefined, blurAbsent: false, break: 10, breakExceedsRange: false, recovery: undefined, recoveryExceedsRange: false });
+    expect(data.nearVergence?.bo).toEqual({ blur: 14, blurAbsent: false, break: 20, breakExceedsRange: false, recovery: 10, recoveryExceedsRange: false });
   });
 
   it('marks blur as explicitly absent (e.g. "No blur" entered) without treating it as missing data', () => {
@@ -55,7 +55,42 @@ describe('parseBinocularFindings', () => {
       'nearVergence.bi.break': '18',
       'nearVergence.bi.recovery': '12',
     });
-    expect(data.nearVergence?.bi).toEqual({ blur: undefined, blurAbsent: true, break: 18, recovery: 12 });
+    expect(data.nearVergence?.bi).toEqual({
+      blur: undefined,
+      blurAbsent: true,
+      break: 18,
+      breakExceedsRange: false,
+      recovery: 12,
+      recoveryExceedsRange: false,
+    });
+  });
+
+  it('marks break/recovery as explicitly exceeding the testable range (e.g. ">40Δ" on a prism bar) without treating it as missing data or a number', () => {
+    const data = parseBinocularFindings({
+      'nearVergence.bi.blur': '12',
+      'nearVergence.bi.break': EXCEEDS_RANGE_VALUE,
+      'nearVergence.bi.recovery': EXCEEDS_RANGE_VALUE,
+    });
+    expect(data.nearVergence?.bi).toEqual({
+      blur: 12,
+      blurAbsent: false,
+      break: undefined,
+      breakExceedsRange: true,
+      recovery: undefined,
+      recoveryExceedsRange: true,
+    });
+  });
+
+  it('records a vergence finding as present when only an exceeds-range Break was entered (no blur/recovery)', () => {
+    const data = parseBinocularFindings({ 'nearVergence.bo.break': EXCEEDS_RANGE_VALUE });
+    expect(data.nearVergence?.bo).toEqual({
+      blur: undefined,
+      blurAbsent: false,
+      break: undefined,
+      breakExceedsRange: true,
+      recovery: undefined,
+      recoveryExceedsRange: false,
+    });
   });
 
   it('leaves vergence undefined when no fields are present', () => {
@@ -84,6 +119,35 @@ describe('parseBinocularFindings', () => {
   it('ignores blank strings as if the field were never entered', () => {
     const data = parseBinocularFindings({ 'age.value': '', 'npc.break': '  ' });
     expect(data.age).toBeUndefined();
+    expect(data.npcBreakCm).toBeUndefined();
+  });
+});
+
+describe('parseStrictNumber', () => {
+  it('parses a clean number', () => {
+    expect(parseStrictNumber('6')).toBe(6);
+    expect(parseStrictNumber('-1.5')).toBe(-1.5);
+    expect(parseStrictNumber('  8  ')).toBe(8);
+  });
+
+  it('returns undefined for blank/whitespace-only input, never 0', () => {
+    expect(parseStrictNumber('')).toBeUndefined();
+    expect(parseStrictNumber('   ')).toBeUndefined();
+  });
+
+  it('rejects trailing garbage that parseFloat would silently accept, unlike a lenient parse', () => {
+    // parseFloat('6cm') === 6 — this must NOT happen here, since entered-but-unparseable text
+    // must never be silently misread as a clean value.
+    expect(parseStrictNumber('6cm')).toBeUndefined();
+    expect(parseStrictNumber('TTN')).toBeUndefined();
+    expect(parseStrictNumber('>40')).toBeUndefined();
+    expect(parseStrictNumber('12/20')).toBeUndefined();
+  });
+});
+
+describe('parseBinocularFindings — entered-but-unparseable text is never silently reinterpreted as a clean value', () => {
+  it('a non-numeric NPC break is treated the same as missing, not as a parsed number (defense in depth — the entry form itself now blocks this text before it can reach here)', () => {
+    const data = parseBinocularFindings({ 'npc.break': '6cm' });
     expect(data.npcBreakCm).toBeUndefined();
   });
 });

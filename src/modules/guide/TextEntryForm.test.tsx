@@ -72,6 +72,75 @@ describe('TextEntryForm', () => {
     expect(onSubmit).toHaveBeenCalledWith({ blur: 'none' });
   });
 
+  it('a numeric field rejects non-numeric text with a visible error and does not submit it', async () => {
+    const { onSubmit } = renderForm([{ key: 'break', label: 'Break (cm)', required: true, numeric: {} }]);
+    await waitForIonicReact();
+
+    setValue('Break (cm)', '6cm');
+    expect(await screen.findByText('Enter a valid number.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).not.toHaveBeenCalled();
+    // The numeric error is shown instead of "Required" — never both at once for the same field.
+    expect(screen.queryByText('Required')).not.toBeInTheDocument();
+  });
+
+  it('a numeric error clears once the text is corrected, and Continue then submits the clean value', async () => {
+    const { onSubmit } = renderForm([{ key: 'break', label: 'Break (cm)', required: true, numeric: {} }]);
+    await waitForIonicReact();
+
+    setValue('Break (cm)', 'abc');
+    expect(await screen.findByText('Enter a valid number.')).toBeInTheDocument();
+
+    setValue('Break (cm)', '12');
+    expect(screen.queryByText('Enter a valid number.')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({ break: '12' });
+  });
+
+  it('a numeric field rejects a negative value by default ("use the base toggle instead" convention)', async () => {
+    const { onSubmit } = renderForm([{ key: 'cpm', label: 'Cycles/min', required: true, numeric: {} }]);
+    await waitForIonicReact();
+
+    setValue('Cycles/min', '-5');
+    expect(await screen.findByText('Enter a non-negative number.')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('a numeric field with allowNegative accepts a signed value (e.g. MEM/Nott lag/lead)', async () => {
+    const { onSubmit } = renderForm([{ key: 'memNott', label: 'OD (D)', numeric: { allowNegative: true } }]);
+    await waitForIonicReact();
+
+    setValue('OD (D)', '-0.25');
+    expect(screen.queryByText('Enter a non-negative number.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Enter a valid number.')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({ memNott: '-0.25' });
+  });
+
+  it('a blank numeric field that is not required submits freely — emptiness is not a numeric error', async () => {
+    const { onSubmit } = renderForm([{ key: 'age', label: 'Age (years)', numeric: {} }]);
+    await waitForIonicReact();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({});
+  });
+
+  it('an "Exceeds range" absentOption satisfies a required numeric field without a fabricated in-range number', async () => {
+    const { onSubmit } = renderForm([
+      { key: 'break', label: 'Break', required: true, numeric: {}, absentOption: { label: 'Exceeds range', value: 'exceeds-range' } },
+    ]);
+    await waitForIonicReact();
+
+    await userEvent.click(screen.getByText('Continue'));
+    expect(await screen.findByText('Required')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText('Exceeds range'));
+    expect(screen.queryByText('Required')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({ break: 'exceeds-range' });
+  });
+
   it('shows a Skip test action only when onSkip is provided, and it discards entry without validating', async () => {
     const onSkip = vi.fn();
     const { onSubmit, rerender } = renderForm([{ key: 'value', label: 'Finding', required: true }]);
