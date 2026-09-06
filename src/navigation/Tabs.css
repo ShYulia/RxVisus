@@ -1,15 +1,21 @@
 .rx-tabbar {
   --background: var(--rx-surface);
   --border: 1px solid var(--rx-border);
-  padding-top: 10px;
-  padding-bottom: 10px;
+  /* Fixed content-box height (Ionic's md tab-bar default is 56px, sized for a
+     one-line label) raised just enough to fit icon + a reserved two-line
+     label without clipping "Guide" — see .rx-tabbar ion-label below, which
+     reserves that same two-line height on every tab so icons stay aligned. */
+  height: 68px;
+  padding-top: 8px;
+  /* Safe-area inset is normally applied by Ionic's own padding-bottom;
+     re-add it explicitly since the rule below overrides that default. */
+  padding-bottom: calc(8px + var(--ion-safe-area-bottom, 0px));
   box-shadow: 0 -4px 14px rgba(37, 36, 42, 0.06);
 }
 
 .rx-tabbar ion-tab-button {
   --color: var(--rx-text-secondary);
   --color-selected: var(--rx-iris);
-  --min-height: 56px;
 }
 
 .rx-tab-icon-wrap {
@@ -18,6 +24,7 @@
   justify-content: center;
   width: 44px;
   height: 32px;
+  flex-shrink: 0;
   border-radius: 14px;
   transition: background-color 150ms ease;
 }
@@ -30,6 +37,12 @@
   font-size: 12.5px;
   font-weight: 500;
   letter-spacing: 0.005em;
+  line-height: 1.25;
+  /* Reserve a full two-line label height on every tab (not just the one
+     that wraps) so all four icons center against the same total content
+     height and land on the same baseline. */
+  min-height: 2.5em;
+  flex-shrink: 0;
   margin-top: 3px;
 }
 
