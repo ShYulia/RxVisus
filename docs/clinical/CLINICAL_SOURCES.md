@@ -260,41 +260,124 @@ diagnostic categories from mainstream binocular-vision classification:
 categories is a real, named, textbook diagnostic entity, not something RxKit
 invented.
 
-**What is NOT independently sourced — and is the central finding of this
-audit** is the specific *algorithm* RxKit uses to decide, from a given
-patient's specific entered numbers, which category (if any) the findings
-match, and with what confidence:
+**Redesigned 2026-09-01, following this audit.** The original design computed
+a `'consistent'`/`'possible'` confidence label per pattern via a
+corroboration-counting scheme (e.g. CI required 2+ of {magnitude gap, receded
+NPC, failed Sheard's}; AI required *bilateral* reduced AA *plus* an
+independent MAF/BAF corroborator to reach `'consistent'`) with no source
+anywhere — that scoring layer has been removed entirely, along with the
+outer combination logic that picked a single "primary" pattern or merged two
+matches into a "mixed" verdict (itself a scoring mechanism, comparing
+finding-counts to choose a winner). RxKit is explicitly framed as a
+**clinical interpretation aid**: it may recognize a clinically meaningful
+combination of findings and name what it resembles, but it never converts
+that recognition into a synthesized confidence level, and it never diagnoses.
 
-- The exact `phoriaSimilarMarginDelta`/`nearOrthoMaxDelta`/etc. thresholds
-  that gate each check (§4.1 above — mostly 🔴 NEEDS SOURCE).
-- The "corroboration counting" logic that decides `'consistent'` vs.
-  `'possible'` confidence (e.g. CI requires 2+ of {magnitude gap, receded NPC,
-  failed Sheard's}; AI requires *bilateral* reduced AA *plus* an independent
-  MAF/BAF corroborator to reach `'consistent'`) — this specific
-  point-counting scheme, including which findings "count" as independent
-  corroboration and which are dismissed as "nonspecific" (e.g. generic
-  symptoms never count toward promoting confidence for CE/Basic
-  phorias/AI/AE/Infacility), is original RxKit engineering. It is clinically
-  *reasonable* (it generally mirrors the logic a clinician would apply
-  informally — don't let a vague symptom substitute for objective evidence),
-  but it is not drawn from any published diagnostic algorithm or validated
-  clinical decision rule found during this audit.
-- The overall combination logic (single vergence match → that pattern; single
-  accommodative match → that pattern; both → "mixed" only if *both* are
-  independently `'consistent'`; more than one match within a category →
-  "no clear pattern" rather than picking one) is a bespoke decision-combination
-  policy, not a citable clinical algorithm.
+The new shape, applied uniformly to all nine patterns:
 
-**Status for the pattern-matching *algorithm* specifically: 🔴 NEEDS
-SOURCE / more precisely, ⚪ RxKit design decision that has not been validated
-against real clinical judgment** — which is exactly what the file's own
-header comment already says, and this audit finds no reason to disagree with
-that self-assessment. **This is not a defect in the audit sense of "wrong,"**
-but it is the single most important thing for the user to understand before
-treating Binocular Status's patient-specific interpretation output as
-anything more than a structured note-taking and reminder tool: **the
-confidence-scoring behind "Findings consistent with X" vs. "Possible X" is
-RxKit's own invention, not a validated clinical instrument.**
+- **Each pattern keeps its own trigger condition, largely unchanged from the
+  original implementation** — the same `phoriaSimilarMarginDelta`/
+  `nearOrthoMaxDelta`/`nearBiBreakLowDelta`/etc. thresholds audited in §4.1
+  still gate whether a pattern is suggested at all, for CI, CE, DI, DE, and
+  Basic Exo/Eso. Their evidence status is unchanged by this redesign: mostly
+  🔴 NEEDS SOURCE / ⚪ RxKit clinical convention, exactly as recorded in §4.1.
+
+  **FVD, Accommodative Excess, Accommodative Insufficiency, and
+  Accommodative Infacility were revised on 2026-09-02**, after their
+  single-signal-sufficient trigger (inherited unexamined from the old
+  `'possible'`-tier floor when the 2026-09-01 redesign first shipped) was
+  checked against a dedicated, multi-pass literature review and found
+  under-justified. Resolved:
+  - **FVD** now requires reduction in **both** near BI and near BO reserves
+    (previously either alone) — the literature consistently distinguishes
+    FVD/"binocular instability" from CI specifically by involvement of
+    *both* directions (Evans BJW, *Ophthalmic Physiol Opt*. 2025;45,
+    doi:10.1111/opo.13497; Evans BJW, *Pickwell's Binocular Vision
+    Anomalies*, Elsevier).
+  - **Accommodative Excess** now requires plus-side difficulty on **both**
+    MAF and BAF (previously either alone) — no validated single-test-
+    sufficient rule was found; "both typically show difficulty" is the
+    best-supported description available (StatPearls: Accommodative Excess,
+    NBK592379; Saikia M, Pant K, Dutta J. *J Binocul Vis Ocul Motil*.
+    2024;74(2):48–64, doi:10.1080/2576117X.2024.2347663) — **explicitly
+    RxKit's own conservative interpretation, not a criterion stated in
+    either source**.
+  - **Accommodative Insufficiency** now requires a reduced amplitude
+    **plus** an independent second abnormal sign (MAF or BAF
+    minus-difficulty) — directly grounded in StatPearls: Accommodative
+    Insufficiency (NBK587363), which states diagnosis requires "a
+    combination of two abnormal test values." The caveat note that used to
+    fire when no facility test corroborated ("normal facility does not rule
+    out...") is removed — it's unreachable now, since lack of corroboration
+    means the pattern no longer triggers at all.
+  - **Accommodative Infacility** now requires both-direction difficulty on
+    **both** MAF and BAF (previously either alone) — the "fails both
+    monocularly and binocularly" description recurred consistently across
+    independent searches but could not be traced to one pinned-down primary
+    source; adopted as **RxKit's own conservative reading**, labeled as such
+    (Griffin JR, Grisham JD. *Binocular Anomalies: Diagnosis and Vision
+    Therapy*, 4th ed. Butterworth-Heinemann; 2002 — general reference for
+    the entity, not a citation for the exact combination rule).
+- **On trigger, one consistently-worded, non-scored suggestion**: "Findings
+  suggest a/an [Pattern] pattern." — followed by "Why this pattern was
+  suggested" and the same supporting-findings text the original
+  implementation already computed (unchanged wording, unchanged selection
+  logic) — including CE's "Elevated AC/A ratio" finding, still gated on
+  `acaHighAboveRatio = 6` exactly as before. That specific figure's
+  gradient-vs-calculated-method mismatch (discrepancy #1 below) is a distinct,
+  separately-flagged issue this redesign deliberately did not touch — it
+  changes *whether a confidence tier is computed*, not *which raw findings are
+  shown or how they're gated*.
+- **No cross-pattern arbitration of any kind**: every pattern whose trigger is
+  met is shown, independently, in a fixed display order (vergence patterns,
+  then accommodative) — never picked as a single "primary," never suppressed
+  because another pattern also matched, never merged into a blended "mixed"
+  finding.
+- **Two caveat strings were trimmed to remove language that only explained
+  the old scoring system**, while a genuine, scoring-independent clinical
+  caveat was kept where one existed:
+  - Accommodative Insufficiency's caveat — shown when neither MAF nor BAF
+    corroborates — now reads "Normal accommodative facility does not rule out
+    Accommodative Insufficiency. Confirmation recommended if clinically
+    indicated." (dropped: "MAF/BAF provide no additional corroborating
+    accommodative abnormality," which only explained why the old tier stayed
+    low).
+  - Accommodative Excess's caveat was dropped entirely — its content
+    ("only one facility direction shows difficulty," "symptoms alone do not
+    independently corroborate") existed solely to explain the old scoring gap
+    and describes a scenario (symptoms alone triggering the suggestion) that
+    can no longer occur, since the trigger already requires an objective
+    MAF-or-BAF finding.
+
+**Point-of-use citations (added 2026-09-02, `domain/reference/binocularPatternSources.ts`).**
+Every suggestion card now shows a compact, collapsed-by-default "Clinical
+Source" disclosure directly beneath its findings — not only recorded here in
+`CLINICAL_SOURCES.md`. Each entry names a specific, verifiable source
+(author/title/publication/year, with a DOI/ISBN where one exists) and states
+plainly, in the UI text itself, whenever RxKit's exact trigger is its own
+conservative interpretation rather than something the cited source
+independently validates — the same distinction drawn throughout this
+document, now also visible chairside. The full text of all nine entries is
+in that file; the FVD/AE/AI/AInfac citations are given above, and CI/CE/DI/
+DE/Basic's are: CI — CITT (2008) + Sheard (1930); CE/DI/DE — Duane
+(1896/1897, classification concept only) + Sheard (1930), with the specific
+phoria-gap margin and (for CE) the AC/A>6 read stated as RxKit's own
+convention; Basic Exo/Eso — Duane (1896/1897, which defines "Basic" by AC/A
+band, not checked here) + Sheard (1930), with the magnitude gate stated as
+RxKit's own substitute criterion.
+
+**Status: the corroboration-counting/confidence-scoring critique from the
+original audit is resolved**, and the four under-justified single-signal
+triggers identified in the 2026-09-02 follow-up review are now resolved too
+— there is no longer a synthesized confidence label anywhere in this module,
+and every trigger that requires two signals now requires them for a
+specifically-considered reason (either a validated criterion, for AI, or an
+explicitly-labeled RxKit convention, for the other three) rather than by
+inheritance from the old tier system. **What remains open**, unchanged by
+either pass: the evidence status of CI/CE/DI/DE/Basic's individual trigger
+thresholds (§4.1) and the CE AC/A-method-mismatch discrepancy (#1 below) —
+both intentionally out of scope, per the user's explicit direction to keep
+each pass narrowly scoped rather than re-validating every threshold at once.
 
 ### 4.5 Management Considerations (`domain/reference/binocularManagement.ts`)
 
@@ -388,10 +471,13 @@ this reduces the risk of the four copies silently drifting apart over time.
 
 ### 2. Weakly supported or missing-source areas
 
-- **The Binocular Status pattern-matching *algorithm* itself** (§4.4) — the
-  specific thresholds and corroboration-counting rules that turn raw findings
-  into a "consistent"/"possible" confidence label. This is the single largest
-  gap in the codebase: real diagnostic categories, homegrown detection logic.
+- **The Binocular Status pattern triggers' individual thresholds** (§4.1) —
+  the corroboration-counting/confidence-scoring layer that used to sit on top
+  of them was removed in the 2026-09-01 redesign (§4.4), but the underlying
+  per-pattern trigger numbers themselves (`phoriaSimilarMarginDelta`,
+  `nearOrthoMaxDelta`, `nearBiBreakLowDelta`/`nearBoBreakLowDelta`, etc.) were
+  deliberately left unchanged and are still mostly unsourced clinical
+  convention — real diagnostic categories, RxKit-chosen numeric gates.
 - **Most of `binocularNorms.ts`'s "notable" thresholds** (near/distance
   phoria magnitude, phoria-similar margin, near-ortho max, near BI/BO
   "reduced" break) — 🔴 NEEDS SOURCE, no citable authority found.
@@ -416,12 +502,18 @@ this reduces the risk of the four copies silently drifting apart over time.
    to state a normal-range number, citing genuine methodological
    uncertainty/variability in the literature (which this audit confirmed —
    gradient-method AC/A values run materially lower and more variable than
-   the traditionally-cited 3:1–5:1 range). Yet `binocularPatterns.ts` uses a
-   hard-coded `6` as the "elevated, supports Convergence Excess" cutoff, with
-   no source of its own. These two parts of the same codebase disagree on
-   whether a specific AC/A number can be asserted at all. **Recommend:**
-   either find/cite a specific source for `6` as a genuine "clearly elevated"
-   cutoff, or reconcile the two files' epistemic stance.
+   the traditionally-cited 3:1–5:1 range). `binocularPatterns.ts` still uses
+   this hard-coded `6` to decide whether the "Elevated AC/A ratio" finding is
+   shown under a Convergence Excess suggestion, with no source of its own.
+   **Still open as of the 2026-09-01 confidence-scoring redesign** — that
+   redesign deliberately preserved every pattern's existing supporting-findings
+   selection logic unchanged (including this one), on the user's explicit
+   instruction that this specific, already-identified misapplication be
+   handled as its own separate change rather than folded into the scoring
+   removal. **Recommend:** either find/cite a specific source for `6` as a
+   genuine "clearly elevated" cutoff for the *gradient* method specifically,
+   or stop gating the finding's inclusion on this number and show the raw
+   AC/A value with a brief reference-range caption instead.
 2. **🛑 Third-nerve-palsy-style red flag (pain, ptosis, OR pupil involvement)
    treats all three signs as equally weighted triggers**, but the
    neuro-ophthalmology literature specifically singles out **pupil

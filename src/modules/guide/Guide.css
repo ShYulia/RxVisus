@@ -825,115 +825,219 @@
   text-align: center;
 }
 
-/* Binocular Summary. */
+/* Binocular Summary. Hierarchy: large primary result card (suggestion + inline disclaimer) ->
+   always-expanded "why" card -> compact tappable cards for source/management/measurements ->
+   generous whitespace -> centered terminal actions (see .rx-terminal-actions-summary below). */
 .rx-summary-headline {
   font-size: 19px;
   font-weight: 700;
   color: var(--rx-text);
   margin: 4px 4px 16px;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
-.rx-summary-headline-dominant {
-  font-size: 20px;
-  font-weight: 800;
-  padding: 16px 18px;
-  margin: 4px 4px 16px;
+.rx-summary-block {
+  margin: 0 0 28px;
+}
+
+/* The focal point of the screen — same large tinted-card language as a calculator result
+   (.rx-result), so the pattern name reads unmistakably as the answer, not one line among several. */
+.rx-summary-result-card {
+  margin: 0 4px;
+  border-radius: var(--rx-radius-lg);
   background: var(--rx-iris-tint);
-  border-radius: var(--rx-radius);
-  color: var(--rx-iris-deep);
+  padding: 24px 20px 20px;
 }
 
-.rx-summary-disclaimer {
-  margin: 0 4px 16px;
-}
-
-.rx-summary-reassurance {
-  margin: 0 4px 14px;
+.rx-summary-result-label {
   font-size: 13px;
-  font-style: italic;
-  color: var(--rx-text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--rx-iris-deep);
+  opacity: 0.75;
+  margin: 0;
 }
 
-.rx-summary-whatnext {
-  margin: 4px 4px 18px;
+.rx-summary-result-value {
+  font-family: var(--rx-font-display);
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--rx-iris-deep);
+  margin: 6px 0 0;
+}
+
+/* Restrained warm-amber accent — never red, so it can never read as an abnormal clinical
+   finding. Always visible, never collapsed. */
+.rx-summary-result-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 18px 0 0;
   padding-top: 14px;
-  border-top: 1px solid var(--rx-border);
+  border-top: 1px solid rgba(87, 74, 148, 0.16);
+  font-size: 12.5px;
+  color: var(--rx-caution-text);
+  line-height: 1.5;
+}
+
+.rx-summary-result-disclaimer-icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* Secondary, always-expanded card — a plain surface card so it's clearly subordinate to the
+   tinted result card above it, while still being the main readable content of the screen. */
+.rx-summary-why-card {
+  margin: 14px 4px 0;
+  background: var(--rx-surface);
+  border: 1px solid var(--rx-border);
+  border-radius: var(--rx-radius);
+  padding: 18px 18px 16px;
+}
+
+.rx-summary-pattern-why {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--rx-text-tertiary);
+  margin: 0 0 10px;
+}
+
+.rx-summary-why-card ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rx-summary-why-card li {
+  font-size: 15px;
+  color: var(--rx-text);
+  line-height: 1.6;
+}
+
+/* Compact tappable cards — Clinical Source, Clinical considerations, Key/All measurements. No
+   native <details> marker; a small custom chevron rotates on open instead, and the whole row is
+   the tap target. */
+.rx-summary-compact {
+  margin: 10px 4px 0;
+  border-radius: var(--rx-radius-sm);
+  background: var(--rx-muted-bg);
+  overflow: hidden;
+}
+
+.rx-summary-compact-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 15px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--rx-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rx-summary-compact-trigger:active {
+  background: var(--rx-border);
+}
+
+.rx-summary-compact-chevron {
+  flex: none;
+  color: var(--rx-text-tertiary);
+  transition: transform 0.15s ease;
+}
+
+.rx-summary-compact-chevron-open {
+  transform: rotate(180deg);
+}
+
+.rx-summary-compact-content {
+  padding: 0 15px 15px;
+}
+
+.rx-summary-compact-content ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rx-summary-compact-content li {
+  font-size: 14px;
+  color: var(--rx-text-secondary);
+  line-height: 1.6;
+}
+
+.rx-summary-source-text {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--rx-text-secondary);
+  line-height: 1.55;
 }
 
 .rx-summary-whatnext-note {
-  margin: 4px 0 0;
+  margin: 0 0 10px;
   font-size: 12.5px;
   font-style: italic;
   color: var(--rx-text-tertiary);
 }
 
-.rx-summary-whatnext ul {
-  margin: 6px 0 0;
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.rx-summary-whatnext li {
-  font-size: 13.5px;
-  color: var(--rx-text-secondary);
-  line-height: 1.5;
-}
-
-.rx-summary-pattern {
-  margin: 0 4px 14px;
-}
-
-.rx-summary-pattern-label {
-  font-size: 14.5px;
+.rx-summary-more-manage-label {
+  margin: 12px 0 8px;
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--rx-text);
-  margin: 0 0 4px;
-}
-
-.rx-summary-pattern-confidence {
-  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   color: var(--rx-text-tertiary);
 }
 
-.rx-summary-pattern ul {
-  margin: 4px 0 0;
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* Key/All measurements sit together as their own group, clearly separated from the pattern
+   block(s) above — then generous, intentional whitespace before the terminal actions. */
+.rx-summary-measurements-group {
+  margin-top: 28px;
+  padding-bottom: 32px;
 }
 
-.rx-summary-pattern li {
-  font-size: 13.5px;
-  color: var(--rx-text-secondary);
-  line-height: 1.5;
+.rx-summary-measurements-group .rx-summary-compact {
+  margin-top: 8px;
 }
 
-/* A 'possible' finding shown alongside a 'consistent' primary (or on its own) reads as clearly
-   secondary/tentative — never with the same visual weight as an established finding. */
-.rx-summary-pattern-possible {
-  padding-left: 10px;
-  border-left: 2px solid var(--rx-border);
+.rx-summary-measurements-group .rx-summary-compact:first-child {
+  margin-top: 0;
 }
 
-.rx-summary-pattern-possible .rx-summary-pattern-label {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--rx-text-secondary);
+.rx-summary-measurements .rx-final-rx-row {
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin-bottom: 6px;
 }
 
-.rx-summary-pattern-note {
-  margin: 6px 0 0;
-  font-size: 12.5px;
-  font-style: italic;
-  color: var(--rx-text-tertiary);
+.rx-summary-measurements .rx-final-rx-row:last-child {
+  margin-bottom: 0;
 }
 
-.rx-summary-measurements {
-  margin-top: 18px;
+/* Terminal actions specifically on the Binocular Status Summary — deliberately more separated
+   and centered than the default .rx-terminal-actions used elsewhere, so New Patient / Back to
+   Clinical Guide read as an intentional closing action, not something stuck under the last
+   disclosure. */
+.rx-terminal-actions-summary {
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 12px;
 }
 
 .rx-wizard-result {

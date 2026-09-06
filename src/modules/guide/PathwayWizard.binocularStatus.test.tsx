@@ -113,7 +113,10 @@ describe('PathwayWizard — Binocular Status', () => {
     await completeFullAssessmentCore();
     await userEvent.click(screen.getByText('Continue to Summary'));
 
-    // the ortho phoria entered during Quick Screen must still be reflected in the Summary
+    // the ortho phoria entered during Quick Screen must still be reflected in the Summary —
+    // now inside the compact, collapsed-by-default "Key measurements" card.
+    const keyMeasurementsBtn = (await screen.findByText('Key measurements')).closest('button')!;
+    fireEvent.click(keyMeasurementsBtn);
     expect((await screen.findAllByText('Ortho')).length).toBeGreaterThan(0);
   });
 
@@ -160,7 +163,7 @@ describe('PathwayWizard — Binocular Status', () => {
     await completeFullAssessmentCore();
     expect(await screen.findByText('No additional targeted testing indicated')).toBeInTheDocument();
     await userEvent.click(screen.getByText('Continue to Summary'));
-    expect(await screen.findByText(/No significant binocular or accommodative dysfunction demonstrated/)).toBeInTheDocument();
+    expect(await screen.findByText('No pattern from this list was suggested by the findings entered.')).toBeInTheDocument();
   });
 
   it('an optional targeted test blocks Continue until its required fields are filled, and Skip test bypasses it without recording anything', async () => {
@@ -227,7 +230,7 @@ describe('PathwayWizard — Binocular Status', () => {
     await completeFullAssessmentCore();
     await userEvent.click(screen.getByText('Continue to Summary'));
 
-    expect(await screen.findByText(/No significant binocular or accommodative dysfunction demonstrated/)).toBeInTheDocument();
+    expect(await screen.findByText('No pattern from this list was suggested by the findings entered.')).toBeInTheDocument();
     const newPatientBtn = screen.getByText('New Patient');
     const backToGuideBtn = screen.getByText('Back to Clinical Guide');
     expect(newPatientBtn.closest('ion-button')).toHaveClass('rx-btn-solid');

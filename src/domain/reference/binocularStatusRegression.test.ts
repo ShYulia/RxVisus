@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { parseBinocularFindings } from './binocularFindings';
-import { interpretBinocularAssessment } from './binocularPatterns';
+import { evaluateBinocularPatterns } from './binocularPatterns';
 import { evaluateQuickScreen } from './binocularQuickScreen';
 import { evaluateNearSheard } from './binocularSheard';
 
 /**
- * The five CTS regression cases from the clinical-logic review session. Each encodes a full
- * patient's recordedFindings (the exact key scheme binocularFindings.ts expects) and checks
- * both Quick Screen (must never diagnose) and the Full Assessment interpretation together.
+ * The seven CTS regression cases from the clinical-logic review sessions. Each encodes a full
+ * patient's recordedFindings (the exact key scheme binocularFindings.ts expects) and checks both
+ * Quick Screen (must never diagnose) and Full Assessment's suggested patterns together. Full
+ * Assessment suggests patterns transparently — no confidence tier, no "primary"/"mixed" pick
+ * between simultaneous suggestions — so these cases assert which patterns are suggested and
+ * which specific findings support each, not a synthesized confidence label.
  */
 
 const CASE_1_NORMAL = {
@@ -130,10 +133,10 @@ const CASE_5_AE = {
 };
 
 // 19-year-old patient reviewed during the AI-confidence CTS follow-up: bilateral reduced AA
-// with normal MAF/BAF no longer upgrades Accommodative Insufficiency to "consistent" on its
-// own — it should read as a secondary "possible" finding alongside the (independently
-// well-supported) Convergence Insufficiency primary, not "Mixed".
-const CASE_6_CI_WITH_POSSIBLE_AI = {
+// with normal MAF/BAF does NOT by itself suggest Accommodative Insufficiency — a second,
+// independent corroborating sign is required (see checkAccommodativeInsufficiency) — while the
+// independently-supported Convergence Insufficiency finding is still reported normally.
+const CASE_6_CI_WITH_AI = {
   'age.value': '19',
   symptoms: 'nearBlur,headache',
   'distancePhoria.type': 'exo',
@@ -157,9 +160,10 @@ const CASE_6_CI_WITH_POSSIBLE_AI = {
   'baf.difficulty': 'neither',
 };
 
-// Isolated case (no vergence finding at all) proving bilateral reduced AA + an independent
-// accommodative corroborator (minus-side MAF/BAF difficulty) CAN still reach "consistent".
-const CASE_7_AI_UPGRADED_BY_FACILITY = {
+// Isolated case (no vergence finding at all) proving bilateral reduced AA plus an independent
+// accommodative corroborator (minus-side MAF difficulty) is what actually triggers the
+// suggestion — contrast with Case 6, where the same AA finding alone did not.
+const CASE_7_AI_WITH_FACILITY_CORROBORATION = {
   'age.value': '20',
   'distancePhoria.type': 'ortho',
   'nearPhoria.type': 'ortho',
@@ -180,12 +184,8 @@ describe('CTS regression — Case 1: normal / well-compensated', () => {
     expect(screen.symptomReasons).toEqual([]);
   });
 
-  it('Full Assessment finds no pattern, with the short (no-symptoms) headline', () => {
-    const result = interpretBinocularAssessment(data);
-    expect(result.category).toBe('no-pattern');
-    expect(result.headline).toBe('No significant binocular or accommodative dysfunction demonstrated.');
-    expect(result.patterns.find((p) => p.id === 'ci')).toBeUndefined();
-    expect(result.patterns.find((p) => p.id === 'basic-exo')).toBeUndefined();
+  it('Full Assessment suggests no pattern', () => {
+    expect(evaluateBinocularPatterns(data)).toEqual([]);
   });
 });
 
@@ -198,17 +198,13 @@ describe('CTS regression — Case 2: Convergence Insufficiency', () => {
     expect(screen.objectiveReasons.join(' ')).not.toMatch(/convergence insufficiency/i);
   });
 
-  it('Full Assessment finds Convergence Insufficiency, consistent, with the right supporting findings', () => {
-    const result = interpretBinocularAssessment(data);
-    expect(result.category).toBe('pattern');
-    const ci = result.patterns.find((p) => p.id === 'ci');
-    expect(ci).toBeDefined();
-    expect(ci?.confidence).toBe('consistent');
+  it('Full Assessment suggests Convergence Insufficiency, with the right supporting findings, and nothing else', () => {
+    const patterns = evaluateBinocularPatterns(data);
+    expect(patterns.map((p) => p.id)).toEqual(['ci']);
+    const ci = patterns.find((p) => p.id === 'ci');
     expect(ci?.supportingFindings.some((f) => /near exophoria.*greater than distance/i.test(f))).toBe(true);
     expect(ci?.supportingFindings.some((f) => /receded NPC/i.test(f))).toBe(true);
     expect(ci?.supportingFindings.some((f) => /Sheard.*failed.*BO/i.test(f))).toBe(true);
-    expect(result.patterns.find((p) => p.id === 'basic-exo')).toBeUndefined();
-    expect(result.patterns.find((p) => p.id === 'ai' || p.id === 'ae' || p.id === 'ainfac')).toBeUndefined();
   });
 
   it('near Sheard uses BO as the compensating reserve for exophoria', () => {
@@ -221,40 +217,27 @@ describe('CTS regression — Case 2: Convergence Insufficiency', () => {
 describe('CTS regression — Case 3: Accommodative Insufficiency', () => {
   const data = parseBinocularFindings(CASE_3_AI);
 
-  it('Full Assessment finds Accommodative Insufficiency with AA, MAF, and BAF all as supporting evidence', () => {
-    const result = interpretBinocularAssessment(data);
-    expect(result.category).toBe('pattern');
-    const ai = result.patterns.find((p) => p.id === 'ai');
-    expect(ai).toBeDefined();
-    expect(ai?.confidence).toBe('consistent');
+  it('Full Assessment suggests Accommodative Insufficiency with AA, MAF, and BAF all as supporting findings, and nothing else', () => {
+    const patterns = evaluateBinocularPatterns(data);
+    expect(patterns.map((p) => p.id)).toEqual(['ai']);
+    const ai = patterns.find((p) => p.id === 'ai');
     expect(ai?.supportingFindings.some((f) => /AA OD.*below age-expected/i.test(f))).toBe(true);
     expect(ai?.supportingFindings.some((f) => /AA OS.*below age-expected/i.test(f))).toBe(true);
     expect(ai?.supportingFindings.some((f) => /MAF/.test(f) && /−2\.00/.test(f))).toBe(true);
     expect(ai?.supportingFindings.some((f) => /BAF/.test(f) && /−2\.00/.test(f))).toBe(true);
-  });
-
-  it('does not classify Basic Exophoria or Mixed', () => {
-    const result = interpretBinocularAssessment(data);
-    expect(result.category).not.toBe('mixed');
-    expect(result.patterns.find((p) => p.id === 'basic-exo')).toBeUndefined();
   });
 });
 
 describe('CTS regression — Case 4: Convergence Excess', () => {
   const data = parseBinocularFindings(CASE_4_CE);
 
-  it('Full Assessment finds Convergence Excess, consistent, using BI (not BO) for Sheard', () => {
-    const result = interpretBinocularAssessment(data);
-    expect(result.category).toBe('pattern');
-    const ce = result.patterns.find((p) => p.id === 'ce');
-    expect(ce).toBeDefined();
-    expect(ce?.confidence).toBe('consistent');
+  it('Full Assessment suggests Convergence Excess, using BI (not BO) for Sheard, and nothing else', () => {
+    const patterns = evaluateBinocularPatterns(data);
+    expect(patterns.map((p) => p.id)).toEqual(['ce']);
+    const ce = patterns.find((p) => p.id === 'ce');
     expect(ce?.supportingFindings.some((f) => /near esophoria.*greater than distance/i.test(f))).toBe(true);
     expect(ce?.supportingFindings.some((f) => /Sheard.*failed.*BI/i.test(f))).toBe(true);
     expect(ce?.supportingFindings.some((f) => /BO/.test(f))).toBe(false);
-    expect(result.patterns.find((p) => p.id === 'basic-eso')).toBeUndefined();
-    expect(result.patterns.find((p) => p.id === 'ai' || p.id === 'ae' || p.id === 'ainfac')).toBeUndefined();
-    expect(result.category).not.toBe('mixed');
   });
 
   it('distance/near Sheard uses BI as the compensating reserve for esophoria', () => {
@@ -267,62 +250,38 @@ describe('CTS regression — Case 4: Convergence Excess', () => {
 describe('CTS regression — Case 5: Accommodative Excess', () => {
   const data = parseBinocularFindings(CASE_5_AE);
 
-  it('Full Assessment finds Accommodative Excess with MAF and BAF plus-difficulty as supporting evidence, normal AA not flagged', () => {
-    const result = interpretBinocularAssessment(data);
-    expect(result.category).toBe('pattern');
-    const ae = result.patterns.find((p) => p.id === 'ae');
-    expect(ae).toBeDefined();
-    expect(ae?.confidence).toBe('consistent');
+  it('Full Assessment suggests Accommodative Excess with MAF and BAF plus-difficulty as supporting findings, normal AA not flagged, and nothing else', () => {
+    const patterns = evaluateBinocularPatterns(data);
+    expect(patterns.map((p) => p.id)).toEqual(['ae']);
+    const ae = patterns.find((p) => p.id === 'ae');
     expect(ae?.supportingFindings.some((f) => /MAF/.test(f) && /\+2\.00/.test(f))).toBe(true);
     expect(ae?.supportingFindings.some((f) => /BAF/.test(f) && /\+2\.00/.test(f))).toBe(true);
-    expect(result.patterns.find((p) => p.id === 'ai')).toBeUndefined();
-    expect(result.patterns.find((p) => p.id === 'basic-exo')).toBeUndefined();
-    expect(result.category).not.toBe('mixed');
   });
 });
 
-describe('CTS regression — Case 6: Convergence Insufficiency with a secondary possible Accommodative Insufficiency (not Mixed)', () => {
-  const data = parseBinocularFindings(CASE_6_CI_WITH_POSSIBLE_AI);
+describe('CTS regression — Case 6: Convergence Insufficiency present, Accommodative Insufficiency NOT suggested without corroboration', () => {
+  const data = parseBinocularFindings(CASE_6_CI_WITH_AI);
 
-  it('Full Assessment reports CI as the consistent primary and AI as a possible secondary finding, and does NOT classify Mixed', () => {
-    const result = interpretBinocularAssessment(data);
-    expect(result.category).toBe('pattern');
-    expect(result.category).not.toBe('mixed');
-    expect(result.headline).toBe('Findings consistent with Convergence Insufficiency pattern');
-
-    expect(result.patterns.length).toBe(2);
-    const [primary, secondary] = result.patterns;
-    expect(primary.id).toBe('ci');
-    expect(primary.confidence).toBe('consistent');
-    expect(secondary.id).toBe('ai');
-    expect(secondary.confidence).toBe('possible');
+  it('reports CI only — bilateral reduced AA with normal MAF/BAF is not enough on its own to suggest Accommodative Insufficiency', () => {
+    const patterns = evaluateBinocularPatterns(data);
+    expect(patterns.map((p) => p.id)).toEqual(['ci']);
+    expect(patterns.find((p) => p.id === 'ai')).toBeUndefined();
   });
 
-  it('AI stays possible because bilateral reduced AA is the required finding, not two independent corroborators, and normal MAF/BAF supply none', () => {
-    const ai = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ai');
-    expect(ai?.supportingFindings.some((f) => /AA OD 8D below age-expected minimum \(~10\.3D\)/.test(f))).toBe(true);
-    expect(ai?.supportingFindings.some((f) => /AA OS 8D below age-expected minimum \(~10\.3D\)/.test(f))).toBe(true);
-    expect(ai?.supportingFindings.some((f) => /MAF|BAF/.test(f))).toBe(false);
-    expect(ai?.note).toMatch(/MAF\/BAF provide no additional corroborating accommodative abnormality/i);
-    expect(ai?.note).toMatch(/does not rule out Accommodative Insufficiency/i);
-  });
-
-  it('CI itself is untouched: still consistent from the phoria-delta and failed near Sheard\'s findings', () => {
-    const ci = interpretBinocularAssessment(data).patterns.find((p) => p.id === 'ci');
-    expect(ci?.confidence).toBe('consistent');
+  it('CI itself: phoria-delta and failed near Sheard\'s findings, NPC not receded so not mentioned', () => {
+    const ci = evaluateBinocularPatterns(data).find((p) => p.id === 'ci');
     expect(ci?.supportingFindings.some((f) => /near exophoria.*greater than distance/i.test(f))).toBe(true);
     expect(ci?.supportingFindings.some((f) => /Sheard.*failed.*BO/i.test(f))).toBe(true);
+    expect(ci?.supportingFindings.some((f) => /NPC/i.test(f))).toBe(false);
   });
 });
 
-describe('CTS regression — Case 7: bilateral reduced AA upgraded to consistent by MAF corroboration', () => {
-  it('Accommodative Insufficiency reaches "consistent" when bilateral reduced AA is accompanied by minus-side MAF difficulty', () => {
-    const data = parseBinocularFindings(CASE_7_AI_UPGRADED_BY_FACILITY);
-    const result = interpretBinocularAssessment(data);
-    expect(result.category).toBe('pattern');
-    const ai = result.patterns.find((p) => p.id === 'ai');
-    expect(ai).toBeDefined();
-    expect(ai?.confidence).toBe('consistent');
-    expect(ai?.note).toBeUndefined();
+describe('CTS regression — Case 7: bilateral reduced AA with MAF facility corroboration', () => {
+  it('Accommodative Insufficiency is suggested once MAF corroboration is actually found', () => {
+    const data = parseBinocularFindings(CASE_7_AI_WITH_FACILITY_CORROBORATION);
+    const patterns = evaluateBinocularPatterns(data);
+    expect(patterns.map((p) => p.id)).toEqual(['ai']);
+    const ai = patterns.find((p) => p.id === 'ai');
+    expect(ai?.supportingFindings.some((f) => /MAF/.test(f) && /−2\.00/.test(f))).toBe(true);
   });
 });
