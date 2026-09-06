@@ -22,9 +22,9 @@ describe('mapToAvailability — cylinder', () => {
     expect(result.cylinderCandidatesD).toEqual([-1.75, -1.25]);
   });
 
-  it('maps to the smallest configured cylinder rather than dropping to spherical when below range', () => {
+  it('recommends spherical rather than rounding up to the smallest configured cylinder when below range', () => {
     const result = mapToAvailability({ sphere: 0, cylinder: -0.3, axis: 90 }, profile);
-    expect(result.cylinderCandidatesD).toEqual([-0.75]);
+    expect(result.cylinderCandidatesD).toEqual([]);
   });
 
   it('maps to the largest configured cylinder rather than extrapolating beyond range', () => {
@@ -53,6 +53,23 @@ describe('mapToAvailability — spherical-only (cylinder = 0)', () => {
   it('omits axis when spherical-only', () => {
     const result = mapToAvailability({ sphere: -4.75, cylinder: 0, axis: 90 }, profile);
     expect(result.axis).toBeUndefined();
+  });
+});
+
+describe('mapToAvailability — below the smallest available toric cylinder', () => {
+  it('recommends spherical (via spherical equivalent) just below the 0.75 D threshold, not rounded up to toric', () => {
+    // SE = -3 + (-0.74 / 2) = -3.37 -> nearest 0.25 step is -3.25.
+    const result = mapToAvailability({ sphere: -3, cylinder: -0.74, axis: 90 }, profile);
+    expect(result.cylinderCandidatesD).toEqual([]);
+    expect(result.sphere).toBeCloseTo(-3.25);
+    expect(result.axis).toBeUndefined();
+  });
+
+  it('keeps the toric recommendation exactly at the 0.75 D threshold', () => {
+    const result = mapToAvailability({ sphere: -3, cylinder: -0.75, axis: 90 }, profile);
+    expect(result.cylinderCandidatesD).toEqual([-0.75]);
+    expect(result.sphere).toBeCloseTo(-3);
+    expect(result.axis).toBe(90);
   });
 });
 

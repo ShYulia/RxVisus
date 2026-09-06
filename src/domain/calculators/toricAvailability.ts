@@ -26,8 +26,10 @@ export interface ToricAvailabilityMapping {
   sphere: number;
   /**
    * One value, or two when the exact cylinder is equidistant between two configured values.
-   * Empty when the exact result is cylinder = 0 — a genuinely spherical Rx, deliberately not
-   * mapped into the toric grid at all (not even "below the smallest configured cylinder").
+   * Empty when the exact result is cylinder = 0, or when |cylinder| is below the smallest
+   * configured toric cylinder — both are recommended as spherical rather than snapped up to
+   * a toric cylinder the exact result doesn't actually call for. In the below-threshold case,
+   * `sphere` is the spherical equivalent of the exact Rx, not the raw sphere component.
    */
   cylinderCandidatesD: number[];
   /** Omitted when cylinderCandidatesD is empty — axis is meaningless for a spherical-only Rx. */
@@ -64,16 +66,28 @@ function roundAxisCircular(axis: number, incrementDeg: number): number {
  *
  * cylinder = 0 is treated as genuinely spherical, not "toric with a very small cylinder" —
  * it's reported as sphere-only rather than snapped to the nearest configured toric cylinder.
+ *
+ * Below the smallest configured toric cylinder, the exact cylinder is likewise not rounded
+ * up into the toric grid — it's reported spherical, using the spherical equivalent (not the
+ * raw sphere component) so the recommendation still reflects the whole exact result. At or
+ * above that threshold, the normal nearest-configured-cylinder mapping applies.
  */
 export function mapToAvailability(rx: Prescription, profile: ToricAvailabilityProfile): ToricAvailabilityMapping {
-  const sphere = roundToStep(rx.sphere, profile.sphereStepD);
-
   if (rx.cylinder === 0) {
-    return { sphere, cylinderCandidatesD: [] };
+    return { sphere: roundToStep(rx.sphere, profile.sphereStepD), cylinderCandidatesD: [] };
+  }
+
+  const smallestAvailableCylinderMagnitude = Math.min(...profile.availableCylindersD.map((c) => Math.abs(c)));
+  const belowSmallestAvailableCylinder =
+    smallestAvailableCylinderMagnitude - Math.abs(rx.cylinder) > TIE_EPSILON;
+
+  if (belowSmallestAvailableCylinder) {
+    const sphericalEquivalent = rx.sphere + rx.cylinder / 2;
+    return { sphere: roundToStep(sphericalEquivalent, profile.sphereStepD), cylinderCandidatesD: [] };
   }
 
   return {
-    sphere,
+    sphere: roundToStep(rx.sphere, profile.sphereStepD),
     cylinderCandidatesD: nearestCylinders(rx.cylinder, profile.availableCylindersD),
     axis: roundAxisCircular(rx.axis, profile.axisIncrementDeg),
   };

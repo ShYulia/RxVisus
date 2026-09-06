@@ -147,7 +147,11 @@ const VertexDistanceCalculator: React.FC = () => {
                     <span className="rx-fieldbox-value-static">{formatSphere(availability.sphere)}</span>
                   </div>
                 </FieldBoxGrid>
-                <p className="rx-result-panel-caption">Spherical — no cylinder to map.</p>
+                <p className="rx-result-panel-caption">
+                  {outcome.result.rx.cylinder === 0
+                    ? 'Spherical — no cylinder to map.'
+                    : 'Spherical — vertex-corrected cylinder is below the smallest available toric option; recommendation uses the spherical equivalent.'}
+                </p>
               </div>
             )}
 
