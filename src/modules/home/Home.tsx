@@ -71,7 +71,7 @@ const Home: React.FC = () => {
               <h1 className="rx-hero-greeting">
                 {displayName ? (
                   <>
-                    {timeOfDayGreeting()},
+                    {`${timeOfDayGreeting()},`}
                     <br />
                     {displayName}
                   </>
