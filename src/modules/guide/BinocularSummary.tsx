@@ -1,16 +1,15 @@
-import CautionBox from '../../components/CautionBox';
-import { getManagementConsiderations, NO_PATTERN_MANAGEMENT, type ManagementConsiderations } from '../../domain/reference/binocularManagement';
+import { useState } from 'react';
+import { ChevronDownIcon, InfoIcon } from '../../components/icons';
+import { getManagementConsiderations, type ManagementConsiderations } from '../../domain/reference/binocularManagement';
 import { parseBinocularFindings, type MemNottFinding, type ParsedBinocularData, type Phoria, type VergencePair } from '../../domain/reference/binocularFindings';
-import { interpretBinocularAssessment, type BinocularInterpretation } from '../../domain/reference/binocularPatterns';
+import { evaluateBinocularPatterns, hasCoreBinocularData, type PatternMatch } from '../../domain/reference/binocularPatterns';
+import { getPatternSource } from '../../domain/reference/binocularPatternSources';
 import { SYMPTOM_LABELS } from '../../domain/reference/binocularQuickScreen';
 import { evaluateDistanceSheard, evaluateNearSheard, type SheardResult } from '../../domain/reference/binocularSheard';
 
 export interface BinocularSummaryProps {
   findings: Record<string, string>;
 }
-
-const VERGENCE_PATTERN_IDS = new Set(['ci', 'ce', 'di', 'de', 'basic-exo', 'basic-eso', 'fvd']);
-const ACCOMMODATIVE_PATTERN_IDS = new Set(['ai', 'ae', 'ainfac']);
 
 function formatPhoria(phoria?: Phoria): string | undefined {
   if (!phoria) return undefined;
@@ -105,113 +104,129 @@ function buildAllRows(data: ParsedBinocularData, nearSheard: SheardResult, dista
   ];
 }
 
-/** No significant associated dysfunction in the *other* domain, shown only for a single well-identified pattern — never asserted for "mixed" or "no pattern". */
-function reassuranceLine(interpretation: BinocularInterpretation): string | undefined {
-  if (interpretation.category !== 'pattern' || interpretation.patterns.length !== 1) return undefined;
-  const id = interpretation.patterns[0].id;
-  if (ACCOMMODATIVE_PATTERN_IDS.has(id)) return 'No significant associated vergence dysfunction demonstrated.';
-  if (VERGENCE_PATTERN_IDS.has(id)) return 'No significant associated accommodative dysfunction demonstrated.';
-  return undefined;
-}
-
-function managementFor(interpretation: BinocularInterpretation): ManagementConsiderations | undefined {
-  // 'pattern' always carries its primary finding first, whether it's the sole match or paired
-  // with a secondary 'possible' finding (see interpretBinocularAssessment) — management follows
-  // the primary either way.
-  if (interpretation.category === 'pattern' && interpretation.patterns.length >= 1) {
-    return getManagementConsiderations(interpretation.patterns[0].id);
-  }
-  if (interpretation.category === 'mixed' && interpretation.patterns.length === 2) {
-    const [a, b] = interpretation.patterns.map((p) => getManagementConsiderations(p.id));
-    if (!a || !b) return a ?? b;
-    return { summary: [...new Set([...a.summary, ...b.summary])], moreDetails: [...(a.moreDetails ?? []), ...(b.moreDetails ?? [])] };
-  }
-  if (interpretation.category === 'no-pattern') return NO_PATTERN_MANAGEMENT;
-  return undefined;
+/** "a" before a consonant sound, "an" before a vowel sound — every current pattern label starts with a plain letter, so a simple vowel check is sufficient. */
+function articleFor(label: string): string {
+  return /^[aeiou]/i.test(label) ? 'an' : 'a';
 }
 
 /**
- * Always terminal: the main result is the dominant element, followed by supporting findings,
- * a short "What next?" (management is clinical decision support, never an automatic
- * prescription — detail stays behind "How to manage →"), then the patient's actual
- * measurements — key ones directly, the full set behind "All measurements" so the summary
- * stays fast to scan at point of care.
+ * A small, compact, tappable row that expands its content on click — no native <details> marker.
+ * Used for every piece of optional/secondary detail (source, management, measurements) so the
+ * primary result and its supporting findings stay the visual focus of the screen.
+ */
+const CompactCard: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rx-summary-compact">
+      <button type="button" className="rx-summary-compact-trigger" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <span>{label}</span>
+        <ChevronDownIcon size={14} className={open ? 'rx-summary-compact-chevron rx-summary-compact-chevron-open' : 'rx-summary-compact-chevron'} />
+      </button>
+      {open && <div className="rx-summary-compact-content">{children}</div>}
+    </div>
+  );
+};
+
+/**
+ * One pattern's full block: the large primary result card (suggestion + compact disclaimer),
+ * the always-expanded "why" card, then compact optional detail (source, then management, with
+ * any further "how to manage" detail flattened into the same card rather than nested another
+ * level deep). Visual hierarchy only — no clinical wording, threshold, source, or management
+ * content changes.
+ */
+const PatternBlock: React.FC<{ pattern: PatternMatch; management?: ManagementConsiderations }> = ({ pattern, management }) => (
+  <div className="rx-summary-block">
+    <div className="rx-summary-result-card">
+      <p className="rx-summary-result-label">Findings suggest</p>
+      <p className="rx-summary-result-value">
+        {articleFor(pattern.label)} {pattern.label} pattern
+      </p>
+      <p className="rx-summary-result-disclaimer">
+        <InfoIcon size={14} className="rx-summary-result-disclaimer-icon" />
+        <span>Decision support only — confirm clinically. You remain responsible for diagnosis and management.</span>
+      </p>
+    </div>
+
+    <div className="rx-summary-why-card">
+      <p className="rx-summary-pattern-why">Why this pattern was suggested</p>
+      <ul>
+        {pattern.supportingFindings.map((finding) => (
+          <li key={finding}>{finding}</li>
+        ))}
+      </ul>
+    </div>
+
+    <CompactCard label="Clinical Source">
+      <p className="rx-summary-source-text">{getPatternSource(pattern.id)}</p>
+    </CompactCard>
+
+    {management && (
+      <CompactCard label="Clinical considerations">
+        <p className="rx-summary-whatnext-note">For clinical reference — decision support only, not automatic treatment or prescribing instructions.</p>
+        <ul>
+          {management.summary.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        {management.moreDetails && management.moreDetails.length > 0 && (
+          <>
+            <p className="rx-summary-more-manage-label">More on managing this</p>
+            <ul>
+              {management.moreDetails.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </>
+        )}
+      </CompactCard>
+    )}
+  </div>
+);
+
+/**
+ * Always terminal: every pattern the findings suggest is shown independently, in order — never a
+ * single "primary" picked out of several, never merged. Each pattern's large result card and
+ * expanded supporting findings are the visual focus; source, management, and measurements are
+ * all compact, collapsed-by-default detail kept out of the way until asked for.
  */
 const BinocularSummary: React.FC<BinocularSummaryProps> = ({ findings }) => {
   const data = parseBinocularFindings(findings);
-  const interpretation = interpretBinocularAssessment(data);
+  const patterns = evaluateBinocularPatterns(data);
+  const hasCoreData = hasCoreBinocularData(data);
   const nearSheard = evaluateNearSheard(data);
   const distanceSheard = evaluateDistanceSheard(data);
   const keyRows = buildKeyRows(data, nearSheard, distanceSheard);
   const allRows = buildAllRows(data, nearSheard, distanceSheard);
-  const reassurance = reassuranceLine(interpretation);
-  const management = managementFor(interpretation);
 
   return (
     <div className="rx-final-rx">
-      <p className="rx-summary-headline rx-summary-headline-dominant">{interpretation.headline}</p>
-
-      <div className="rx-summary-disclaimer">
-        <CautionBox>
-          Decision support, not a diagnosis — confirm and correlate clinically. You remain responsible for diagnosis and management.
-        </CautionBox>
-      </div>
-
-      {interpretation.patterns.map((pattern) => (
-        <div key={pattern.id} className={pattern.confidence === 'possible' ? 'rx-summary-pattern rx-summary-pattern-possible' : 'rx-summary-pattern'}>
-          <p className="rx-summary-pattern-label">
-            {pattern.label} <span className="rx-summary-pattern-confidence">({pattern.confidence})</span>
-          </p>
-          <ul>
-            {pattern.supportingFindings.map((finding) => (
-              <li key={finding}>{finding}</li>
-            ))}
-          </ul>
-          {pattern.note && <p className="rx-summary-pattern-note">{pattern.note}</p>}
-        </div>
-      ))}
-
-      {reassurance && <p className="rx-summary-reassurance">{reassurance}</p>}
-
-      {management && (
-        <div className="rx-summary-whatnext">
-          <p className="rx-list-section-label">What next?</p>
-          <p className="rx-summary-whatnext-note">
-            For clinical reference — decision support only, not automatic treatment or prescribing instructions.
-          </p>
-          <ul>
-            {management.summary.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-          {management.moreDetails && management.moreDetails.length > 0 && (
-            <details className="rx-more-details">
-              <summary>How to manage →</summary>
-              <ul>
-                {management.moreDetails.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </div>
+      {!hasCoreData && (
+        <p className="rx-summary-headline">Insufficient data to interpret — complete the core Alignment/Convergence steps first.</p>
       )}
 
-      <div className="rx-summary-measurements">
-        <p className="rx-list-section-label">Key measurements</p>
-        {keyRows.map((row) => (
-          <Row key={row.label} label={row.label} value={row.value} />
-        ))}
-      </div>
+      {hasCoreData && patterns.length === 0 && <p className="rx-summary-headline">No pattern from this list was suggested by the findings entered.</p>}
 
-      <details className="rx-more-details">
-        <summary>All measurements</summary>
-        <div className="rx-summary-measurements" style={{ marginTop: 10 }}>
-          {allRows.map((row) => (
-            <Row key={row.label} label={row.label} value={row.value} />
-          ))}
-        </div>
-      </details>
+      {patterns.map((pattern) => (
+        <PatternBlock key={pattern.id} pattern={pattern} management={getManagementConsiderations(pattern.id)} />
+      ))}
+
+      <div className="rx-summary-measurements-group">
+        <CompactCard label="Key measurements">
+          <div className="rx-summary-measurements">
+            {keyRows.map((row) => (
+              <Row key={row.label} label={row.label} value={row.value} />
+            ))}
+          </div>
+        </CompactCard>
+
+        <CompactCard label="All measurements">
+          <div className="rx-summary-measurements">
+            {allRows.map((row) => (
+              <Row key={row.label} label={row.label} value={row.value} />
+            ))}
+          </div>
+        </CompactCard>
+      </div>
     </div>
   );
 };

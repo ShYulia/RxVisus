@@ -343,19 +343,24 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
         <>
         {history.length > 0 &&
           (isTerminalStep ? (
-            <details className="rx-wizard-trail-collapsed">
-              <summary>Assessment history ({history.length} steps)</summary>
-              <div className="rx-wizard-trail rx-wizard-trail-nested">
-                {history.map((entry, i) => (
-                  <span key={`${entry.stepId}-${i}`} className="rx-wizard-trail-item">
-                    {i > 0 && <span className="rx-wizard-trail-arrow">&rarr;</span>}
-                    <button type="button" className="rx-wizard-trail-btn" onClick={() => jumpTo(i)}>
-                      {entry.outcomeLabel}
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </details>
+            // The Binocular Status Summary already has its own "All measurements" detail and a
+            // deliberately clean, card-focused layout — the step-by-step trail would be visual
+            // noise there, so it's omitted for that terminal step specifically (Final Rx keeps it).
+            currentStep?.kind !== 'binocular-summary' && (
+              <details className="rx-wizard-trail-collapsed">
+                <summary>Assessment history ({history.length} steps)</summary>
+                <div className="rx-wizard-trail rx-wizard-trail-nested">
+                  {history.map((entry, i) => (
+                    <span key={`${entry.stepId}-${i}`} className="rx-wizard-trail-item">
+                      {i > 0 && <span className="rx-wizard-trail-arrow">&rarr;</span>}
+                      <button type="button" className="rx-wizard-trail-btn" onClick={() => jumpTo(i)}>
+                        {entry.outcomeLabel}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </details>
+            )
           ) : (
             <div className="rx-wizard-trail">
               {history.map((entry, i) => (
@@ -473,7 +478,13 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
         )}
 
         {!pendingOutcome && !pendingConsistencyWarning && !result && isTerminalStep && (
-          <div className="rx-wizard-choices rx-terminal-actions">
+          <div
+            className={
+              currentStep?.kind === 'binocular-summary'
+                ? 'rx-wizard-choices rx-terminal-actions rx-terminal-actions-summary'
+                : 'rx-wizard-choices rx-terminal-actions'
+            }
+          >
             <IonButton className="rx-btn-solid" expand="block" onClick={restart}>
               New Patient
             </IonButton>

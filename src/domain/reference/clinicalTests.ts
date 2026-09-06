@@ -1196,6 +1196,12 @@ export const clinicalTests: ClinicalTest[] = [
         ],
       },
       {
+        heading: 'Source',
+        items: [
+          "Sheard C. \"Zones of Ocular Comfort.\" American Journal of Optometry. 1930;7:9–25 — the original formulation of the criterion. Modern treatment: Scheiman M, Wick B. Clinical Management of Binocular Vision: Heterophoric, Accommodative, and Eye Movement Disorders. Lippincott Williams & Wilkins (current edition).",
+        ],
+      },
+      {
         heading: 'Which reserve compensates which phoria — the direction that\'s easy to get backwards',
         items: [
           'An exophoria is compensated by CONVERGING against it — check the BO (positive fusional vergence) reserve. An esophoria is compensated by DIVERGING against it — check the BI (negative fusional vergence) reserve. This is the same "compensating direction equals the phoria\'s own pull direction" rule explained in full on the Fusional Vergence Ranges card — and it is the OPPOSITE of the prism direction that would neutralize/prescribe for that same phoria (exophoria is neutralized with BI, esophoria with BO). Don\'t reach for the neutralizing-prism direction here by habit.',
@@ -1251,6 +1257,12 @@ export const clinicalTests: ClinicalTest[] = [
         heading: 'The rule',
         items: [
           'NRA + PRA defines the total accommodative range available while binocular fusion is held. The habitual near correction defines the resting point within that range. The rule checks whether that resting point falls inside the middle third of the total range, rather than pressed up against the NRA end or the PRA end.',
+        ],
+      },
+      {
+        heading: 'Source',
+        items: [
+          "Percival AS. \"The Relation of Convergence to Accommodation and Its Practical Bearing.\" Ophthalmic Review. 1892;11:313–328 — the original formulation of the criterion. Modern treatment: Scheiman M, Wick B. Clinical Management of Binocular Vision: Heterophoric, Accommodative, and Eye Movement Disorders. Lippincott Williams & Wilkins (current edition).",
         ],
       },
       {

@@ -9,6 +9,13 @@ import type { ParsedBinocularData, Phoria, VergencePair } from './binocularFindi
  * conservative/standard reading); fall back to break only when blur wasn't
  * recorded. PASS/FAIL is a finding only — this module never computes or
  * suggests a prism amount.
+ *
+ * Source: Sheard C. "Zones of Ocular Comfort." American Journal of Optometry.
+ * 1930;7:9–25 (original formulation). Modern treatment: Scheiman M, Wick B.
+ * Clinical Management of Binocular Vision: Heterophoric, Accommodative, and
+ * Eye Movement Disorders. Lippincott Williams & Wilkins (current edition).
+ * See also the "Source" section on the Sheard's Criterion card in
+ * clinicalTests.ts.
  */
 export interface SheardResult {
   applicable: boolean;

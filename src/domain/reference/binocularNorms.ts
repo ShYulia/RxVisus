@@ -16,7 +16,10 @@ export const BINOCULAR_NORMS = {
   distancePhoriaNotableDelta: 3,
   /** MAF cycles/min below this is treated as notable on Quick Screen (adult monocular facility). */
   mafNotableBelowCpm: 6,
-  /** Sheard's criterion: compensating reserve must be at least this multiple of the phoria to pass. */
+  /**
+   * Sheard's criterion: compensating reserve must be at least this multiple of the phoria to pass.
+   * Source: Sheard C. "Zones of Ocular Comfort." American Journal of Optometry. 1930;7:9–25.
+   */
   sheardMultiplier: 2,
   /**
    * Hofstetter's formula for expected minimum amplitude of accommodation by age (D) —

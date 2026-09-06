@@ -1,9 +1,16 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import BinocularSummary from './BinocularSummary';
 
+/** Compact cards are buttons that reveal a sibling content block on click — open it, then query. */
+function openCompactCard(label: string) {
+  const trigger = screen.getByText(label).closest('button')!;
+  fireEvent.click(trigger);
+  return trigger.closest('.rx-summary-compact')!;
+}
+
 describe('BinocularSummary', () => {
-  it('shows the short no-pattern message (no symptoms sentence) when no symptoms were reported', () => {
+  it('shows a neutral message, not a diagnostic claim, when no pattern is suggested', () => {
     render(
       <BinocularSummary
         findings={{
@@ -18,33 +25,25 @@ describe('BinocularSummary', () => {
       />,
     );
 
-    expect(screen.getByText('No significant binocular or accommodative dysfunction demonstrated.')).toBeInTheDocument();
-    expect(screen.queryByText(/does not explain the reported symptoms/)).not.toBeInTheDocument();
-    expect(screen.getAllByText(/break 5cm/).length).toBeGreaterThan(0);
+    expect(screen.getByText('No pattern from this list was suggested by the findings entered.')).toBeInTheDocument();
+    expect(screen.queryByText(/dysfunction demonstrated/i)).not.toBeInTheDocument();
+
+    const keyMeasurements = openCompactCard('Key measurements');
+    expect(keyMeasurements.textContent).toContain('break 5cm');
   });
 
-  it('appends the "does not explain the reported symptoms" sentence when symptoms actually were reported', () => {
-    render(
-      <BinocularSummary
-        findings={{
-          symptoms: 'nearStrain',
-          'distancePhoria.type': 'ortho',
-          'nearPhoria.type': 'ortho',
-          'npc.break': '5',
-        }}
-      />,
-    );
-    expect(
-      screen.getByText('No significant binocular or accommodative dysfunction demonstrated. Current findings do not explain the reported symptoms.'),
-    ).toBeInTheDocument();
+  it('shows the insufficient-data prompt when no core data was entered at all', () => {
+    render(<BinocularSummary findings={{}} />);
+    expect(screen.getByText('Insufficient data to interpret — complete the core Alignment/Convergence steps first.')).toBeInTheDocument();
   });
 
   it('renders human-readable symptom labels, never a raw recordedFindings key like "nearStrain"', () => {
     render(<BinocularSummary findings={{ symptoms: 'nearStrain,slowRefocusNearToDistance', 'distancePhoria.type': 'ortho', 'nearPhoria.type': 'ortho' }} />);
-    expect(screen.getAllByText(/Near eye strain \/ fatigue/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Slow refocusing near/).length).toBeGreaterThan(0);
-    expect(screen.queryByText(/nearStrain/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/slowRefocusNearToDistance/)).not.toBeInTheDocument();
+    const keyMeasurements = openCompactCard('Key measurements');
+    expect(keyMeasurements.textContent).toMatch(/Near eye strain \/ fatigue/);
+    expect(keyMeasurements.textContent).toMatch(/Slow refocusing near/);
+    expect(keyMeasurements.textContent).not.toMatch(/nearStrain/);
+    expect(keyMeasurements.textContent).not.toMatch(/slowRefocusNearToDistance/);
   });
 
   it('does not fabricate a pattern from a single recorded value', () => {
@@ -52,7 +51,7 @@ describe('BinocularSummary', () => {
     expect(screen.queryByText(/Convergence Insufficiency/)).not.toBeInTheDocument();
   });
 
-  it('shows the actual measurements alongside a matched pattern, not just its label, and a "What next?" section', () => {
+  it('shows the large result card (label + pattern name), the always-expanded why card, and the compact Clinical Source / Clinical considerations cards', () => {
     render(
       <BinocularSummary
         findings={{
@@ -64,21 +63,68 @@ describe('BinocularSummary', () => {
         }}
       />,
     );
-    expect(screen.getAllByText(/Convergence Insufficiency/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Near phoria/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/10Δ exo/).length).toBeGreaterThan(0);
-    expect(screen.getByText('What next?')).toBeInTheDocument();
-    expect(screen.getAllByText(/therapy/).length).toBeGreaterThan(0);
-    expect(screen.getByText('How to manage →')).toBeInTheDocument();
+    expect(screen.getByText('Findings suggest')).toBeInTheDocument();
+    expect(screen.getByText('a Convergence Insufficiency pattern')).toBeInTheDocument();
+    expect(screen.getByText('Why this pattern was suggested')).toBeInTheDocument();
+    expect(screen.getByText(/Near exophoria \(10Δ\) greater than distance/)).toBeInTheDocument();
+
+    const source = openCompactCard('Clinical Source');
+    expect(source.textContent).toContain('CITT Investigator Group');
+
+    const considerations = openCompactCard('Clinical considerations');
+    expect(considerations.textContent).toMatch(/therapy/);
   });
 
-  it('shows a reassurance line for a single accommodative pattern, and vice versa for a single vergence pattern', () => {
-    render(<BinocularSummary findings={{ 'age.value': '20', 'aa.OD': '4', 'aa.OS': '4', 'distancePhoria.type': 'ortho' }} />);
-    expect(screen.getByText('No significant associated vergence dysfunction demonstrated.')).toBeInTheDocument();
-  });
-
-  it('shows a consistent primary pattern with a possible secondary finding retained (visually distinct), not Mixed', () => {
+  it('shows the decision-support disclaimer inline inside the result card, always visible, never behind a toggle', () => {
     const { container } = render(
+      <BinocularSummary
+        findings={{
+          'distancePhoria.type': 'ortho',
+          'nearPhoria.type': 'exo',
+          'nearPhoria.amount': '10',
+          'npc.break': '12',
+          'nearVergence.bo.break': '10',
+        }}
+      />,
+    );
+    const disclaimer = screen.getByText('Decision support only — confirm clinically. You remain responsible for diagnosis and management.');
+    expect(disclaimer.closest('.rx-summary-result-card')).not.toBeNull();
+    // No expand/collapse control around it — no <details>, no button wrapping it.
+    expect(disclaimer.closest('details')).toBeNull();
+    expect(disclaimer.closest('button')).toBeNull();
+    expect(container.querySelector('.rx-summary-result-disclaimer')).not.toBeNull();
+  });
+
+  it('never shows a "consistent"/"possible" confidence label anywhere', () => {
+    render(
+      <BinocularSummary
+        findings={{
+          'distancePhoria.type': 'ortho',
+          'nearPhoria.type': 'exo',
+          'nearPhoria.amount': '10',
+          'npc.break': '12',
+          'nearVergence.bo.break': '10',
+        }}
+      />,
+    );
+    expect(screen.queryByText(/\(consistent\)/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\(possible\)/)).not.toBeInTheDocument();
+  });
+
+  it('does NOT suggest Accommodative Insufficiency from reduced amplitude alone — a second corroborating sign is required', () => {
+    render(<BinocularSummary findings={{ 'age.value': '20', 'aa.OD': '4', 'aa.OS': '4', 'distancePhoria.type': 'ortho' }} />);
+    expect(screen.queryByText(/Accommodative Insufficiency pattern/)).not.toBeInTheDocument();
+  });
+
+  it('suggests Accommodative Insufficiency, with its Clinical Source, once a corroborating facility finding is present', () => {
+    render(<BinocularSummary findings={{ 'age.value': '20', 'aa.OD': '4', 'aa.OS': '4', 'distancePhoria.type': 'ortho', 'maf.difficulty': 'minus' }} />);
+    expect(screen.getByText('an Accommodative Insufficiency pattern')).toBeInTheDocument();
+    const source = openCompactCard('Clinical Source');
+    expect(source.textContent).toContain('StatPearls: Accommodative Insufficiency');
+  });
+
+  it('shows two simultaneously-suggested patterns independently, in a fixed order, each with its own result card, findings, and management — never merged, never a single primary', () => {
+    render(
       <BinocularSummary
         findings={{
           'age.value': '19',
@@ -97,19 +143,19 @@ describe('BinocularSummary', () => {
           'nearVergence.bo.recovery': '12',
           'aa.OD': '8',
           'aa.OS': '8',
-          'maf.OD': '12',
-          'maf.OS': '12',
-          'maf.difficulty': 'neither',
-          'baf.cyclesPerMin': '12',
-          'baf.difficulty': 'neither',
+          'maf.difficulty': 'minus',
         }}
       />,
     );
 
-    expect(screen.getByText('Findings consistent with Convergence Insufficiency pattern')).toBeInTheDocument();
-    expect(screen.getAllByText(/Accommodative Insufficiency/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Confirmation recommended if clinically indicated/)).toBeInTheDocument();
-    expect(container.querySelector('.rx-summary-pattern-possible')).not.toBeNull();
+    expect(screen.getByText('a Convergence Insufficiency pattern')).toBeInTheDocument();
+    expect(screen.getByText('an Accommodative Insufficiency pattern')).toBeInTheDocument();
+
+    // Two result cards, two "Findings suggest" labels, in that fixed order.
+    const findingsLabels = screen.getAllByText('Findings suggest');
+    expect(findingsLabels).toHaveLength(2);
+    const values = screen.getAllByText(/^(a|an) .+ pattern$/);
+    expect(values.map((el) => el.textContent)).toEqual(['a Convergence Insufficiency pattern', 'an Accommodative Insufficiency pattern']);
   });
 
   it('shows an exceeds-range Break/Recovery distinctly — never as a number, never dropped like missing data', () => {
@@ -125,11 +171,13 @@ describe('BinocularSummary', () => {
         }}
       />,
     );
-    expect(screen.getAllByText(/break exceeds range/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/recovery exceeds range/).length).toBeGreaterThan(0);
+    // Near/distance vergence only appears in "All measurements", which is collapsed by default.
+    const allMeasurements = openCompactCard('All measurements');
+    expect(allMeasurements.textContent).toMatch(/break exceeds range/);
+    expect(allMeasurements.textContent).toMatch(/recovery exceeds range/);
   });
 
-  it('splits measurements into a compact "Key measurements" view and a collapsed "All measurements"', () => {
+  it('shows Key measurements and All measurements as separate compact cards, collapsed by default, each expanding independently on click', () => {
     render(
       <BinocularSummary
         findings={{
@@ -140,7 +188,14 @@ describe('BinocularSummary', () => {
         }}
       />,
     );
-    expect(screen.getByText('Key measurements')).toBeInTheDocument();
-    expect(screen.getByText('All measurements')).toBeInTheDocument();
+    const keyTrigger = screen.getByText('Key measurements').closest('button')!;
+    const allTrigger = screen.getByText('All measurements').closest('button')!;
+    expect(keyTrigger).not.toBe(allTrigger);
+    expect(keyTrigger.getAttribute('aria-expanded')).toBe('false');
+    expect(allTrigger.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(keyTrigger);
+    expect(keyTrigger.getAttribute('aria-expanded')).toBe('true');
+    expect(allTrigger.getAttribute('aria-expanded')).toBe('false');
   });
 });
