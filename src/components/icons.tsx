@@ -167,6 +167,27 @@ export const ExternalLinkIcon: React.FC<IconProps> = (props) => (
   </IconBase>
 );
 
+export const ShieldIcon: React.FC<IconProps> = (props) => (
+  <IconBase {...props} viewBox="0 0 20 20">
+    <path
+      d="M10 2.6l6 2.2v4.6c0 4-2.6 7.1-6 8-3.4-.9-6-4-6-8V4.8l6-2.2Z"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    <path d="M7.3 9.9l1.9 1.9 3.5-3.9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </IconBase>
+);
+
+export const HeartIcon: React.FC<IconProps> = (props) => (
+  <IconBase {...props} viewBox="0 0 20 20">
+    <path
+      d="M10 17S3 12.6 3 7.9C3 5.5 4.9 3.7 7.1 3.7c1.2 0 2.3.55 2.9 1.4.6-.85 1.7-1.4 2.9-1.4 2.2 0 4.1 1.8 4.1 4.2 0 4.7-7 9.1-7 9.1Z"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+  </IconBase>
+);
+
 export const StarIcon: React.FC<IconProps> = (props) => (
   <IconBase {...props} viewBox="0 0 20 20">
     <path
