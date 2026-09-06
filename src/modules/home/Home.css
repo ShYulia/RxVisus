@@ -151,6 +151,47 @@
   padding-bottom: 8px;
 }
 
+@media (max-width: 767px) {
+  /* On phone widths the eye illustration's own asset has generous built-in
+     transparent margin, so the CSS box's default size/position (52%,
+     right: 6px) reads as a small graphic floating near the card's center
+     rather than anchored to its right edge. Enlarge the box and pull it
+     further right (and up, clear of the subline) to compensate. */
+  .rx-hero-eye-wrap {
+    width: 64%;
+    /* -40px visibly clipped the illustration on real devices. Back near the
+       original -10px (bleeds only marginally past the card edge, same as
+       before) — separation from "afternoon," now comes from nudging the
+       greeting itself (below) instead of pushing the eye further out. */
+    right: -8px;
+    transform: translateY(-26px);
+  }
+
+  /* Small nudge left+up, purely visual (transform doesn't affect layout
+     flow, so .rx-hero-subline's position below is untouched) — creates
+     clearance from the eye without changing the greeting's wrap column,
+     font size, or the space it reserves in .rx-hero-text. */
+  .rx-hero-greeting {
+    transform: translate(-10px, -10px);
+  }
+
+  /* The subline used to sit tight against the greeting (10px gap) with the
+     card's whole lower third left empty below it. Shift it down visually —
+     `position: relative` + `top` doesn't change the space it reserves in
+     .rx-hero-text's normal flow, so this can't move the greeting above it.
+     The wider fixed width (> .rx-hero-text's narrow greeting-sized column)
+     lets "What do you need today?" fit on one line; it's free to overflow
+     .rx-hero-text since nothing clips there before .rx-hero's own edges. */
+  .rx-hero-subline {
+    position: relative;
+    /* 78px left it sitting close to the card's bottom edge with a large
+       empty gap above it back to the greeting. 42px splits that leftover
+       space more evenly between the greeting-gap and the bottom margin. */
+    top: 42px;
+    width: 205px;
+  }
+}
+
 @media (min-width: 768px) {
   .rx-home-wordmark {
     font-size: 26px;

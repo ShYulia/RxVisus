@@ -73,7 +73,7 @@ const Home: React.FC = () => {
                   <>
                     {`${timeOfDayGreeting()},`}
                     <br />
-                    {displayName}
+                    {`${displayName}!`}
                   </>
                 ) : (
                   timeOfDayGreeting()
