@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IonButton } from '@ionic/react';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import { parseStrictNumber } from '../../domain/reference/binocularFindings';
+import { isValidVisualAcuity } from '../../domain/reference/visualAcuity';
 import TestChips from './TestChips';
 
 export interface TextEntryFieldDef {
@@ -19,6 +20,14 @@ export interface TextEntryFieldDef {
    * opts in for a signed measurement (e.g. MEM/Nott lag/lead).
    */
   numeric?: { allowNegative?: boolean };
+  /**
+   * Marks this field as visual-acuity notation (Snellen e.g. "6/6", decimal e.g. "0.8", or
+   * low-vision CF/HM/LP/NLP) rather than unrestricted free text — see visualAcuity.ts. Stays
+   * free-text keyboard (notation varies, never parsed as a plain number), but malformed/
+   * negative/unrelated text is rejected with a visible error instead of being accepted as if it
+   * were a real recorded acuity. Mutually exclusive with `numeric`.
+   */
+  visualAcuity?: boolean;
 }
 
 /** Returns an error message when `raw` is non-empty but fails this field's numeric requirement — undefined otherwise (including for a genuinely blank value, which is a `required`-check concern, not a numeric one). */
@@ -29,6 +38,13 @@ function numericError(field: TextEntryFieldDef, raw: string): string | undefined
   if (value === undefined) return 'Enter a valid number.';
   if (!field.numeric.allowNegative && value < 0) return 'Enter a non-negative number.';
   return undefined;
+}
+
+/** Same split as numericError: undefined for a genuinely blank value (a `required` concern) or non-VA fields; an error message only for non-blank text that isn't valid VA notation. */
+function visualAcuityError(field: TextEntryFieldDef, raw: string): string | undefined {
+  if (!field.visualAcuity) return undefined;
+  if (raw.trim() === '') return undefined;
+  return isValidVisualAcuity(raw) ? undefined : 'Enter Snellen (e.g. 6/6), decimal (e.g. 0.8), or CF/HM/LP/NLP.';
 }
 
 export interface TextEntryFormProps {
@@ -60,9 +76,10 @@ const TextEntryForm: React.FC<TextEntryFormProps> = ({ fields, groups, helperTex
   const isSatisfied = (field: TextEntryFieldDef) => {
     if (field.absentOption && absent[field.key]) return true;
     const raw = values[field.key] ?? '';
-    // Invalid numeric text blocks Continue regardless of `required` — entered-but-unparseable
-    // data must never be accepted, let alone silently reinterpreted as "not entered".
+    // Invalid numeric/VA-notation text blocks Continue regardless of `required` — entered-but-
+    // unparseable data must never be accepted, let alone silently reinterpreted as "not entered".
     if (numericError(field, raw)) return false;
+    if (visualAcuityError(field, raw)) return false;
     if (!field.required) return true;
     return raw.trim() !== '';
   };
@@ -89,12 +106,13 @@ const TextEntryForm: React.FC<TextEntryFormProps> = ({ fields, groups, helperTex
       {defs.map((field) => {
         const fieldIsAbsent = !!(field.absentOption && absent[field.key]);
         const raw = values[field.key] ?? '';
-        // A numeric error is shown as soon as it's typed (like the calculators' own progressive
-        // validation) — the clinician shouldn't have to hit Continue to find out garbage text
-        // won't be accepted. "Required" only appears after a blocked Continue attempt, and never
-        // alongside a numeric error for the same field.
+        // A numeric/VA-notation error is shown as soon as it's typed (like the calculators' own
+        // progressive validation) — the clinician shouldn't have to hit Continue to find out
+        // garbage text won't be accepted. "Required" only appears after a blocked Continue
+        // attempt, and never alongside a format error for the same field.
         const numError = numericError(field, raw);
-        const requiredError = submitAttempted && !isSatisfied(field) && !numError ? 'Required' : undefined;
+        const vaError = visualAcuityError(field, raw);
+        const requiredError = submitAttempted && !isSatisfied(field) && !numError && !vaError ? 'Required' : undefined;
         return (
           <div key={field.key} className="rx-textentry-field">
             <FieldBox
@@ -102,7 +120,7 @@ const TextEntryForm: React.FC<TextEntryFormProps> = ({ fields, groups, helperTex
               inputMode={field.numeric ? 'decimal' : 'text'}
               value={raw}
               disabled={fieldIsAbsent}
-              error={numError ?? requiredError}
+              error={numError ?? vaError ?? requiredError}
               onChange={(v) => setValues((cur) => ({ ...cur, [field.key]: v }))}
             />
             {field.absentOption && (

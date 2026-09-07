@@ -172,6 +172,14 @@ export interface TextEntryField {
    * workingDistanceToAdd.ts) — this is a sanity bound on the input, not a clinical threshold.
    */
   numeric?: { allowNegative?: boolean };
+  /**
+   * Marks this as visual-acuity notation (Snellen e.g. "6/6", decimal e.g. "0.8", or low-vision
+   * CF/HM/LP/NLP — see domain/reference/visualAcuity.ts) rather than unrestricted free text.
+   * Stays a free-text keyboard (notation varies, never parsed as a plain number like `numeric`
+   * fields are), but malformed/negative/unrelated text (e.g. "-2") is rejected with a visible
+   * error instead of being accepted as if it were a real recorded acuity.
+   */
+  visualAcuity?: boolean;
 }
 
 /** A short free-text recording point (e.g. best-corrected VA per eye) — context only, never a branch. */
@@ -708,10 +716,10 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         id: 'va',
         question: 'Best-corrected VA',
         fields: [
-          { key: 'OD', label: 'OD' },
-          { key: 'OS', label: 'OS' },
+          { key: 'OD', label: 'OD', visualAcuity: true },
+          { key: 'OS', label: 'OS', visualAcuity: true },
         ],
-        helperText: 'Any notation.',
+        helperText: 'Snellen (e.g. 6/6), decimal (e.g. 0.8), or CF/HM/LP/NLP.',
         next: 'which-eye',
       },
       {

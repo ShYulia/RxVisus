@@ -236,6 +236,18 @@ describe('clinicalPathways referential integrity', () => {
     }
   });
 
+  it("Strabismus's Best-corrected VA fields (OD/OS) are marked `visualAcuity` — validated as VA notation, not unrestricted free text or a stereoacuity-style field", () => {
+    const fields = allTextEntryFields();
+    for (const key of ['OD', 'OS']) {
+      const match = fields.find((f) => f.field.key === key);
+      expect(match, `expected a text-entry field for key "${key}"`).toBeDefined();
+      expect(match!.field.visualAcuity, `field "${key}" should be marked visualAcuity`).toBe(true);
+    }
+    // Stereoacuity's notation (e.g. arc seconds) is a different concern entirely — never VA notation.
+    const stereo = fields.find((f) => f.field.key === 'stereoacuity.value');
+    expect(stereo!.field.visualAcuity, 'stereoacuity.value should not be treated as VA notation').toBeUndefined();
+  });
+
   it('MEM/Nott allows a negative (signed lag/lead) value; every other numeric field is a non-negative magnitude', () => {
     const fields = allTextEntryFields();
     const memNott = fields.filter((f) => f.field.key === 'memNott.OD' || f.field.key === 'memNott.OS');

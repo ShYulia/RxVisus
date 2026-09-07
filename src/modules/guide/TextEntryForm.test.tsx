@@ -141,6 +141,59 @@ describe('TextEntryForm', () => {
     expect(onSubmit).toHaveBeenCalledWith({ break: 'exceeds-range' });
   });
 
+  it('a visualAcuity field rejects a negative value (e.g. "-2") with a visible error and does not submit it', async () => {
+    const { onSubmit } = renderForm([{ key: 'OD', label: 'OD', visualAcuity: true }]);
+    await waitForIonicReact();
+
+    setValue('OD', '-2');
+    expect(await screen.findByText('Enter Snellen (e.g. 6/6), decimal (e.g. 0.8), or CF/HM/LP/NLP.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).not.toHaveBeenCalled();
+    // The VA-format error is shown instead of "Required" — never both at once for the same field.
+    expect(screen.queryByText('Required')).not.toBeInTheDocument();
+  });
+
+  it('a visualAcuity field rejects unrelated/malformed text', async () => {
+    const { onSubmit } = renderForm([{ key: 'OD', label: 'OD', visualAcuity: true }]);
+    await waitForIonicReact();
+
+    setValue('OD', 'abc');
+    expect(await screen.findByText('Enter Snellen (e.g. 6/6), decimal (e.g. 0.8), or CF/HM/LP/NLP.')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it.each(['6/6', '6/7.5', '6/12', '1.0', '0.8', 'CF', 'HM', 'LP', 'NLP'])('a visualAcuity field accepts the valid VA notation "%s" and submits it', async (value) => {
+    const { onSubmit } = renderForm([{ key: 'OD', label: 'OD', visualAcuity: true }]);
+    await waitForIonicReact();
+
+    setValue('OD', value);
+    expect(screen.queryByText('Enter Snellen (e.g. 6/6), decimal (e.g. 0.8), or CF/HM/LP/NLP.')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({ OD: value });
+  });
+
+  it('a visualAcuity error clears once the text is corrected, and Continue then submits the clean value', async () => {
+    const { onSubmit } = renderForm([{ key: 'OD', label: 'OD', visualAcuity: true }]);
+    await waitForIonicReact();
+
+    setValue('OD', 'normal');
+    expect(await screen.findByText('Enter Snellen (e.g. 6/6), decimal (e.g. 0.8), or CF/HM/LP/NLP.')).toBeInTheDocument();
+
+    setValue('OD', '6/6');
+    expect(screen.queryByText('Enter Snellen (e.g. 6/6), decimal (e.g. 0.8), or CF/HM/LP/NLP.')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({ OD: '6/6' });
+  });
+
+  it('a blank visualAcuity field that is not required submits freely — emptiness is not a VA-format error', async () => {
+    const { onSubmit } = renderForm([{ key: 'OD', label: 'OD', visualAcuity: true }]);
+    await waitForIonicReact();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({});
+  });
+
   it('shows a Skip test action only when onSkip is provided, and it discards entry without validating', async () => {
     const onSkip = vi.fn();
     const { onSubmit, rerender } = renderForm([{ key: 'value', label: 'Finding', required: true }]);

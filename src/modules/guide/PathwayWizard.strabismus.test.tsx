@@ -69,6 +69,38 @@ async function reachAfterSensoryCheck(diplopia: 'Yes' | 'Sometimes' | 'No', prio
   await clickChoice('Fusion'); // sensory-check (Worth 4 Dot)
 }
 
+describe('Strabismus pathway — Best-corrected VA rejects invalid input in situ', () => {
+  it('rejects a negative value entered at the real VA step and blocks Continue', async () => {
+    renderStrabismus();
+    await clickChoice('Long-standing');
+    await clickChoice('Yes'); // diplopia
+
+    setValueAt('OD', 0, '-2');
+    expect(await screen.findByText('Enter Snellen (e.g. 6/6), decimal (e.g. 0.8), or CF/HM/LP/NLP.')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Continue'));
+    expect(screen.getByText('Best-corrected VA')).toBeInTheDocument(); // still on the VA step — did not advance
+  });
+
+  it('accepts valid Snellen VA for both eyes and proceeds to which-eye', async () => {
+    renderStrabismus();
+    await clickChoice('Long-standing');
+    await clickChoice('Yes');
+
+    setValueAt('OD', 0, '6/6');
+    setValueAt('OS', 0, '6/9');
+    await userEvent.click(screen.getByText('Continue'));
+    expect(screen.getByText('Which eye deviates?')).toBeInTheDocument();
+  });
+
+  it('a blank VA (still optional/context) proceeds without any validation error', async () => {
+    renderStrabismus();
+    await clickChoice('Long-standing');
+    await clickChoice('Yes');
+    await userEvent.click(screen.getByText('Continue'));
+    expect(screen.getByText('Which eye deviates?')).toBeInTheDocument();
+  });
+});
+
 describe('Strabismus pathway — known findings are reused, not re-asked', () => {
   it('diplopia already "Yes" at intake: "symptom-check" is skipped entirely, landing straight on Best Refractive Correction', async () => {
     renderStrabismus();
@@ -270,6 +302,39 @@ describe('Strabismus pathway — the validated prism trial outcomes still work e
     await reachTrial();
     await clickChoice('Single comfortable vision');
     expect(screen.getByText('Final Rx')).toBeInTheDocument();
+  });
+
+  it('a full, realistic assessment with valid VA, an existing prism, and a valid Rx progresses cleanly start to finish, with every entered value reaching Final Rx correctly', async () => {
+    renderStrabismus();
+    await clickChoice('Long-standing');
+    await clickChoice('Yes'); // diplopia
+    setValueAt('OD', 0, '6/6');
+    setValueAt('OS', 0, '6/9');
+    await userEvent.click(screen.getByText('Continue')); // valid VA
+    await clickChoice('OD'); // which-eye
+    await clickChoice('No'); // prior-prism: none
+    await clickChoice('Eso'); // cover-test
+    await clickChoice('No'); // gaze-dependence: comitant
+    await clickChoice('Fusion'); // sensory-check
+
+    setValueAt('SPH', 0, '-2.00');
+    setValueAt('SPH', 1, '-2.00');
+    await userEvent.click(screen.getByText('Continue')); // Best Refractive Correction (diplopia known -> straight through)
+
+    const measureChoice = document.querySelector('.rx-wizard-choices') as HTMLElement;
+    await userEvent.click(within(measureChoice).getByText('Enter measurement'));
+    setValueAt('Amount', 0, '6');
+    await userEvent.click(screen.getByText('BO'));
+    await userEvent.click(screen.getAllByText('OD')[0]);
+    await userEvent.click(screen.getByText('Continue'));
+
+    await clickChoice('Single comfortable vision');
+
+    expect(screen.getByText('Final Rx')).toBeInTheDocument();
+    expect(screen.getAllByText('-2.00')).toHaveLength(2);
+    expect(screen.getAllByText('3.00Δ BO')).toHaveLength(2);
+    expect(screen.queryByText(/undefined/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
   });
 
   it('"Improved but not fully comfortable" -> "Finish assessment" still reaches the partial-relief endpoint', async () => {
