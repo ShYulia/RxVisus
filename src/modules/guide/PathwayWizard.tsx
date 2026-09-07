@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { IonButton, IonContent, IonPage, useIonViewWillEnter, useIonViewWillLeave } from '@ionic/react';
+import CautionBox from '../../components/CautionBox';
 import PageHeader from '../../components/PageHeader';
 import PillarRow from '../../components/PillarRow';
 import { ChevronRightIcon, CompassIcon } from '../../components/icons';
@@ -21,6 +22,7 @@ import ConsistencyWarning from './ConsistencyWarning';
 import FinalRxSummary from './FinalRxSummary';
 import MeasurementForm from './MeasurementForm';
 import OptionalTestsMenu from './OptionalTestsMenu';
+import PrismUnsuccessfulSummary from './PrismUnsuccessfulSummary';
 import QuickScreenResult from './QuickScreenResult';
 import RedFlagAlert from './RedFlagAlert';
 import RxEntryForm from './RxEntryForm';
@@ -32,11 +34,13 @@ import TextEntryForm from './TextEntryForm';
 /** Everything a step's outcome can affect, snapshotted after every commit so jumping back to an earlier step restores exactly the state that existed then. */
 interface WizardSnapshot {
   measurement: PrismMeasurement | null;
+  /** The patient's existing/prior prism (if any) — its own slot, never conflated with `measurement` (the proposed/trial prism). See MeasurementStep.target. */
+  existingPrism: PrismMeasurement | null;
   bestCorrection: BestCorrection | null;
   findings: Record<string, string>;
 }
 
-const EMPTY_SNAPSHOT: WizardSnapshot = { measurement: null, bestCorrection: null, findings: {} };
+const EMPTY_SNAPSHOT: WizardSnapshot = { measurement: null, existingPrism: null, bestCorrection: null, findings: {} };
 
 interface HistoryEntry {
   stepId: string;
@@ -75,6 +79,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   const [currentStepId, setCurrentStepId] = useState<string | undefined>(firstStepId);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [measurement, setMeasurement] = useState<PrismMeasurement | null>(null);
+  const [existingPrism, setExistingPrism] = useState<PrismMeasurement | null>(null);
   const [bestCorrection, setBestCorrection] = useState<BestCorrection | null>(null);
   const [recordedFindings, setRecordedFindings] = useState<Record<string, string>>({});
   const [pendingOutcome, setPendingOutcome] = useState<{ step: QuestionStep; outcome: DecisionOutcome } | null>(null);
@@ -89,7 +94,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   const [confirmingNewAssessment, setConfirmingNewAssessment] = useState(false);
 
   const currentStep = currentStepId ? stepById.get(currentStepId) : undefined;
-  const isTerminalStep = currentStep?.kind === 'final-rx' || currentStep?.kind === 'binocular-summary';
+  const isTerminalStep = currentStep?.kind === 'final-rx' || currentStep?.kind === 'binocular-summary' || currentStep?.kind === 'prism-unsuccessful';
 
   // Always-fresh refs for the two lifecycle hooks below, which register their callback once
   // (deps: []) and must not close over stale render values.
@@ -98,16 +103,21 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   const isTerminalStepRef = useRef(isTerminalStep);
   isTerminalStepRef.current = isTerminalStep;
 
-  // Full Assessment entered directly skips the Quick Screen checkpoint transparently —
-  // no history entry, so Back/breadcrumb behave as if it never existed for that path.
+  // Full Assessment entered directly skips the Quick Screen checkpoint transparently, and any
+  // question step with `skipWhen` bypasses itself once its finding is already known (e.g.
+  // Strabismus's 'symptom-check' reusing an already-established diplopia answer) — in both
+  // cases: no history entry, so Back/breadcrumb behave as if the step never existed for that path.
   useLayoutEffect(() => {
     if (currentStep?.kind === 'quick-screen-result' && recordedFindings.entryMode === 'full') {
       setCurrentStepId(currentStep.continueNext);
+    } else if (currentStep?.kind === 'question' && currentStep.skipWhen && currentStep.skipWhen.values.includes(recordedFindings[currentStep.skipWhen.key])) {
+      setCurrentStepId(currentStep.skipWhen.next);
     }
-  }, [currentStep, recordedFindings.entryMode]);
+  }, [currentStep, recordedFindings]);
 
   const applySnapshot = (snap: WizardSnapshot) => {
     setMeasurement(snap.measurement);
+    setExistingPrism(snap.existingPrism);
     setBestCorrection(snap.bestCorrection);
     setRecordedFindings(snap.findings);
   };
@@ -119,7 +129,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   const commit = (step: QuestionStep, outcome: DecisionOutcome) => {
     const findings = outcome.recordAs ? { ...recordedFindings, [outcome.recordAs.key]: outcome.recordAs.value } : recordedFindings;
     if (outcome.recordAs) setRecordedFindings(findings);
-    pushHistory(step.id, outcome.label, { measurement, bestCorrection, findings });
+    pushHistory(step.id, outcome.label, { measurement, existingPrism, bestCorrection, findings });
     if (outcome.next) {
       setCurrentStepId(outcome.next);
       setResult(null);
@@ -132,7 +142,13 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   const finalizeMeasurement = (step: MeasurementStep, value: PrismMeasurement) => {
     const isProposed = (step.target ?? 'proposed') === 'proposed';
     if (isProposed) setMeasurement(value);
-    pushHistory(step.id, formatPrismMeasurement(value), { measurement: isProposed ? value : measurement, bestCorrection, findings: recordedFindings });
+    else setExistingPrism(value);
+    pushHistory(step.id, formatPrismMeasurement(value), {
+      measurement: isProposed ? value : measurement,
+      existingPrism: isProposed ? existingPrism : value,
+      bestCorrection,
+      findings: recordedFindings,
+    });
     setCurrentStepId(step.next);
     setResult(null);
   };
@@ -153,13 +169,13 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
   const commitTextEntry = (step: TextEntryStep, values: Record<string, string>) => {
     const findings = { ...recordedFindings, ...values };
     setRecordedFindings(findings);
-    pushHistory(step.id, formatTextEntry(values, step.fields), { measurement, bestCorrection, findings });
+    pushHistory(step.id, formatTextEntry(values, step.fields), { measurement, existingPrism, bestCorrection, findings });
     setCurrentStepId(step.next);
     setResult(null);
   };
 
   const skipTextEntryStep = (step: TextEntryStep) => {
-    pushHistory(step.id, 'Skipped', { measurement, bestCorrection, findings: recordedFindings });
+    pushHistory(step.id, 'Skipped', { measurement, existingPrism, bestCorrection, findings: recordedFindings });
     setCurrentStepId(step.next);
     setResult(null);
   };
@@ -169,39 +185,39 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
     setRecordedFindings(findings);
     const isNoneOnly = selectedKeys.length === 0 || (selectedKeys.length === 1 && selectedKeys[0] === step.exclusiveKey);
     const label = isNoneOnly ? 'No symptoms' : selectedKeys.map((key) => step.options.find((o) => o.key === key)?.label ?? key).join(', ');
-    pushHistory(step.id, label, { measurement, bestCorrection, findings });
+    pushHistory(step.id, label, { measurement, existingPrism, bestCorrection, findings });
     const next = step.branchOnKey && selectedKeys.includes(step.branchOnKey.key) ? step.branchOnKey.next : step.next;
     setCurrentStepId(next);
     setResult(null);
   };
 
   const continueToFullAssessment = (stepId: string, continueNext: string) => {
-    pushHistory(stepId, 'Continue to Full Assessment', { measurement, bestCorrection, findings: recordedFindings });
+    pushHistory(stepId, 'Continue to Full Assessment', { measurement, existingPrism, bestCorrection, findings: recordedFindings });
     setCurrentStepId(continueNext);
     setResult(null);
   };
 
   const finishQuickScreen = (stepId: string, finishNext: string) => {
-    pushHistory(stepId, 'Finish Screening', { measurement, bestCorrection, findings: recordedFindings });
+    pushHistory(stepId, 'Finish Screening', { measurement, existingPrism, bestCorrection, findings: recordedFindings });
     setCurrentStepId(finishNext);
     setResult(null);
   };
 
   const selectOptionalTest = (stepId: string, label: string, targetStepId: string) => {
-    pushHistory(stepId, label, { measurement, bestCorrection, findings: recordedFindings });
+    pushHistory(stepId, label, { measurement, existingPrism, bestCorrection, findings: recordedFindings });
     setCurrentStepId(targetStepId);
     setResult(null);
   };
 
   const skipOptionalTests = (stepId: string, skipNext: string) => {
-    pushHistory(stepId, 'Skip', { measurement, bestCorrection, findings: recordedFindings });
+    pushHistory(stepId, 'Skip', { measurement, existingPrism, bestCorrection, findings: recordedFindings });
     setCurrentStepId(skipNext);
     setResult(null);
   };
 
   const commitRxEntry = (step: RxEntryStep, value: BestCorrection) => {
     setBestCorrection(value);
-    pushHistory(step.id, formatBestCorrection(value), { measurement, bestCorrection: value, findings: recordedFindings });
+    pushHistory(step.id, formatBestCorrection(value), { measurement, existingPrism, bestCorrection: value, findings: recordedFindings });
     setCurrentStepId(step.next);
     setResult(null);
   };
@@ -238,6 +254,7 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
     setCurrentStepId(firstStepId);
     setHistory([]);
     setMeasurement(null);
+    setExistingPrism(null);
     setBestCorrection(null);
     setRecordedFindings({});
     setPendingOutcome(null);
@@ -293,6 +310,45 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
 
   const stepBack = () => jumpTo(history.length - 1);
 
+  // Assessment History always renders last — below the current step's content and its
+  // primary action/Continue button, at the bottom of the screen — so it never competes
+  // visually with what the clinician is currently doing. Same content/behavior as before
+  // (collapsed disclosure on a terminal step, inline breadcrumb otherwise); only where it's
+  // placed on the page has changed.
+  const historyTrail =
+    history.length > 0 &&
+    (isTerminalStep ? (
+      // The Binocular Status Summary already has its own "All measurements" detail and a
+      // deliberately clean, card-focused layout — the step-by-step trail would be visual
+      // noise there, so it's omitted for that terminal step specifically (Final Rx keeps it).
+      currentStep?.kind !== 'binocular-summary' && (
+        <details className="rx-wizard-trail-collapsed">
+          <summary>Assessment history ({history.length} steps)</summary>
+          <div className="rx-wizard-trail rx-wizard-trail-nested">
+            {history.map((entry, i) => (
+              <span key={`${entry.stepId}-${i}`} className="rx-wizard-trail-item">
+                {i > 0 && <span className="rx-wizard-trail-arrow">&rarr;</span>}
+                <button type="button" className="rx-wizard-trail-btn" onClick={() => jumpTo(i)}>
+                  {entry.outcomeLabel}
+                </button>
+              </span>
+            ))}
+          </div>
+        </details>
+      )
+    ) : (
+      <div className="rx-wizard-trail">
+        {history.map((entry, i) => (
+          <span key={`${entry.stepId}-${i}`} className="rx-wizard-trail-item">
+            {i > 0 && <span className="rx-wizard-trail-arrow">&rarr;</span>}
+            <button type="button" className="rx-wizard-trail-btn" onClick={() => jumpTo(i)}>
+              {entry.outcomeLabel}
+            </button>
+          </span>
+        ))}
+      </div>
+    ));
+
   return (
     <IonPage>
       <PageHeader
@@ -341,39 +397,6 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
           </div>
         ) : (
         <>
-        {history.length > 0 &&
-          (isTerminalStep ? (
-            // The Binocular Status Summary already has its own "All measurements" detail and a
-            // deliberately clean, card-focused layout — the step-by-step trail would be visual
-            // noise there, so it's omitted for that terminal step specifically (Final Rx keeps it).
-            currentStep?.kind !== 'binocular-summary' && (
-              <details className="rx-wizard-trail-collapsed">
-                <summary>Assessment history ({history.length} steps)</summary>
-                <div className="rx-wizard-trail rx-wizard-trail-nested">
-                  {history.map((entry, i) => (
-                    <span key={`${entry.stepId}-${i}`} className="rx-wizard-trail-item">
-                      {i > 0 && <span className="rx-wizard-trail-arrow">&rarr;</span>}
-                      <button type="button" className="rx-wizard-trail-btn" onClick={() => jumpTo(i)}>
-                        {entry.outcomeLabel}
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </details>
-            )
-          ) : (
-            <div className="rx-wizard-trail">
-              {history.map((entry, i) => (
-                <span key={`${entry.stepId}-${i}`} className="rx-wizard-trail-item">
-                  {i > 0 && <span className="rx-wizard-trail-arrow">&rarr;</span>}
-                  <button type="button" className="rx-wizard-trail-btn" onClick={() => jumpTo(i)}>
-                    {entry.outcomeLabel}
-                  </button>
-                </span>
-              ))}
-            </div>
-          ))}
-
         {history.length === 0 && node.overview && (
           <p className="rx-hint" style={{ marginTop: 0 }}>
             {node.overview}
@@ -469,12 +492,28 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'rx-entry' && (
           <div className="rx-wizard-step">
             <p className="rx-wizard-question">{currentStep.question}</p>
+            {currentStep.helperText && (
+              <p className="rx-hint" style={{ marginTop: 0 }}>
+                {currentStep.helperText}
+              </p>
+            )}
             <RxEntryForm key={currentStep.id} initialValue={bestCorrection} onSubmit={(value) => commitRxEntry(currentStep, value)} />
           </div>
         )}
 
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'final-rx' && (
           <FinalRxSummary measurement={measurement} bestCorrection={bestCorrection} trialOutcomeLabel={history[history.length - 1]?.outcomeLabel} />
+        )}
+
+        {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'prism-unsuccessful' && (
+          <PrismUnsuccessfulSummary
+            title={currentStep.title}
+            message={currentStep.message}
+            guidance={currentStep.guidance}
+            measurement={measurement}
+            bestCorrection={bestCorrection}
+            trialOutcomeLabel={history[history.length - 1]?.outcomeLabel}
+          />
         )}
 
         {!pendingOutcome && !pendingConsistencyWarning && !result && isTerminalStep && (
@@ -497,6 +536,17 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
         {!pendingOutcome && !pendingConsistencyWarning && !result && currentStep?.kind === 'question' && (
           <div className="rx-wizard-step">
             {currentStep.instruction && <p className="rx-hint" style={{ marginTop: 0 }}>{currentStep.instruction}</p>}
+            {currentStep.caution && (
+              <CautionBox>
+                <p className="rx-caution-text">
+                  <strong>{currentStep.caution.title}</strong>
+                </p>
+                <p className="rx-caution-text">{currentStep.caution.message}</p>
+              </CautionBox>
+            )}
+            {currentStep.showExistingPrism && existingPrism && (
+              <p className="rx-wizard-measurement-summary">Currently wearing: {formatPrismMeasurement(existingPrism)}</p>
+            )}
             {currentStep.showMeasurement && measurement && (
               <p className="rx-wizard-measurement-summary">Proposed prism: {formatPrismMeasurement(measurement)}</p>
             )}
@@ -571,6 +621,8 @@ const PathwayWizard: React.FC<{ node: ClinicalPathwayNode }> = ({ node }) => {
         )}
 
         {!pendingOutcome && !pendingConsistencyWarning && !result && !currentStep && <p className="rx-hint">No content for this pathway yet.</p>}
+
+        {historyTrail}
         </>
         )}
       </IonContent>

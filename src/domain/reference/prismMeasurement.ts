@@ -3,12 +3,14 @@ import type { HorizontalPrismBase, VerticalPrismBase } from '../calculators/pris
 
 /**
  * A clinician-entered prism finding — recorded as-measured, never computed or inferred.
- * Vertical prism needs an eye (OD/OS) since base-up/base-down is only meaningful per eye;
- * horizontal doesn't, since a total horizontal deviation is recorded as one amount + base
- * before any prescribing split.
+ * Both components record the eye the deviation was measured over (horizontal and vertical
+ * may be measured over different eyes), but that recorded eye only changes the split for
+ * vertical (base-up/base-down is meaningful per eye) — see splitPrismEqually, which still
+ * divides horizontal evenly with the same base in both eyes regardless of which eye it was
+ * measured over, since a horizontal deviation is a whole-eye-pair finding.
  */
 export interface PrismMeasurement {
-  horizontal?: { amount: number; base: HorizontalPrismBase };
+  horizontal?: { amount: number; base: HorizontalPrismBase; eye: 'OD' | 'OS' };
   vertical?: { amount: number; base: VerticalPrismBase; eye: 'OD' | 'OS' };
 }
 
@@ -16,10 +18,10 @@ export function isMeasurementEmpty(measurement: PrismMeasurement): boolean {
   return !measurement.horizontal && !measurement.vertical;
 }
 
-/** e.g. "6.00Δ BO" or "6.00Δ BO / 2.00Δ BU OD". */
+/** e.g. "6.00Δ BO OD" or "6.00Δ BO OD / 2.00Δ BU OS". */
 export function formatPrismMeasurement(measurement: PrismMeasurement): string {
   const parts: string[] = [];
-  if (measurement.horizontal) parts.push(`${measurement.horizontal.amount.toFixed(2)}Δ ${measurement.horizontal.base}`);
+  if (measurement.horizontal) parts.push(`${measurement.horizontal.amount.toFixed(2)}Δ ${measurement.horizontal.base} ${measurement.horizontal.eye}`);
   if (measurement.vertical) parts.push(`${measurement.vertical.amount.toFixed(2)}Δ ${measurement.vertical.base} ${measurement.vertical.eye}`);
   return parts.join(' / ');
 }

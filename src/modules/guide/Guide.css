@@ -509,9 +509,10 @@
 }
 
 /* Collapsed breadcrumb — used on terminal (Summary/Final Rx) steps so the clinical result is
-   the dominant element, not a long history trail. */
+   the dominant element, not a long history trail. Always renders last on the page, below the
+   step's own content and primary action/Continue button — see PathwayWizard's `historyTrail`. */
 .rx-wizard-trail-collapsed {
-  margin: 0 4px 16px;
+  margin: 24px 4px 8px;
 }
 
 .rx-wizard-trail-collapsed summary {
@@ -526,13 +527,14 @@
   margin: 10px 0 0;
 }
 
-/* Pathway wizard: one question/action at a time. */
+/* Pathway wizard: one question/action at a time. Always renders last on the page, below the
+   step's own content and primary action/Continue button — see PathwayWizard's `historyTrail`. */
 .rx-wizard-trail {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 0;
-  margin: 0 4px 16px;
+  margin: 24px 4px 8px;
 }
 
 .rx-wizard-trail-item {
@@ -659,18 +661,103 @@
   margin-right: 4px;
 }
 
-.rx-final-rx-notes {
-  margin: 8px 0 0;
-  padding-left: 20px;
+/* Final Rx primary result card: per-eye Rx + assigned prism, inside .rx-summary-result-card
+   (same tinted-card language as Binocular Status's pattern result). */
+.rx-finalrx-eyes {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 16px;
+  margin-top: 14px;
 }
 
-.rx-final-rx-notes li {
-  font-size: 13.5px;
-  color: var(--rx-text-secondary);
+.rx-finalrx-eye {
+  padding-top: 14px;
+  border-top: 1px solid rgba(87, 74, 148, 0.16);
+}
+
+.rx-finalrx-eye:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.rx-finalrx-eye-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rx-iris-deep);
+  opacity: 0.75;
+}
+
+.rx-finalrx-eye-rx {
+  display: block;
+  font-family: var(--rx-font-display);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--rx-iris-deep);
+  margin-top: 4px;
+}
+
+.rx-finalrx-prism-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.rx-finalrx-prism-chip {
+  display: inline-flex;
+  align-items: baseline;
+  background: var(--rx-surface);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-family: var(--rx-font-display);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--rx-iris-deep);
+}
+
+/* Unsuccessful/incomplete prism trial result (PrismUnsuccessfulSummary) — same
+   .rx-summary-result-card / .rx-finalrx-eyes primary-card language as Final Rx, plus a factual
+   outcome statement and a neutral "not finalized" status badge. */
+.rx-unsuccessful-message {
+  margin: 10px 0 0;
+  font-size: 15px;
   line-height: 1.5;
+  color: var(--rx-text);
+}
+
+.rx-unsuccessful-status {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(87, 74, 148, 0.14);
+  color: var(--rx-iris-deep);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.rx-unsuccessful-section-label {
+  margin: 20px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--rx-iris-deep);
+  opacity: 0.75;
+}
+
+.rx-unsuccessful-none {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--rx-text-tertiary);
 }
 
 .rx-wizard-choices {
@@ -920,66 +1007,8 @@
   line-height: 1.6;
 }
 
-/* Compact tappable cards — Clinical Source, Clinical considerations, Key/All measurements. No
-   native <details> marker; a small custom chevron rotates on open instead, and the whole row is
-   the tap target. */
-.rx-summary-compact {
-  margin: 10px 4px 0;
-  border-radius: var(--rx-radius-sm);
-  background: var(--rx-muted-bg);
-  overflow: hidden;
-}
-
-.rx-summary-compact-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 13px 15px;
-  background: none;
-  border: none;
-  font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--rx-text-secondary);
-  cursor: pointer;
-  text-align: left;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.rx-summary-compact-trigger:active {
-  background: var(--rx-border);
-}
-
-.rx-summary-compact-chevron {
-  flex: none;
-  color: var(--rx-text-tertiary);
-  transition: transform 0.15s ease;
-}
-
-.rx-summary-compact-chevron-open {
-  transform: rotate(180deg);
-}
-
-.rx-summary-compact-content {
-  padding: 0 15px 15px;
-}
-
-.rx-summary-compact-content ul {
-  margin: 0;
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.rx-summary-compact-content li {
-  font-size: 14px;
-  color: var(--rx-text-secondary);
-  line-height: 1.6;
-}
+/* Base .rx-summary-compact card styles live in components/CompactCard.css (shared with
+   Final Rx). Only page-specific overrides for Binocular Summary's use of it stay here. */
 
 .rx-summary-source-text {
   margin: 0;

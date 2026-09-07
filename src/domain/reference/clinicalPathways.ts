@@ -104,10 +104,28 @@ export interface QuestionStep {
   shortLabel?: string;
   /** Short framing line shown above the question, e.g. exam-technique instructions. */
   instruction?: string;
+  /**
+   * Renders a calm, non-alarming CautionBox above the question — for a clinical distinction
+   * that needs explaining right at the decision point, instead of a separate Continue-only
+   * screen the clinician has to tap through with nothing to decide (see Strabismus's
+   * 'incomitant-warning', which folds the old passive 'gaze-caution' screen into this same
+   * question step).
+   */
+  caution?: { title: string; message: string };
+  /**
+   * When `recordedFindings[key]` already equals one of `values`, this step is skipped
+   * transparently (no history entry — same pattern as the Quick Screen -> Full Assessment
+   * skip in PathwayWizard) and the flow jumps straight to `next`. Use this to reuse an
+   * already-known answer instead of asking the clinician again (e.g. Strabismus's
+   * 'symptom-check' skips straight to 'best-correction' once diplopia is already established).
+   */
+  skipWhen?: { key: string; values: string[]; next: string };
   /** Show the currently recorded proposed PrismMeasurement above the question (e.g. at the trial step). */
   showMeasurement?: boolean;
   /** Show the currently recorded best-correction Rx above the question (e.g. at the trial step). */
   showBestCorrection?: boolean;
+  /** Show the currently recorded existing/prior prism above the question, as context (e.g. "Currently wearing: 3Δ BI OD") — never the same state slot as the proposed/trial prism, see PrismMeasurement and MeasurementStep.target. */
+  showExistingPrism?: boolean;
   /** Test(s) relevant to this question, if any (e.g. the cover test itself) — shown as reference chip(s) before the choices. */
   testIds?: string[];
   /** Label above testIds, e.g. "Additional tests (optional)" — omit for a primary "perform this now" chip. */
@@ -120,7 +138,7 @@ export interface MeasurementStep {
   kind: 'measurement';
   id: string;
   question: string;
-  /** 'proposed' (default) feeds the shared Trial step; 'existing' is a one-off record that doesn't. */
+  /** 'proposed' (default) feeds the shared Trial step and PathwayWizard's `measurement` state; 'existing' persists separately into `existingPrism` (its own state slot, shown as context via `showExistingPrism`) — the two are never conflated, and measuring a new proposed prism never overwrites an existing one. */
   target?: 'proposed' | 'existing';
   /** Cross-check this measurement against an earlier recorded finding (see consistencyChecks.ts) before continuing. */
   consistencyCheck?: { findingKey: string; recheckStepId: string };
@@ -239,11 +257,13 @@ export interface BinocularSummaryStep {
   id: string;
 }
 
-/** The patient's best refractive correction (SPH/CYL/AXIS per eye) — see BestCorrection. */
+/** The refractive correction used for binocular testing and the prism trial (SPH/CYL/AXIS per eye) — see BestCorrection. */
 export interface RxEntryStep {
   kind: 'rx-entry';
   id: string;
   question: string;
+  /** Short clarifying note shown under the question — e.g. that this is the correction used for testing, not necessarily the patient's current spectacle Rx or the eventual prescribed Rx. */
+  helperText?: string;
   /** Id of the step to continue to once submitted. */
   next: string;
 }
@@ -254,12 +274,34 @@ export interface FinalRxStep {
   id: string;
 }
 
+/**
+ * Always terminal: an unsuccessful/incomplete prism trial — relief was partial or absent, so
+ * the clinician finished the assessment without a finalized prescription. Never shows a
+ * per-eye prescribing split (that's Final Rx's job, reached only via a successful trial) —
+ * only what was actually recorded: Best Correction and the prism as-trialled per eye.
+ */
+export interface PrismUnsuccessfulStep {
+  kind: 'prism-unsuccessful';
+  id: string;
+  /** Big headline in the primary result card, e.g. "Trial prism provided partial relief". */
+  title: string;
+  /** One-line statement of what happened, shown under the headline. Never repeated or paraphrased inside `guidance` below — the outcome belongs in the primary card only. */
+  message: string;
+  /**
+   * Next-step clinical considerations for persistent diplopia, shown as a bullet list in the
+   * closed-by-default "Clinical Considerations" disclosure — what to do about the outcome, never
+   * a restatement of the outcome itself (that's `message`'s job, in the primary card).
+   */
+  guidance: string[];
+}
+
 export type DecisionStep =
   | QuestionStep
   | MeasurementStep
   | TextEntryStep
   | RxEntryStep
   | FinalRxStep
+  | PrismUnsuccessfulStep
   | SymptomSelectStep
   | QuickScreenResultStep
   | OptionalTestsMenuStep
@@ -298,16 +340,31 @@ export const PRISM_DISTRIBUTION_NOTES: string[] = [
 ];
 
 /**
+ * Next-step considerations for persistent diplopia after an unsuccessful/incomplete prism
+ * trial — what to do about it, never a restatement of the trial outcome itself (that's each
+ * PrismUnsuccessfulStep's own `message`, shown separately in the primary result card). Shared
+ * verbatim between the partial-relief and no-improvement endpoints, since the follow-up workup
+ * is the same regardless of how much relief the trial gave.
+ */
+export const PERSISTENT_DIPLOPIA_CONSIDERATIONS: string[] = [
+  'Reassess ocular alignment and motility, including comitancy.',
+  'Consider other ocular, sensory/binocular, or torsional factors contributing to persistent diplopia.',
+  'Consider further ophthalmic or neuro-ophthalmic evaluation when clinically indicated. Follow the urgent-referral pathway if red flags are present.',
+];
+
+/**
  * Measure -> Trial Prism -> Final Rx, shared verbatim by every pathway that reaches a point
  * where a measured deviation needs trialling before prescribing. Appended to the end of a
  * node's `steps` array; whatever leads into it should set its outcome's `next` to
  * 'best-correction'.
  */
-const sharedPrismSteps: DecisionStep[] = [
+/** Exported for integration tests that exercise the trial-prism flow directly without re-walking Diplopia's/Strabismus's full history/exam question tree. */
+export const sharedPrismSteps: DecisionStep[] = [
   {
     kind: 'rx-entry',
     id: 'best-correction',
-    question: "Patient's best correction",
+    question: 'Best Refractive Correction',
+    helperText: 'Enter the refractive correction used for binocular testing and prism trial.',
     next: 'measure',
   },
   {
@@ -333,22 +390,47 @@ const sharedPrismSteps: DecisionStep[] = [
     instruction: 'Place the proposed prism in a trial frame together with the patient’s best correction.',
     showMeasurement: true,
     showBestCorrection: true,
+    showExistingPrism: true,
     outcomes: [
       {
         label: 'Single comfortable vision',
         action: '',
         next: 'final-rx',
       },
-      { label: 'Improved but not fully comfortable', action: '', next: 'record-measurement' },
-      {
-        label: 'No meaningful improvement',
-        action: 'Prism trial unsuccessful — reassess / further assessment as appropriate.',
-      },
+      { label: 'Improved but not fully comfortable', action: '', next: 'trial-partial-choice' },
+      { label: 'No meaningful improvement', action: '', next: 'prism-no-improvement' },
+    ],
+  },
+  // "Improved but not fully comfortable" no longer auto-routes back to remeasuring — partial
+  // relief doesn't always warrant another trial, and forcing one took that call away from the
+  // clinician. This step hands the decision back explicitly instead.
+  {
+    kind: 'question',
+    id: 'trial-partial-choice',
+    shortLabel: 'Partial improvement',
+    question: 'Trial prism gave partial but incomplete symptom relief. What would you like to do?',
+    outcomes: [
+      { label: 'Reassess / adjust trial prism', action: '', next: 'record-measurement' },
+      { label: 'Finish assessment', action: '', next: 'prism-partial-relief' },
     ],
   },
   {
     kind: 'final-rx',
     id: 'final-rx',
+  },
+  {
+    kind: 'prism-unsuccessful',
+    id: 'prism-partial-relief',
+    title: 'Trial prism provided partial relief',
+    message: 'Trial prism improved symptoms but did not provide comfortable single vision.',
+    guidance: PERSISTENT_DIPLOPIA_CONSIDERATIONS,
+  },
+  {
+    kind: 'prism-unsuccessful',
+    id: 'prism-no-improvement',
+    title: 'Trial prism did not provide meaningful benefit',
+    message: 'Trial prism did not improve symptoms or provide comfortable single vision.',
+    guidance: PERSISTENT_DIPLOPIA_CONSIDERATIONS,
   },
 ];
 
@@ -578,10 +660,12 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         shortLabel: 'Onset',
         question: 'New/recent or long-standing?',
         outcomes: [
-          { label: 'New/recent', action: '', next: 'diplopia-check-new' },
-          { label: 'Long-standing', action: '', next: 'diplopia-check-longstanding' },
+          { label: 'New/recent', action: '', next: 'diplopia-check-new', recordAs: { key: 'onset', value: 'new' } },
+          { label: 'Long-standing', action: '', next: 'diplopia-check-longstanding', recordAs: { key: 'onset', value: 'longstanding' } },
         ],
       },
+      // Diplopia status is tagged here (recordAs: diplopiaHistory) so it can be reused later —
+      // see 'symptom-check' below, which no longer re-asks this from scratch.
       {
         kind: 'question',
         id: 'diplopia-check-new',
@@ -593,14 +677,16 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
             action: '',
             redFlag: 'New/recent strabismus with diplopia — consider urgent medical/neuro-ophthalmic assessment.',
             next: 'va',
+            recordAs: { key: 'diplopiaHistory', value: 'yes' },
           },
           {
             label: 'Sometimes',
             action: '',
             redFlag: 'New/recent strabismus with diplopia — consider urgent medical/neuro-ophthalmic assessment.',
             next: 'va',
+            recordAs: { key: 'diplopiaHistory', value: 'sometimes' },
           },
-          { label: 'No', action: '', next: 'va' },
+          { label: 'No', action: '', next: 'va', recordAs: { key: 'diplopiaHistory', value: 'no' } },
         ],
       },
       {
@@ -609,11 +695,14 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         shortLabel: 'Diplopia?',
         question: 'Diplopia?',
         outcomes: [
-          { label: 'Yes', action: '', next: 'va' },
-          { label: 'Sometimes', action: '', next: 'va' },
-          { label: 'No', action: '', next: 'va' },
+          { label: 'Yes', action: '', next: 'va', recordAs: { key: 'diplopiaHistory', value: 'yes' } },
+          { label: 'Sometimes', action: '', next: 'va', recordAs: { key: 'diplopiaHistory', value: 'sometimes' } },
+          { label: 'No', action: '', next: 'va', recordAs: { key: 'diplopiaHistory', value: 'no' } },
         ],
       },
+      // Best-corrected VA — a Snellen/notation acuity check, intentionally distinct from the
+      // actual refractive correction entered later at 'best-correction' (renamed "Best
+      // Refractive Correction" precisely so the two don't read as the same question asked twice).
       {
         kind: 'text-entry',
         id: 'va',
@@ -631,9 +720,9 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         shortLabel: 'Which eye deviates',
         question: 'Which eye deviates?',
         outcomes: [
-          { label: 'OD', action: '', next: 'prior-prism' },
-          { label: 'OS', action: '', next: 'prior-prism' },
-          { label: 'Alternating', action: '', next: 'prior-prism' },
+          { label: 'OD', action: '', next: 'prior-prism', recordAs: { key: 'deviatingEye', value: 'OD' } },
+          { label: 'OS', action: '', next: 'prior-prism', recordAs: { key: 'deviatingEye', value: 'OS' } },
+          { label: 'Alternating', action: '', next: 'prior-prism', recordAs: { key: 'deviatingEye', value: 'alternating' } },
         ],
       },
       {
@@ -646,6 +735,9 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
           { label: 'No', action: '', next: 'cover-test' },
         ],
       },
+      // target: 'existing' persists into its own `existingPrism` state slot (see
+      // MeasurementStep.target) — separate from the proposed/trial prism measured later at
+      // 'record-measurement', and shown as context on the Trial step (showExistingPrism).
       {
         kind: 'measurement',
         id: 'prior-prism-measurement',
@@ -659,8 +751,8 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         shortLabel: 'Comfortable?',
         question: 'Comfortable with the current prism?',
         outcomes: [
-          { label: 'Yes', action: '', next: 'cover-test' },
-          { label: 'No', action: '', next: 'cover-test' },
+          { label: 'Yes', action: '', next: 'cover-test', recordAs: { key: 'priorPrismComfort', value: 'yes' } },
+          { label: 'No', action: '', next: 'cover-test', recordAs: { key: 'priorPrismComfort', value: 'no' } },
         ],
       },
 
@@ -675,15 +767,17 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         outcomes: [
           { label: 'Eso', action: '', next: 'gaze-dependence', recordAs: { key: 'horizontalDirection', value: 'eso' } },
           { label: 'Exo', action: '', next: 'gaze-dependence', recordAs: { key: 'horizontalDirection', value: 'exo' } },
-          { label: 'Vertical', action: '', next: 'gaze-dependence' },
-          { label: 'Combined', action: '', next: 'gaze-dependence' },
+          { label: 'Vertical', action: '', next: 'gaze-dependence', recordAs: { key: 'horizontalDirection', value: 'vertical' } },
+          { label: 'Combined', action: '', next: 'gaze-dependence', recordAs: { key: 'horizontalDirection', value: 'combined' } },
           {
             label: 'No clear deviation',
             action: 'Deviation not clearly demonstrated today — reassess when manifest/symptomatic as appropriate.',
+            recordAs: { key: 'horizontalDirection', value: 'no-clear-deviation' },
           },
           {
             label: 'Not sure',
             action: 'Deviation not clearly demonstrated today — reassess when manifest/symptomatic as appropriate.',
+            recordAs: { key: 'horizontalDirection', value: 'not-sure' },
           },
         ],
       },
@@ -693,8 +787,22 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         shortLabel: 'Gaze-dependent?',
         question: 'Does the deviation change with gaze direction?',
         outcomes: [
-          { label: 'Yes', secondaryLabel: 'incomitant', infoTerm: 'incomitant', action: '', next: 'gaze-caution' },
-          { label: 'No', secondaryLabel: 'comitant', infoTerm: 'comitant', action: '', next: 'sensory-check' },
+          {
+            label: 'Yes',
+            secondaryLabel: 'incomitant',
+            infoTerm: 'incomitant',
+            action: '',
+            next: 'incomitant-warning',
+            recordAs: { key: 'gazeDependence', value: 'incomitant' },
+          },
+          {
+            label: 'No',
+            secondaryLabel: 'comitant',
+            infoTerm: 'comitant',
+            action: '',
+            next: 'sensory-check',
+            recordAs: { key: 'gazeDependence', value: 'comitant' },
+          },
           { label: 'Not sure', action: '', next: 'gaze-instruction' },
         ],
       },
@@ -705,15 +813,36 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         question: 'Compare alignment in primary, right, left, up and down gaze.',
         outcomes: [{ label: 'Continue', action: '', next: 'gaze-dependence' }],
       },
+      // Replaces the old passive Continue-only 'gaze-caution' screen: the warning is now inline
+      // (via `caution`) on the same step where the clinician actually makes a decision, instead
+      // of a separate no-data tap-through. Never auto-diagnoses the cause of incomitancy and
+      // never forces a referral — "Finish / further evaluation" states a general recommendation
+      // only; existing red-flag logic (e.g. at diplopia-check-new) still takes priority whenever
+      // it applies, unaffected by this step.
       {
         kind: 'question',
-        id: 'gaze-caution',
-        shortLabel: 'Gaze-dependent noted',
-        question:
-          "One fixed prism may not work equally well in every gaze position. Trial for the patient's relevant functional viewing position (e.g. primary gaze), and verify comfort/single vision before prescribing.",
+        id: 'incomitant-warning',
+        shortLabel: 'Incomitant deviation',
+        caution: {
+          title: 'Incomitant deviation',
+          message: 'The deviation varies with gaze direction — a single fixed prism may not provide comfortable single vision in every gaze position.',
+        },
+        question: 'How would you like to proceed?',
         testIds: ['double-maddox-rod'],
         testIdsLabel: 'Additional tests (optional)',
-        outcomes: [{ label: 'Continue', action: '', next: 'sensory-check' }],
+        outcomes: [
+          {
+            label: 'Continue prism trial',
+            action: '',
+            next: 'sensory-check',
+            hint: 'Trial for the primary or clinically relevant gaze position, and verify comfort/single vision there before prescribing.',
+          },
+          {
+            label: 'Finish / further evaluation',
+            action: 'Consider further evaluation of ocular motility and the underlying cause of incomitancy, based on the clinical findings.',
+            hint: 'Ends the assessment without forcing a prism trial.',
+          },
+        ],
       },
 
       // SENSORY
@@ -725,23 +854,29 @@ export const clinicalPathways: ClinicalPathwayNode[] = [
         instruction: 'Check sensory status.',
         testIds: ['worth-4-dot'],
         outcomes: [
-          { label: 'Fusion', action: '', next: 'symptom-check' },
-          { label: 'Suppression OD', action: '', next: 'symptom-check' },
-          { label: 'Suppression OS', action: '', next: 'symptom-check' },
-          { label: 'Diplopia', action: '', next: 'symptom-check' },
+          { label: 'Fusion', action: '', next: 'symptom-check', recordAs: { key: 'sensoryFinding', value: 'fusion' } },
+          { label: 'Suppression OD', action: '', next: 'symptom-check', recordAs: { key: 'sensoryFinding', value: 'suppression-od' } },
+          { label: 'Suppression OS', action: '', next: 'symptom-check', recordAs: { key: 'sensoryFinding', value: 'suppression-os' } },
+          { label: 'Diplopia', action: '', next: 'symptom-check', recordAs: { key: 'sensoryFinding', value: 'diplopia' } },
+          { label: 'Skip', action: '', next: 'symptom-check' },
         ],
       },
+      // Only reached when diplopia was NOT already established at intake (diplopiaHistory:
+      // 'no') — skipWhen bypasses this transparently, reusing the known 'yes'/'sometimes'
+      // answer instead of asking "does the patient have diplopia" a second time. The wording
+      // is deliberately different from the intake question: this asks whether *testing*
+      // elicited diplopia, not whether the patient has diplopia in general.
       {
         kind: 'question',
         id: 'symptom-check',
-        shortLabel: 'Diplopia now?',
-        question: 'Does the patient currently experience diplopia?',
+        shortLabel: 'Diplopia on testing?',
+        question: 'Diplopia was not reported at intake — has testing elicited or revealed diplopia (e.g. on cover test or sensory testing)?',
+        skipWhen: { key: 'diplopiaHistory', values: ['yes', 'sometimes'], next: 'best-correction' },
         outcomes: [
           { label: 'Yes', action: '', next: 'best-correction' },
-          { label: 'Sometimes', action: '', next: 'best-correction' },
           {
             label: 'No',
-            action: 'No current diplopia — prism is not indicated based on sensory testing alone. Continue routine management; reassess if symptoms change.',
+            action: 'No diplopia reported or elicited — prism is not indicated based on findings so far. Continue routine management; reassess if symptoms change.',
           },
         ],
       },

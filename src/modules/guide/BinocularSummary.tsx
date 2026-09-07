@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDownIcon, InfoIcon } from '../../components/icons';
+import CompactCard from '../../components/CompactCard';
+import { InfoIcon } from '../../components/icons';
 import { getManagementConsiderations, type ManagementConsiderations } from '../../domain/reference/binocularManagement';
 import { parseBinocularFindings, type MemNottFinding, type ParsedBinocularData, type Phoria, type VergencePair } from '../../domain/reference/binocularFindings';
 import { evaluateBinocularPatterns, hasCoreBinocularData, type PatternMatch } from '../../domain/reference/binocularPatterns';
@@ -108,24 +108,6 @@ function buildAllRows(data: ParsedBinocularData, nearSheard: SheardResult, dista
 function articleFor(label: string): string {
   return /^[aeiou]/i.test(label) ? 'an' : 'a';
 }
-
-/**
- * A small, compact, tappable row that expands its content on click — no native <details> marker.
- * Used for every piece of optional/secondary detail (source, management, measurements) so the
- * primary result and its supporting findings stay the visual focus of the screen.
- */
-const CompactCard: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="rx-summary-compact">
-      <button type="button" className="rx-summary-compact-trigger" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span>{label}</span>
-        <ChevronDownIcon size={14} className={open ? 'rx-summary-compact-chevron rx-summary-compact-chevron-open' : 'rx-summary-compact-chevron'} />
-      </button>
-      {open && <div className="rx-summary-compact-content">{children}</div>}
-    </div>
-  );
-};
 
 /**
  * One pattern's full block: the large primary result card (suggestion + compact disclaimer),

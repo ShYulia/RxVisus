@@ -1,0 +1,60 @@
+/* Compact tappable card — secondary/supporting detail collapsed by default. No native
+   <details> marker; a small custom chevron rotates on open instead, and the whole row is
+   the tap target. */
+.rx-summary-compact {
+  margin: 10px 4px 0;
+  border-radius: var(--rx-radius-sm);
+  background: var(--rx-muted-bg);
+  overflow: hidden;
+}
+
+.rx-summary-compact-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 15px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--rx-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rx-summary-compact-trigger:active {
+  background: var(--rx-border);
+}
+
+.rx-summary-compact-chevron {
+  flex: none;
+  color: var(--rx-text-tertiary);
+  transition: transform 0.15s ease;
+}
+
+.rx-summary-compact-chevron-open {
+  transform: rotate(180deg);
+}
+
+.rx-summary-compact-content {
+  padding: 0 15px 15px;
+}
+
+.rx-summary-compact-content ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rx-summary-compact-content li {
+  font-size: 14px;
+  color: var(--rx-text-secondary);
+  line-height: 1.6;
+}

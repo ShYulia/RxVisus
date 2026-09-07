@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EXCEEDS_RANGE_VALUE } from './binocularFindings';
-import { clinicalPathways, getPathwayNode, type TextEntryField } from './clinicalPathways';
+import { clinicalPathways, getPathwayNode, PERSISTENT_DIPLOPIA_CONSIDERATIONS, type TextEntryField } from './clinicalPathways';
 import { getClinicalTest } from './clinicalTests';
 import { getGlossaryTerm } from './glossary';
 
@@ -98,7 +98,10 @@ describe('clinicalPathways referential integrity', () => {
           }
           continue;
         }
-        if (step.kind === 'final-rx' || step.kind === 'binocular-summary') continue;
+        if (step.kind === 'final-rx' || step.kind === 'binocular-summary' || step.kind === 'prism-unsuccessful') continue;
+        if (step.skipWhen) {
+          expect(stepIds.has(step.skipWhen.next), `${node.id} -> step "${step.id}" -> skipWhen.next "${step.skipWhen.next}"`).toBe(true);
+        }
         for (const outcome of step.outcomes) {
           if (outcome.next) {
             expect(stepIds.has(outcome.next), `${node.id} -> step "${step.id}" -> outcome "${outcome.label}" -> next "${outcome.next}"`).toBe(true);
@@ -170,6 +173,18 @@ describe('clinicalPathways referential integrity', () => {
       for (const step of node.steps ?? []) {
         if (step.kind !== 'measurement' || !step.consistencyCheck) continue;
         expect(recordedKeys.has(step.consistencyCheck.findingKey), `${node.id} -> step "${step.id}" -> consistencyCheck.findingKey "${step.consistencyCheck.findingKey}" has no recordAs producer`).toBe(true);
+      }
+    }
+  });
+
+  it('every question step\'s skipWhen.key has a matching recordAs producer in the same node — an already-known finding must actually be recordable, or the skip could never fire', () => {
+    for (const node of clinicalPathways) {
+      const recordedKeys = new Set(
+        (node.steps ?? []).flatMap((step) => (step.kind === 'question' ? step.outcomes.flatMap((o) => (o.recordAs ? [o.recordAs.key] : [])) : [])),
+      );
+      for (const step of node.steps ?? []) {
+        if (step.kind !== 'question' || !step.skipWhen) continue;
+        expect(recordedKeys.has(step.skipWhen.key), `${node.id} -> step "${step.id}" -> skipWhen.key "${step.skipWhen.key}" has no recordAs producer`).toBe(true);
       }
     }
   });
@@ -254,6 +269,16 @@ describe('clinicalPathways referential integrity', () => {
         expect(node.steps).toBeUndefined();
       } else {
         expect(node.children).toBeUndefined();
+      }
+    }
+  });
+
+  it('every prism-unsuccessful step shares the same concise, 3-point Clinical Considerations list — kept short on purpose for a final result screen', () => {
+    expect(PERSISTENT_DIPLOPIA_CONSIDERATIONS).toHaveLength(3);
+    for (const node of clinicalPathways) {
+      for (const step of node.steps ?? []) {
+        if (step.kind !== 'prism-unsuccessful') continue;
+        expect(step.guidance, `${node.id} -> step "${step.id}" -> guidance`).toBe(PERSISTENT_DIPLOPIA_CONSIDERATIONS);
       }
     }
   });

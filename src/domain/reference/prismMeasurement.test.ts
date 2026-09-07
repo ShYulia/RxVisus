@@ -7,15 +7,15 @@ describe('isMeasurementEmpty', () => {
   });
 
   it('is false when either component is set', () => {
-    expect(isMeasurementEmpty({ horizontal: { amount: 6, base: 'BO' } })).toBe(false);
+    expect(isMeasurementEmpty({ horizontal: { amount: 6, base: 'BO', eye: 'OD' } })).toBe(false);
     expect(isMeasurementEmpty({ vertical: { amount: 2, base: 'BU', eye: 'OD' } })).toBe(false);
   });
 });
 
 describe('formatPrismMeasurement', () => {
-  it('formats a horizontal-only measurement', () => {
-    const m: PrismMeasurement = { horizontal: { amount: 6, base: 'BO' } };
-    expect(formatPrismMeasurement(m)).toBe('6.00Δ BO');
+  it('formats a horizontal-only measurement with eye', () => {
+    const m: PrismMeasurement = { horizontal: { amount: 6, base: 'BO', eye: 'OD' } };
+    expect(formatPrismMeasurement(m)).toBe('6.00Δ BO OD');
   });
 
   it('formats a vertical-only measurement with eye', () => {
@@ -24,8 +24,8 @@ describe('formatPrismMeasurement', () => {
   });
 
   it('formats a combined horizontal + vertical measurement', () => {
-    const m: PrismMeasurement = { horizontal: { amount: 6, base: 'BO' }, vertical: { amount: 2, base: 'BD', eye: 'OS' } };
-    expect(formatPrismMeasurement(m)).toBe('6.00Δ BO / 2.00Δ BD OS');
+    const m: PrismMeasurement = { horizontal: { amount: 6, base: 'BO', eye: 'OD' }, vertical: { amount: 2, base: 'BD', eye: 'OS' } };
+    expect(formatPrismMeasurement(m)).toBe('6.00Δ BO OD / 2.00Δ BD OS');
   });
 
   it('returns an empty string for an empty measurement', () => {
@@ -34,8 +34,8 @@ describe('formatPrismMeasurement', () => {
 });
 
 describe('splitPrismEqually', () => {
-  it('splits horizontal evenly with the same base in both eyes', () => {
-    const result = splitPrismEqually({ horizontal: { amount: 6, base: 'BO' } });
+  it('splits horizontal evenly with the same base in both eyes, regardless of the recorded eye', () => {
+    const result = splitPrismEqually({ horizontal: { amount: 6, base: 'BO', eye: 'OD' } });
     expect(result.od.horizontal).toEqual({ amount: 3, base: 'BO' });
     expect(result.os.horizontal).toEqual({ amount: 3, base: 'BO' });
   });
@@ -54,13 +54,13 @@ describe('splitPrismEqually', () => {
   });
 
   it('splits a combined horizontal + vertical measurement independently', () => {
-    const result = splitPrismEqually({ horizontal: { amount: 6, base: 'BO' }, vertical: { amount: 6, base: 'BU', eye: 'OS' } });
+    const result = splitPrismEqually({ horizontal: { amount: 6, base: 'BO', eye: 'OD' }, vertical: { amount: 6, base: 'BU', eye: 'OS' } });
     expect(result.od).toEqual({ horizontal: { amount: 3, base: 'BO' }, vertical: { amount: 3, base: 'BD' } });
     expect(result.os).toEqual({ horizontal: { amount: 3, base: 'BO' }, vertical: { amount: 3, base: 'BU' } });
   });
 
   it('omits a component from both eyes when not measured', () => {
-    const result = splitPrismEqually({ horizontal: { amount: 6, base: 'BI' } });
+    const result = splitPrismEqually({ horizontal: { amount: 6, base: 'BI', eye: 'OS' } });
     expect(result.od.vertical).toBeUndefined();
     expect(result.os.vertical).toBeUndefined();
   });
