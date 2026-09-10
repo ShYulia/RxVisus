@@ -7,6 +7,11 @@
   flex: 1;
   min-width: 0;
   height: 100%;
+  /* Without this, ion-router-outlet's internal position:absolute;inset:0
+     resolves against ion-app (full viewport) instead of this flex item,
+     painting page content over the SideRail at >=768px widths — including
+     phone landscape, where CSS width crosses that breakpoint. */
+  position: relative;
 }
 
 .rx-hint {
