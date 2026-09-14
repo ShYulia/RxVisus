@@ -92,3 +92,23 @@ export function mapToAvailability(rx: Prescription, profile: ToricAvailabilityPr
     axis: roundAxisCircular(rx.axis, profile.axisIncrementDeg),
   };
 }
+
+/**
+ * True when the exact cylinder's magnitude exceeds the largest cylinder the profile stocks —
+ * an availability CONSTRAINT, distinct from ordinary step-rounding. `mapToAvailability`
+ * doesn't extrapolate a stock cylinder beyond the profile's largest configured value; it
+ * clamps to that largest value instead (see its own doc comment), so the stock recommendation
+ * genuinely differs from the exact result in a way normal rounding never would. Use this to
+ * decide whether to show an "outside common stock range" note — it's the reason such a note
+ * is warranted, not merely that stock rounded the exact value to a nearby step.
+ *
+ * Deliberately one-directional: a cylinder below the smallest configured value is NOT flagged
+ * here. That case substitutes a simpler spherical recommendation — a normal, common clinical
+ * simplification for a small amount of astigmatism, not a supply gap that would call for
+ * considering a custom lens.
+ */
+export function exceedsCommonStockCylinderRange(cylinder: number, profile: ToricAvailabilityProfile): boolean {
+  if (cylinder === 0) return false;
+  const largestAvailableCylinderMagnitude = Math.max(...profile.availableCylindersD.map((c) => Math.abs(c)));
+  return Math.abs(cylinder) - largestAvailableCylinderMagnitude > TIE_EPSILON;
+}

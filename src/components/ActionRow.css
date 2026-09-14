@@ -61,3 +61,34 @@
 .rx-action-row ion-button {
   flex: 1;
 }
+
+/*
+ * Compact secondary-action treatment for a copy button tied directly to one result value
+ * (e.g. inside .rx-result-value-row) — sized to its label, not a full-width primary CTA like
+ * .rx-btn-solid. Same color/disabled language as .rx-btn-solid, just smaller.
+ */
+.rx-btn-compact {
+  margin: 0;
+  --border-radius: var(--rx-radius-sm);
+  --box-shadow: none;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --color: #ffffff;
+  --background: var(--rx-iris);
+  --background-hover: var(--rx-iris-deep);
+  --background-activated: var(--rx-iris-deep);
+  font-family: var(--rx-font-sans);
+  font-weight: 600;
+  font-size: 12.5px;
+  text-transform: none;
+  letter-spacing: 0;
+  height: 34px;
+}
+
+.rx-btn-compact[disabled] {
+  opacity: 1;
+  cursor: default;
+  --background: var(--rx-muted-bg);
+  --color: var(--rx-text-tertiary);
+  --box-shadow: none;
+}

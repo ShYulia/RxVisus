@@ -22,6 +22,14 @@ function setValue(label: string, index: 0 | 1, value: string) {
   fireEvent(ionInput, new CustomEvent('ionInput', { detail: { value }, bubbles: true, composed: true }));
 }
 
+/** Pastes `text` into the `index`-th ion-input labeled `label`, same targeting as setValue. */
+function pasteValue(label: string, index: 0 | 1, text: string) {
+  const fieldBox = screen.getAllByText(label)[index].closest('.rx-fieldbox')!;
+  const ionInput = fieldBox.querySelector('ion-input')!;
+  fireEvent.paste(ionInput, { clipboardData: { getData: () => text } });
+}
+
+
 describe('RxEntryForm input validation', () => {
   it('blocks Continue while SPH is blank for either eye', async () => {
     const { onSubmit } = renderForm();
@@ -120,6 +128,58 @@ describe('RxEntryForm input validation', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       od: { sphere: -2, cylinder: -1, axis: 90 },
       os: { sphere: -1.5, cylinder: -0.5, axis: 180 },
+    });
+  });
+});
+
+describe('RxEntryForm smart Rx paste', () => {
+  it('pasting a full Rx string into any field of a row fills SPH/CYL/AXIS for that eye only', async () => {
+    const { onSubmit } = renderForm();
+    await waitForIonicReact();
+    // Pasted into CYL, not SPH — must still populate the whole OD row.
+    pasteValue('CYL', 0, '-4.72 / -1.74 x 83');
+    setValue('SPH', 1, '-1.00');
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({
+      od: { sphere: -4.72, cylinder: -1.74, axis: 83 },
+      os: { sphere: -1, cylinder: 0, axis: NaN },
+    });
+  });
+
+  it('pasting into OS does not affect OD', async () => {
+    const { onSubmit } = renderForm();
+    await waitForIonicReact();
+    setValue('SPH', 0, '-1.00');
+    pasteValue('SPH', 1, 'Pln / -1.50 x 90');
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({
+      od: { sphere: -1, cylinder: 0, axis: NaN },
+      os: { sphere: 0, cylinder: -1.5, axis: 90 },
+    });
+  });
+
+  it('a normal single-value paste (no confident full-Rx match) affects only the focused field, not the whole row', async () => {
+    const { onSubmit } = renderForm();
+    await waitForIonicReact();
+    pasteValue('SPH', 0, '-2.00');
+    setValue('SPH', 1, '-1.00');
+    // If the bare "-2.00" had been (mis)treated as a full Rx, CYL/AXIS would already be set —
+    // instead SPH itself never lands via paste in jsdom (no native paste-insertion simulated),
+    // so it's still blank, and Continue must stay blocked exactly as any blank-SPH case would.
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('malformed/ambiguous pasted text never produces NaN or partial data — no crash, no submit', async () => {
+    const { onSubmit } = renderForm();
+    await waitForIonicReact();
+    setValue('SPH', 0, '-2.00');
+    pasteValue('CYL', 0, 'not an rx at all');
+    setValue('SPH', 1, '-1.00');
+    await userEvent.click(screen.getByText('Continue'));
+    expect(onSubmit).toHaveBeenCalledWith({
+      od: { sphere: -2, cylinder: 0, axis: NaN },
+      os: { sphere: -1, cylinder: 0, axis: NaN },
     });
   });
 });

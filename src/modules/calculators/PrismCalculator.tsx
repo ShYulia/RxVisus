@@ -28,6 +28,7 @@ import CautionBox from '../../components/CautionBox';
 import Disclosure from '../../components/Disclosure';
 import ActionRow from '../../components/ActionRow';
 import SegmentedControl from '../../components/SegmentedControl';
+import { handleRxRowPaste } from './rxRowPaste';
 
 const MODE_OPTIONS = [
   { value: 'induced', label: 'Induced Prism' },
@@ -85,7 +86,16 @@ const EyeRxFields: React.FC<{
   return (
     <>
       <p className="rx-section-label">{label} Rx (minus cylinder)</p>
-      <FieldBoxGrid columns={3}>
+      <FieldBoxGrid
+        columns={3}
+        onPaste={(e) =>
+          handleRxRowPaste(e, (fields) => {
+            eye.setSphereStr(fields.sphere);
+            eye.setCylinderStr(fields.cylinder);
+            eye.setAxisStr(fields.axis);
+          })
+        }
+      >
         <FieldBox
           label="SPH"
           placeholder="0.00"

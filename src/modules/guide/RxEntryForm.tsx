@@ -4,6 +4,7 @@ import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import type { Prescription } from '../../domain/calculators/transposition';
 import type { BestCorrection } from '../../domain/reference/prismMeasurement';
 import { parseSphereInput } from '../calculators/formatDiopter';
+import { handleRxRowPaste } from '../calculators/rxRowPaste';
 
 export interface RxEntryFormProps {
   initialValue?: BestCorrection | null;
@@ -63,7 +64,14 @@ const EyeRxFields: React.FC<{ label: string; value: EyeFieldState; parsed: EyePa
 }) => (
   <>
     <p className="rx-list-section-label">{label}</p>
-    <FieldBoxGrid columns={3}>
+    <FieldBoxGrid
+      columns={3}
+      onPaste={(e) =>
+        handleRxRowPaste(e, (fields) =>
+          onChange({ sphereStr: fields.sphere, cylinderStr: fields.cylinder, axisStr: fields.axis }),
+        )
+      }
+    >
       <FieldBox
         label="SPH"
         placeholder="0.00"

@@ -5,15 +5,22 @@ import {
   validateVertexDistanceInput,
   type VertexDistanceValidationErrors,
 } from '../../domain/calculators/vertexDistance';
-import { GENERIC_TORIC_AVAILABILITY_PROFILE, mapToAvailability } from '../../domain/calculators/toricAvailability';
-import { formatDiopter, formatRx, formatSphere, parseSphereInput } from './formatDiopter';
+import {
+  GENERIC_TORIC_AVAILABILITY_PROFILE,
+  exceedsCommonStockCylinderRange,
+  mapToAvailability,
+} from '../../domain/calculators/toricAvailability';
+import { formatDiopter, formatRx, formatStockParameters, parseSphereInput } from './formatDiopter';
 import PageHeader from '../../components/PageHeader';
 import FavoriteStarButton from '../../components/FavoriteStarButton';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import CalculatorResult from '../../components/CalculatorResult';
+import CautionBox from '../../components/CautionBox';
 import Disclosure from '../../components/Disclosure';
 import ActionRow from '../../components/ActionRow';
+import CopyButton from '../../components/CopyButton';
 import SegmentedControl from '../../components/SegmentedControl';
+import { handleRxRowPaste } from './rxRowPaste';
 
 const VertexDistanceCalculator: React.FC = () => {
   const [sphereStr, setSphereStr] = useState('');
@@ -43,6 +50,14 @@ const VertexDistanceCalculator: React.FC = () => {
     if (!outcome || !outcome.ok) return null;
     return mapToAvailability(outcome.result.rx, GENERIC_TORIC_AVAILABILITY_PROFILE);
   }, [outcome]);
+
+  // An availability CONSTRAINT (stock has nothing that large), not ordinary step-rounding —
+  // see exceedsCommonStockCylinderRange's doc comment. Drives the "Outside common stock
+  // range" note; never affects the actual calculation.
+  const outsideStockRange =
+    outcome && outcome.ok
+      ? exceedsCommonStockCylinderRange(outcome.result.rx.cylinder, GENERIC_TORIC_AVAILABILITY_PROFILE)
+      : false;
 
   const showFieldError = (field: keyof VertexDistanceValidationErrors, raw: string) =>
     raw.trim() !== '' && Boolean(errors[field]);
@@ -103,7 +118,16 @@ const VertexDistanceCalculator: React.FC = () => {
         <p className="rx-hint">0 mm is the corneal plane — use it for contact lens power.</p>
 
         <p className="rx-section-label">Rx (minus cylinder)</p>
-        <FieldBoxGrid columns={3}>
+        <FieldBoxGrid
+          columns={3}
+          onPaste={(e) =>
+            handleRxRowPaste(e, (fields) => {
+              setSphereStr(fields.sphere);
+              setCylinderStr(fields.cylinder);
+              setAxisStr(fields.axis);
+            })
+          }
+        >
           <FieldBox
             label="SPH"
             placeholder="0.00"
@@ -137,76 +161,53 @@ const VertexDistanceCalculator: React.FC = () => {
         )}
 
         {outcome && outcome.ok && (
-          <CalculatorResult primaryLabel="Exact Optical Conversion" primaryValue={formatRx(outcome.result.rx)}>
-            {availability && availability.cylinderCandidatesD.length === 0 && (
-              <div className="rx-result-panel">
-                <div className="rx-result-panel-label">Nearest Common Stock Parameters</div>
-                <FieldBoxGrid columns={3}>
-                  <div className="rx-fieldbox rx-fieldbox-static">
-                    <span className="rx-fieldbox-label">SPH</span>
-                    <span className="rx-fieldbox-value-static">{formatSphere(availability.sphere)}</span>
-                  </div>
-                </FieldBoxGrid>
-                <p className="rx-result-panel-caption">
-                  {outcome.result.rx.cylinder === 0
-                    ? 'Spherical — no cylinder to map.'
-                    : 'Spherical — vertex-corrected cylinder is below the smallest available toric option; recommendation uses the spherical equivalent.'}
-                </p>
-              </div>
-            )}
-
-            {availability && availability.cylinderCandidatesD.length > 0 && (
-              <div className="rx-result-panel">
-                <div className="rx-result-panel-label">Nearest Common Stock Parameters</div>
-                <FieldBoxGrid columns={3}>
-                  <div className="rx-fieldbox rx-fieldbox-static">
-                    <span className="rx-fieldbox-label">SPH</span>
-                    <span className="rx-fieldbox-value-static">{formatSphere(availability.sphere)}</span>
-                  </div>
-                  <div className="rx-fieldbox rx-fieldbox-static">
-                    <span className="rx-fieldbox-label">CYL</span>
-                    <span className="rx-fieldbox-value-static">
-                      {availability.cylinderCandidatesD.map((c) => formatDiopter(c)).join(' / ')}
-                    </span>
-                  </div>
-                  <div className="rx-fieldbox rx-fieldbox-static">
-                    <span className="rx-fieldbox-label">AXIS</span>
-                    <span className="rx-fieldbox-value-static">
-                      {availability.axis ?? 0}
-                    </span>
-                  </div>
-                </FieldBoxGrid>
-                <p className="rx-result-panel-caption">
-                  Generic toric availability (10&deg; steps)
-                  {availability.cylinderCandidatesD.length > 1 ? ' — two cylinders shown, equally close' : ''}
-                </p>
-              </div>
-            )}
-          </CalculatorResult>
+          <CalculatorResult
+            primaryLabel="Vertex-Corrected Rx"
+            primaryValue={formatRx(outcome.result.rx)}
+            singleLine
+            valueAction={<CopyButton compact label="Copy Corrected Rx" text={formatRx(outcome.result.rx)} />}
+          />
         )}
 
-        {outcome && outcome.ok && (
-          <Disclosure label="Calculation details">
-            <p>
-              Meridian 1 (sphere): {formatDiopter(outcome.result.meridian1.power)} D &rarr;{' '}
-              <strong>{formatDiopter(outcome.result.meridian1.convertedPower)} D</strong>
-            </p>
-            <p>
-              Meridian 2 (sphere + cylinder): {formatDiopter(outcome.result.meridian2.power)} D &rarr;{' '}
-              <strong>{formatDiopter(outcome.result.meridian2.convertedPower)} D</strong>
-            </p>
-          </Disclosure>
+        {outcome && outcome.ok && availability && (
+          <>
+            <CalculatorResult
+              primaryLabel="Common Stock Parameters"
+              primaryValue={formatStockParameters(availability)}
+              singleLine
+              valueAction={<CopyButton compact label="Copy Stock Parameters" text={formatStockParameters(availability)} />}
+            >
+              {outsideStockRange && (
+                <CautionBox className="rx-result-caution">
+                  <p className="rx-caution-text">
+                    <strong>Outside common stock range</strong>
+                  </p>
+                  <p className="rx-caution-text">
+                    Consider custom-made lens options when clinically appropriate. Final lens parameters depend on
+                    lens design, fit, rotation and over-refraction.
+                  </p>
+                </CautionBox>
+              )}
+            </CalculatorResult>
+
+            <Disclosure label="Calculation details">
+              <p>
+                Meridian 1 (sphere): {formatDiopter(outcome.result.meridian1.power)} D &rarr;{' '}
+                <strong>{formatDiopter(outcome.result.meridian1.convertedPower)} D</strong>
+              </p>
+              <p>
+                Meridian 2 (sphere + cylinder): {formatDiopter(outcome.result.meridian2.power)} D &rarr;{' '}
+                <strong>{formatDiopter(outcome.result.meridian2.convertedPower)} D</strong>
+              </p>
+            </Disclosure>
+          </>
         )}
 
         {!outcome && noInputYet && (
           <p className="rx-hint">Enter sphere to convert. Add cylinder and axis only for a toric Rx.</p>
         )}
 
-        <ActionRow
-          onClear={handleClear}
-          showCopy
-          copyText={outcome && outcome.ok ? formatRx(outcome.result.rx) : undefined}
-        />
+        <ActionRow onClear={handleClear} />
       </IonContent>
     </IonPage>
   );

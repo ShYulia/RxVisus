@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GENERIC_TORIC_AVAILABILITY_PROFILE, mapToAvailability } from './toricAvailability';
+import { GENERIC_TORIC_AVAILABILITY_PROFILE, exceedsCommonStockCylinderRange, mapToAvailability } from './toricAvailability';
 
 const profile = GENERIC_TORIC_AVAILABILITY_PROFILE;
 
@@ -95,5 +95,35 @@ describe('mapToAvailability — axis (circular rounding)', () => {
       expect(result.axis).toBeGreaterThanOrEqual(1);
       expect(result.axis).toBeLessThanOrEqual(180);
     }
+  });
+});
+
+describe('exceedsCommonStockCylinderRange', () => {
+  it('is false for a cylinder within the configured range', () => {
+    expect(exceedsCommonStockCylinderRange(-1.5, profile)).toBe(false);
+  });
+
+  it('is false exactly at the largest configured cylinder', () => {
+    expect(exceedsCommonStockCylinderRange(-2.75, profile)).toBe(false);
+  });
+
+  it('is true when the magnitude exceeds the largest configured cylinder', () => {
+    expect(exceedsCommonStockCylinderRange(-3.0, profile)).toBe(true);
+    expect(exceedsCommonStockCylinderRange(-6.0, profile)).toBe(true);
+  });
+
+  it('is false for a cylinder below the smallest configured value — that case substitutes spherical, not a supply gap', () => {
+    expect(exceedsCommonStockCylinderRange(-0.3, profile)).toBe(false);
+  });
+
+  it('is false for a zero (spherical-only) cylinder', () => {
+    expect(exceedsCommonStockCylinderRange(0, profile)).toBe(false);
+  });
+
+  it('agrees with mapToAvailability\'s own clamping behavior: true exactly when the exact cylinder and the mapped cylinder diverge beyond a simple rounding step', () => {
+    // -6.00 clamps to the largest configured cylinder (-2.75), not merely "rounds" to it.
+    const result = mapToAvailability({ sphere: 0, cylinder: -6.0, axis: 90 }, profile);
+    expect(result.cylinderCandidatesD).toEqual([-2.75]);
+    expect(exceedsCommonStockCylinderRange(-6.0, profile)).toBe(true);
   });
 });

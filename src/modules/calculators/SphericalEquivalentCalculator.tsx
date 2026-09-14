@@ -7,6 +7,7 @@ import FavoriteStarButton from '../../components/FavoriteStarButton';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import CalculatorResult from '../../components/CalculatorResult';
 import ActionRow from '../../components/ActionRow';
+import { handleRxRowPaste } from './rxRowPaste';
 
 const SphericalEquivalentCalculator: React.FC = () => {
   const [sphere, setSphere] = useState('');
@@ -40,7 +41,17 @@ const SphericalEquivalentCalculator: React.FC = () => {
         }
       />
       <IonContent fullscreen className="ion-padding">
-        <FieldBoxGrid columns={2}>
+        <FieldBoxGrid
+          columns={2}
+          onPaste={(e) =>
+            // This row has no AXIS field — a pasted full Rx's axis is simply discarded, which
+            // is safe here: spherical equivalent (sphere + cylinder/2) never depends on axis.
+            handleRxRowPaste(e, (fields) => {
+              setSphere(fields.sphere);
+              setCylinder(fields.cylinder);
+            })
+          }
+        >
           <FieldBox
             label="SPH"
             placeholder="0.00"

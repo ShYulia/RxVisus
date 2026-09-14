@@ -7,6 +7,7 @@ import FavoriteStarButton from '../../components/FavoriteStarButton';
 import { FieldBox, FieldBoxGrid } from '../../components/FieldBox';
 import CalculatorResult from '../../components/CalculatorResult';
 import ActionRow from '../../components/ActionRow';
+import { handleRxRowPaste } from './rxRowPaste';
 
 const TranspositionCalculator: React.FC = () => {
   const [sphere, setSphere] = useState('');
@@ -42,7 +43,16 @@ const TranspositionCalculator: React.FC = () => {
         action={<FavoriteStarButton favorite={{ type: 'calculator', id: 'transposition' }} label="Transposition" />}
       />
       <IonContent fullscreen className="ion-padding">
-        <FieldBoxGrid columns={3}>
+        <FieldBoxGrid
+          columns={3}
+          onPaste={(e) =>
+            handleRxRowPaste(e, (fields) => {
+              setSphere(fields.sphere);
+              setCylinder(fields.cylinder);
+              setAxis(fields.axis);
+            })
+          }
+        >
           <FieldBox
             label="SPH"
             placeholder="0.00"

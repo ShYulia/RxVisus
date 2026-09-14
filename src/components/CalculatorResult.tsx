@@ -12,6 +12,10 @@ export interface CalculatorResultProps {
   caution?: string;
   /** Extra secondary content — e.g. an availability/stock-parameters panel. Stays visually subordinate to the primary value. */
   children?: React.ReactNode;
+  /** Keeps primaryValue on one line (shrinking to fit) instead of wrapping — for a full Rx string where an orphaned "x 90" on its own line reads badly. */
+  singleLine?: boolean;
+  /** Compact control shown inline alongside primaryValue (e.g. a copy button) instead of a separate full-width action below. */
+  valueAction?: React.ReactNode;
 }
 
 /**
@@ -27,10 +31,19 @@ const CalculatorResult: React.FC<CalculatorResultProps> = ({
   secondaryValue,
   caution,
   children,
+  singleLine = false,
+  valueAction,
 }) => (
   <div className="rx-result">
     <div className="rx-result-label">{primaryLabel}</div>
-    <div className="rx-result-value">{primaryValue}</div>
+    {valueAction ? (
+      <div className="rx-result-value-row">
+        <div className={`rx-result-value ${singleLine ? 'rx-result-value-singleline' : ''}`}>{primaryValue}</div>
+        <div className="rx-result-value-action">{valueAction}</div>
+      </div>
+    ) : (
+      <div className={`rx-result-value ${singleLine ? 'rx-result-value-singleline' : ''}`}>{primaryValue}</div>
+    )}
     {primaryCaption && <p className="rx-result-panel-caption">{primaryCaption}</p>}
 
     {secondaryLabel && secondaryValue && (

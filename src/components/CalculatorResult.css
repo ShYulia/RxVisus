@@ -24,6 +24,47 @@
   word-break: break-word;
 }
 
+/*
+ * Pairs the primary value with a compact inline action (e.g. a copy button) on the same
+ * row — for results where a full-width ActionRow copy button would dominate the screen.
+ * flex-wrap: wrap is the overflow safety net: min-width: max-content on the value (below)
+ * means it never shrinks below its own full nowrap width, so on a narrow phone where value +
+ * button truly don't both fit, the button wraps onto its own line below rather than clipping
+ * the value — verified on-device after an earlier version (min-width: 0, which lets the value
+ * shrink and silently clip instead of wrapping) truncated a long Common Stock Parameters
+ * value's axis behind the button.
+ */
+.rx-result-value-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+}
+
+.rx-result-value-row .rx-result-value {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: max-content;
+}
+
+.rx-result-value-row .rx-result-value-action {
+  flex: none;
+}
+
+/*
+ * Keeps a full Rx ("-1.95 / -1.86 x 90") on one line rather than wrapping the axis onto its
+ * own line — clamp() scales the size down on narrow phones instead of wrapping; overflow-x is
+ * a last-resort escape hatch for the (now rare, thanks to min-width: max-content above)
+ * button-collision case and any other unusually long value, never truncated (this is copyable
+ * clinical data, not a label — hiding part of it would be worse than a small scroll).
+ */
+.rx-result-value-singleline {
+  font-size: clamp(16px, 5.5vw, 28px);
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
 .rx-result-secondary-row {
   display: flex;
   align-items: baseline;

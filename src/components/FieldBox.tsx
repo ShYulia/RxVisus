@@ -5,11 +5,19 @@ export interface FieldBoxGridProps {
   children: React.ReactNode;
   /** Columns at the field-box's natural size (mobile). Defaults to 3, matching SPH/CYL/AXIS triads. */
   columns?: 2 | 3;
+  /**
+   * Paste handler on the grid's wrapping element — used by SPH/CYL/AXIS rows to catch a
+   * pasted full Rx string regardless of which of the three fields it lands on (the native
+   * paste event bubbles up from whichever FieldBox's input fired it). See rxRowPaste.ts.
+   */
+  onPaste?: (event: React.ClipboardEvent<HTMLDivElement>) => void;
 }
 
 /** Lays FieldBoxes out in a compact grid, matching the boxed input pattern. */
-export const FieldBoxGrid: React.FC<FieldBoxGridProps> = ({ children, columns = 3 }) => (
-  <div className={`rx-fieldbox-grid rx-fieldbox-grid-${columns}`}>{children}</div>
+export const FieldBoxGrid: React.FC<FieldBoxGridProps> = ({ children, columns = 3, onPaste }) => (
+  <div className={`rx-fieldbox-grid rx-fieldbox-grid-${columns}`} onPaste={onPaste}>
+    {children}
+  </div>
 );
 
 export interface FieldBoxProps {
