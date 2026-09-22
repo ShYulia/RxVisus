@@ -8,6 +8,9 @@ during real patient care. It's built by an optometrist who also writes
 software, with a practicing optometrist as its first real user, and
 every formula checked against clinical judgment before it ships.
 
+**Live PWA:** [rxkit.pages.dev](https://rxkit.pages.dev) — installable
+straight from the browser (Add to Home Screen / Install App).
+
 <p>
   <img alt="Status" src="https://img.shields.io/badge/status-MVP%20in%20development-6658A6">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Android%20%7C%20PWA-6658A6">
@@ -67,10 +70,12 @@ get trusted anyway (see [Clinical rigor](#clinical-rigor) below).
   network calls. Every number comes from a pure, unit-tested function.
 - **No patient-identifiable data.** No names, no patient IDs —
   numbers-only, local-only state (see [CLAUDE.md](CLAUDE.md)).
-- **Installable, not just a website.** Ships as a real Android app
-  (Capacitor, Google Play–bound, release signing already configured)
-  and as an installable Progressive Web App for iOS/Safari and desktop,
-  from one codebase.
+- **Installable, not just a website.** Live today as an installable
+  Progressive Web App at [rxkit.pages.dev](https://rxkit.pages.dev)
+  (hosted on Cloudflare Pages) — works on iOS/Safari, Android, and
+  desktop from one codebase. A signed Android release build also
+  exists (Capacitor, release signing configured) but hasn't been
+  published to Google Play yet.
 
 ## Clinical rigor
 
@@ -108,9 +113,11 @@ working conventions are documented in [CLAUDE.md](CLAUDE.md).
 Distance → ADD, Vertex Distance, Spherical Equivalent, Prism &
 Decentration), Favorites, and the Clinical Guide architecture (seeded
 with Binocular Status, Diplopia, and Strabismus) are implemented and
-unit-tested. The app already runs as a native Android build and an
-installable PWA. Most Clinical Guide content is still being written,
-and clinical thresholds flagged in
+unit-tested. The web build is live and installable as a PWA at
+[rxkit.pages.dev](https://rxkit.pages.dev) (Cloudflare Pages); a signed
+Android release build also exists but hasn't been published to Google
+Play. Most Clinical Guide content is still being written, and clinical
+thresholds flagged in
 [CLINICAL_SOURCES.md](docs/clinical/CLINICAL_SOURCES.md) are pending
 final sign-off before release.
 
@@ -136,6 +143,8 @@ for the acknowledgment's exact wording and version history.
 - **[docs/design.md](docs/design.md)** — The product reasoning: what this
   has to beat, information architecture, MVP scope, and what's planned
   beyond it.
+- **[docs/deployment.md](docs/deployment.md)** — The live PWA URL,
+  hosting setup, and how the deployed site relates to this repo.
 - **[docs/clinical/CLINICAL_SOURCES.md](docs/clinical/CLINICAL_SOURCES.md)**
   — Source-by-source audit of every clinical formula, threshold, and
   reference range implemented.
