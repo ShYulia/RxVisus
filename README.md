@@ -86,16 +86,10 @@ optometrist user.
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="46%" alt="Home screen">
+  <img src="docs/screenshots/home.png" width="32%" alt="Home screen">
+  <img src="docs/screenshots/vertex-distance.png" width="32%" alt="Vertex Distance calculator result">
+  <img src="docs/screenshots/test-card.png" width="32%" alt="Cover Test clinical reference card">
 </p>
-<p align="center">
-  <img src="docs/screenshots/vertex-distance.png" width="31%" alt="Vertex Distance calculator result">
-  <img src="docs/screenshots/guide-pathway.png" width="31%" alt="Clinical Guide pathway">
-  <img src="docs/screenshots/test-card.png" width="31%" alt="Cover Test clinical reference card">
-</p>
-
-*Home, a calculator result, a Clinical Guide pathway, and the test card
-it leads to.*
 
 ## Tech stack
 
