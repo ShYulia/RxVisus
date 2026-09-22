@@ -4,9 +4,10 @@
 
 A toolkit for opticians and optometrists — optical calculators and a
 chairside clinical reference, designed to be opened many times a day
-during real patient care. It's built by an optometrist who also writes
-software, with a practicing optometrist as its first real user, and
-every formula checked against clinical judgment before it ships.
+during real patient care. RxKit brings together my professional
+experience in software development and optometry. It is built around
+real clinical workflows, with every formula and clinical rule reviewed
+against both the literature and practical optometric use.
 
 **Live PWA:** [rxkit.pages.dev](https://rxkit.pages.dev) — installable
 straight from the browser (Add to Home Screen / Install App).
@@ -79,14 +80,12 @@ get trusted anyway (see [Clinical rigor](#clinical-rigor) below).
 
 ## Clinical rigor
 
-Every formula, threshold, and reference range is checked against a
-named clinical source, and
-[`docs/clinical/CLINICAL_SOURCES.md`](docs/clinical/CLINICAL_SOURCES.md)
-tracks that process openly: each clinical claim carries one of five
-statuses, from **✅ Verified against a named source** down to
-**🔴 Needs source**, including the handful of places still flagged as
-unvalidated starting points pending review by the app's real
-optometrist user.
+Clinical formulas, reference values, and decision rules are reviewed
+against the literature and documented in
+[`docs/clinical/CLINICAL_SOURCES.md`](docs/clinical/CLINICAL_SOURCES.md).
+The audit distinguishes between values supported directly by published
+sources, areas where the literature varies, and explicit RxKit design
+conventions used where no universal clinical cutoff exists.
 
 ## Screenshots
 
@@ -116,10 +115,10 @@ with Binocular Status, Diplopia, and Strabismus) are implemented and
 unit-tested. The web build is live and installable as a PWA at
 [rxkit.pages.dev](https://rxkit.pages.dev) (Cloudflare Pages); a signed
 Android release build also exists but hasn't been published to Google
-Play. Most Clinical Guide content is still being written, and clinical
-thresholds flagged in
-[CLINICAL_SOURCES.md](docs/clinical/CLINICAL_SOURCES.md) are pending
-final sign-off before release.
+Play. Clinical Guide content is still expanding; the clinical rules and
+thresholds already implemented have completed the documented
+source-review pass in
+[CLINICAL_SOURCES.md](docs/clinical/CLINICAL_SOURCES.md).
 
 ## Clinical disclaimer
 
