@@ -168,7 +168,7 @@ export interface EyeHorizontalInducedPrismResult {
  * Scalar Prentice's Rule (Δ = c(cm) × F180), horizontal only.
  *
  * Sign convention: OUT is positive decentration. Verified against authoritative dispensing
- * teaching (e.g. opticaltraining.com "Mastering Prentice's Rule"; the standard "MOBI" mnemonic):
+ * teaching (e.g. opticaltraining.com "Mastering Prentice's Rule"):
  * a MINUS lens decentered OUT (wider PD than patient) induces BASE IN; a PLUS lens decentered
  * OUT induces BASE OUT. Equivalently: base direction matches the decentration direction for a
  * plus lens, and is opposite the decentration direction for a minus lens. That single sign rule

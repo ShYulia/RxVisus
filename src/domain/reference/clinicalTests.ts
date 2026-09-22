@@ -461,7 +461,7 @@ export const clinicalTests: ClinicalTest[] = [
         items: [
           'Suppression (2 or 3 dots) means the visual system is actively ignoring one eye\'s input to avoid diplopia — common and often adaptive in longstanding strabismus/amblyopia.',
           "Diplopia (5 dots) means both eyes' input is being perceived, unreconciled — relevant in recent-onset or decompensating deviations where suppression hasn't (or can't) develop.",
-          'A pattern that swaps or alternates between the suppression arrangements (sometimes 2, sometimes 3 dots on repeat trials) still indicates suppression, but specifically alternating suppression rather than suppression fixed to one eye — worth noting which, since it has a different prognostic implication (alternating suppression rarely amblyopes as deeply as fixed suppression).',
+          'A pattern that swaps or alternates between the suppression arrangements (sometimes 2, sometimes 3 dots on repeat trials) still indicates suppression, but specifically alternating suppression rather than suppression fixed to one eye — worth noting which: alternating suppression is generally associated with better binocular potential than fixed suppression, which is more characteristic of strabismic amblyopia (Hess BC. Ophthalmic Physiol Opt. 2014).',
         ],
       },
       {
@@ -735,7 +735,7 @@ export const clinicalTests: ClinicalTest[] = [
       {
         heading: 'The push-up overestimation — a real and measured effect',
         items: [
-          "Push-up amplitude is systematically higher than the amplitude measured with a minus-lens (push-down/pull-away) method, by a clinically meaningful margin that itself increases with age — largely because the approaching target grows in retinal image size as it nears (a magnification/proximal cue), which can trigger a stronger accommodative-convergence response than a purely optical stimulus would.",
+          "Push-up amplitude is systematically higher than the amplitude measured with a minus-lens (push-down/pull-away) method — largely because the approaching target grows in retinal image size as it nears (a magnification/proximal cue), which can trigger a stronger accommodative-convergence response than a purely optical stimulus would.",
           'This means push-up amplitude is not directly interchangeable with a minus-lens amplitude from a different visit or a different clinician\'s preferred method — stay consistent with the same technique for a given patient across visits, and don\'t compare a push-up figure against a minus-lens-derived reference table.',
         ],
       },

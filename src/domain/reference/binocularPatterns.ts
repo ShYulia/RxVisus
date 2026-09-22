@@ -53,7 +53,7 @@ const checkConvergenceExcess: PatternCheck = (data, nearSheard) => {
     supporting.push(`Near Sheard's criterion failed (BI ${nearSheard.reserveSource} ${nearSheard.reserveUsed}Δ)`);
   }
   if (data.acaGradient !== undefined && data.acaGradient > BINOCULAR_NORMS.acaHighAboveRatio) {
-    supporting.push(`Elevated AC/A ratio (${data.acaGradient}Δ/D)`);
+    supporting.push(`AC/A ratio above RxKit's reference point (${data.acaGradient}Δ/D)`);
   }
 
   return { id: 'ce', label: 'Convergence Excess', supportingFindings: supporting };

@@ -12,6 +12,16 @@ Date reviewed: 2026-09-01.
 Codebase state audited: `clinical-sources` worktree, based on commit
 `0e875a1` ("Add first-launch clinical-use acknowledgment").
 
+**Follow-up review: 2026-09-22.** A second, deliberately narrower pass — reconciling every
+remaining 🔴 NEEDS SOURCE / 🛑 DISCREPANCY / 🟡 Partially verified item against sources already
+present in the project (in-code comments and this document's own prior citations), then doing
+focused new literature checks only for the items that had no existing project reference at all.
+Individual rows below carry a 2026-09-22 "Reviewed" date and inline note wherever their status or
+supporting source changed in this pass; rows with no note were reconciled and left unchanged
+(already correctly categorized). No clinical logic was changed to make a status "look better" —
+per instruction, group means and secondary-source approximations were explicitly *not* treated as
+license to invent a precise cutoff where none is published.
+
 ## How to read this document
 
 Each row gets a **Status**:
@@ -94,7 +104,7 @@ at face value.
 |---|---|---|---|---|
 | Meridional power via sine-squared law: `Fθ = S + C·sin²(θ − axis)`, evaluated only at 90°/180° | Standard sphero-cylindrical optics (Conoid of Sturm treatment) — e.g. Michaels' *Visual Optics*, Keating's *Geometric, Physical, and Visual Optics*; code cites "American Board of Opticianry / NAO 'Prentice's Rule and Finding the Power of a Lens in Any Meridian'" | The formula, and the deliberate choice to solve H/V independently rather than via a coupled astigmatic power matrix (a genuine, named simplification vs. the full off-axis prismatic-power treatment) | ✅ Verified | 2026-09-01 |
 | Prentice's Rule: `Δ = c(cm) × F(D)` | Prentice's Rule is universal optical-dispensing teaching. Independently confirmed via opticaltraining.com's "Mastering Prentice's Rule" (the same source the code cites) and OptoGrid's "Prentice's Rule: How a PD or Centration Error Induces Prism" — both state the identical `P = c × F` relationship | The core formula, both directions (induced prism from known decentration; required decentration from a target prism) | ✅ Verified | 2026-09-01 |
-| Sign convention: minus lens decentered OUT → BASE IN; plus lens decentered OUT → BASE OUT (the "MOBI"-type rule) | Code cites opticaltraining.com and "the standard MOBI mnemonic." Confirmed opticaltraining.com's Prentice's-Rule page is a real, current resource covering this exact sign relationship; the general base-in/base-out-vs-lens-power-sign relationship is standard optical-dispensing teaching. The specific "MOBI" mnemonic phrasing itself was not independently found in a citable secondary source during this audit (search returned only the general Prentice's-Rule relationship, not that specific mnemonic name) | The underlying sign rule: ✅ Verified. The "MOBI" mnemonic label specifically: 🟡 Partially verified (rule confirmed, mnemonic name not independently corroborated) | 2026-09-01 |
+| Sign convention: minus lens decentered OUT → BASE IN; plus lens decentered OUT → BASE OUT | Code cites opticaltraining.com "Mastering Prentice's Rule," a real, current resource covering this exact sign relationship; the general base-in/base-out-vs-lens-power-sign relationship is standard optical-dispensing teaching | ✅ **Verified** — the unsourced "MOBI" mnemonic name was removed from the code comment in this pass (the underlying sign rule it labeled was always independently correct and remains so; only the specific mnemonic name lacked corroboration) | 2026-09-22 |
 | 10Δ "extreme prism" caution threshold for suggesting split/Fresnel prism | Code is explicit that this is **not** an evidence-based hard manufacturing limit — "a conservative practical heuristic... not a claim that the displacement is impossible" | Nothing beyond itself — correctly labeled | ⚪ RxKit design decision (correctly self-labeled in code) | 2026-09-01 |
 | `LARGE_DECENTRATION_MM = 10` caution in `decentrationWarnings.ts`, evaluated per-axis (not combined via Pythagoras) | Code is explicit: "NOT an evidence-based hard manufacturing limit — no authoritative source ties a specific mm figure to feasibility" | Nothing beyond itself — correctly labeled | ⚪ RxKit design decision (correctly self-labeled in code) | 2026-09-01 |
 | Horizontal prism split evenly between lenses with the *same* base; vertical split evenly with *opposite* bases between the eyes | Standard prism-prescribing/dispensing convention (mirrors the same logic taught alongside Prentice's Rule for prism incorporation) — same convention independently re-implemented in `prismMeasurement.ts`'s `splitPrismEqually()` and stated (uncited, but consistent) in `clinicalPathways.ts`'s `PRISM_DISTRIBUTION_NOTES` | The split convention as a reference/reminder, explicitly caveated in-code as "not necessarily the optimal lens thickness" | ✅ Verified (as a standard convention) — but see note below | 2026-09-01 |
@@ -132,28 +142,28 @@ named criteria, which do need sourcing. This section focuses on (b).
 |---|---|---|---|---|
 | **Cover Test** | Cover-Uncover (manifest/tropia only) vs. Alternate Cover (total deviation, tropia+phoria) is a genuinely different question, and Cover-Uncover must be performed first | Standard binocular-vision-exam teaching — von Noorden & Campos, *Binocular Vision and Ocular Motility*; AAO Basic and Clinical Science Course (Section 6, Pediatric Ophthalmology/Strabismus). Independently confirmed as standard sequence teaching across multiple current clinical-teaching sources found in this audit | The clinical rationale and required sequencing | ✅ Verified | 2026-09-01 |
 | **Cover Test** | Direction naming: eye moves OUT (temporal) → esotropia was present, neutralize BO; moves IN (nasal) → exotropia, neutralize BI | Direct consequence of the definition of eso/exo-deviation and prism neutralization — standard optics/binocular-vision teaching, universal across sources | ✅ Verified | 2026-09-01 |
-| **Maddox Rod** | Line right of light = esophoria (neutralize BO); left = exophoria (BI); below = OD hyper (BD OD); above = OD hypo (BU OD), for a rod-over-OD setup | Standard Maddox Rod teaching (e.g. Scheiman & Wick's *Clinical Management of Binocular Vision*; AOA/optometric-school clinical-procedures manuals). Code states this was "checked against independent optics references" but the specific reference is not named in the file itself | 🟡 Partially verified — the rule matches standard teaching, but no single named source lives in the code; this audit could not pin down which "independent optics references" were originally checked | 2026-09-01 |
-| **Von Graefe Technique** | 12Δ BI OD / 6Δ BU OS standard starting dissociating-prism convention | Not independently found in a citable secondary source during this audit's searches (general Von Graefe procedure was confirmed as a real, standard technique, but this specific starting-prism figure was not independently corroborated) | 🔴 NEEDS SOURCE | 2026-09-01 |
+| **Maddox Rod** | Line right of light = esophoria (neutralize BO); left = exophoria (BI); below = OD hyper (BD OD); above = OD hypo (BU OD), for a rod-over-OD setup | Standard Maddox Rod teaching (e.g. Scheiman & Wick's *Clinical Management of Binocular Vision*; AOA/optometric-school clinical-procedures manuals). This is the identical eso→BO/exo→BI/hyper-eye→BD/hypo-eye→BU rule already independently ✅ Verified in §5 (Cross-Cutting) as universal, source-consistent optics/binocular-vision teaching | ✅ **Verified** — scoring this lower than the identical rule in §5 was an inconsistency in the original pass, not a real evidence gap | 2026-09-22 |
+| **Von Graefe Technique** | 12Δ BI OD / 6Δ BU OS standard starting dissociating-prism convention | Independently corroborated in this follow-up pass by a second institution's clinical-procedures teaching material (UAB School of Optometry), stating the identical 12Δ BI / 6Δ BD(BU) figures | 🟡 **Partially verified** — consistently and independently taught at two institutions, but still no peer-reviewed/textbook primary citation, so short of full Verified | 2026-09-22 |
 | **Von Graefe Technique** | "Typical normal ranges": distance lateral phoria ~ortho to 2Δ exo; near lateral phoria ~3–6Δ exo; vertical phoria ≤1Δ | Broadly consistent with the general shape of published heterophoria norms (this audit found figures such as "≤4Δ distance, ≤6Δ near, ≤1Δ vertical" and "near lateral phoria 2.5–6Δ" in current normative-values literature), but exact bounds vary meaningfully across sources/methods and no single citable source was pinned to this exact figure | 🟡 Partially verified | 2026-09-01 |
 | **Double Maddox Rod** | Red rod over OD / white rod over OS convention; documented attribution bias toward the red-rod eye | Independently confirmed: Kushner BJ, "Color Dissociation Artifacts in Double Maddox Rod Cyclodeviation Testing," *Ophthalmology* (AAO journal), 1994 — the actual peer-reviewed source for the bias claim, found directly in this audit's search (83% of patients in that study localized cyclodeviation to the red-rod eye regardless of true laterality; luminance/spatial-frequency mismatch between red and clear rods was the identified cause) | The attribution-bias claim specifically, and the general red-OD/white-OS setup convention | ✅ Verified — and notably, this audit found a *stronger, more specific* primary source (the actual 1994 Kushner paper) than the code's own comment cites ("AAO EyeWiki/Stanford teaching material") | 2026-09-01 |
 | **Double Maddox Rod** | Excyclotorsion = superior pole rotated temporally; incyclotorsion = rotated nasally (per-eye rule) | Standard cyclotorsion-measurement convention, consistent with AAO EyeWiki "Three Step Test for Cyclovertical Muscle Palsy" and general strabismus teaching | ✅ Verified | 2026-09-01 |
 | **Double Maddox Rod** | Torsion >10° (combined) more typical of bilateral than unilateral superior oblique palsy | Independently confirmed via multiple current sources including StatPearls "Trochlear Nerve Palsy" (NCBI Bookshelf) and AAO EyeWiki "Cranial Nerve 4 Palsy" — both state >10° excyclotorsion on double Maddox rod as a bilateral-palsy indicator, alongside V-pattern esotropia and bilateral fundus torsion | The specific 10° figure and its association with bilateral (vs. unilateral) superior oblique/CN IV palsy | ✅ Verified | 2026-09-01 |
 | **Pinhole Test** | Optical principle (narrows blur circle regardless of refractive-error type); resolves→optical cause, no-change→non-refractive cause; monocular diplopia resolving with pinhole suggests an optical (not neurological) cause | Standard refraction/optics teaching found in every clinical optics/refraction textbook; the monocular-diplopia-pinhole application is standard neuro-ophthalmic teaching (true monocular diplopia is overwhelmingly optical) | ✅ Verified | 2026-09-01 |
 | **Worth 4 Dot** | 2 red dots seen = OS suppressed (only OD's red-filtered eye seeing); 3 green = OD suppressed; 4 (with flickering/mixed bottom) = normal fusion; 5 = diplopia; red-right/green-left = uncrossed (esotropia-typical), green-right/red-left = crossed (exotropia-typical) | Independently confirmed via AAO EyeWiki "Worth 4 Dot" and Wikipedia's "Worth 4 dot test" summary of the standard interpretation table | The interpretation table | ✅ Verified | 2026-09-01 |
-| **Worth 4 Dot** | Alternating suppression has a different (better) prognosis than fixed suppression | Standard amblyopia/suppression teaching (alternating suppression implies neither eye is permanently dominant, generally a more favorable sign) | 🟡 Partially verified — principle is standard teaching; the specific "rarely amblyopes as deeply" phrasing was not matched to a single named source | 2026-09-01 |
-| **Schober Test** | Red/green cross-and-circles direction rules, same eso→BO/exo→BI/hyper→BD-over-that-eye pattern as Maddox Rod | Same status as Maddox Rod above — consistent with standard teaching, no single named source in-code | 🟡 Partially verified | 2026-09-01 |
-| **NPC** | "Break beyond ~6cm is notable" (quick-reminder text; matches `BINOCULAR_NORMS.npcBreakNotableCm = 6`) | This audit independently found normal NPC break commonly cited as ≤5cm (with recovery ≤7cm), and "receded" thresholds cited anywhere from >6cm (pediatric screening context) to >10cm (the more commonly cited general clinical cutoff), across Scheiman/Rouse "Nearpoint of Convergence" (*Optometry and Vision Science*) and related normative-data papers | The general "5–10cm range" is well supported; RxKit's specific 6cm pick sits at the *stricter/lower* end of that range | 🟡 Partially verified — see discrepancy note in §4 | 2026-09-01 |
+| **Worth 4 Dot** | Alternating suppression has a different (better) prognosis than fixed suppression | Hess BC, "Binocular vision in amblyopia: structure, suppression and plasticity," *Ophthalmic Physiol Opt*. 2014 — distinguishes alternating strabismics (suppression without amblyopia) from strabismic amblyopes (fixed suppression) | 🟡 **Partially verified, now cited** — the general association is sourced; the card's specific comparative phrasing ("rarely amblyopes as deeply") was softened in this pass to match what the source actually supports (a general association, not a magnitude comparison) | 2026-09-22 |
+| **Schober Test** | Red/green cross-and-circles direction rules, same eso→BO/exo→BI/hyper→BD-over-that-eye pattern as Maddox Rod | Same rule already independently ✅ Verified in §5 (Cross-Cutting) — see Maddox Rod above for the identical reasoning | ✅ **Verified** — same consistency fix as Maddox Rod | 2026-09-22 |
+| **NPC** | "Break beyond ~6cm is notable" (quick-reminder text; matches `BINOCULAR_NORMS.npcBreakNotableCm = 6`) | Read both primary studies in full this pass: **Hayes et al., Optom Vis Sci 1998;75:506–12** (children, N=297) recommends a **6cm** cutoff — RxKit's figure is an exact match to this pediatric primary source, not an unsourced pick. **Scheiman et al., Optom Vis Sci 2003;80:214–225** (adults, N=175, the rigorous adult-specific primary study) recommends **5cm** break / 7cm recovery instead | RxKit's 6cm is a real, primary-sourced figure — just the pediatric one, applied to a tool used on adults too. Not wrong, but worth a deliberate choice now that both options are precisely known | 🟡 **Partially verified, now precisely sourced** — no longer "somewhere in a wide range"; it's exactly one of two specific, named, primary cutoffs | 2026-09-22 |
 | **NPC** | Receded NPC + near-work asthenopia + reduced BO reserve = "classic Convergence Insufficiency pattern" | Standard, widely-taught CI diagnostic triad (Scheiman & Wick; CITT investigators' published CI diagnostic criteria) | ✅ Verified | 2026-09-01 |
 | **Fusional Vergence Ranges** | Exophoria compensated by BO (convergence) reserve; esophoria compensated by BI (divergence) reserve; blur point preferred over break as the more conservative Sheard's endpoint | Standard binocular-vision teaching (Scheiman & Wick) | ✅ Verified | 2026-09-01 |
 | **Amplitude of Accommodation** | `AA(D) = 100 / near-point-distance(cm)` | Standard reciprocal-distance optics | ✅ Verified | 2026-09-01 |
 | **Amplitude of Accommodation** | Hofstetter's minimum-expected formula: `15 − 0.25×age` | Hofstetter, MC, "Optometric Vision Training," 1950 — the formula's real origin. Independently confirmed via multiple current sources (Wikipedia "Amplitude of accommodation," ScienceDirect topic overview, multiple peer-reviewed re-analyses) that correctly attribute both the 1950 origin and the formula itself | The formula and its 1950 origin | ✅ Verified | 2026-09-01 |
 | **Amplitude of Accommodation** | "More recent population studies report meaningfully lower real-world minimums (particularly in children)" than Hofstetter predicts | Independently confirmed — this audit found a specific peer-reviewed source directly on point: "Hofstetter's equations overestimate the amplitude of accommodation in human eye: An analysis of 5433 subjects" (ResearchGate/journal publication), plus "Does Hofstetter's equation predict the real amplitude of accommodation in children?" (PubMed) reaching the same conclusion | The general "Hofstetter overestimates, especially in children" claim | ✅ Verified — this is actually *better* supported than the code's own hedged phrasing suggested; a specific citable source exists | 2026-09-01 |
-| **Amplitude of Accommodation** | Push-up (accommodative-target) method yields systematically higher AA than push-down/minus-lens method, by a margin that grows with age | Not independently confirmed during this audit — plausible and consistent with general accommodative-measurement literature (push-up methods are known to overestimate AA due to target-size/proximal cues), but no specific citable source was found pinning down "increases with age" | 🔴 NEEDS SOURCE | 2026-09-01 |
+| **Amplitude of Accommodation** | Push-up (accommodative-target) method yields systematically higher AA than push-down/minus-lens method | Well established in the general accommodative-measurement literature — push-up methods overestimate AA due to target-size/proximal (magnification) cues | ✅ **Verified** — the unsupported "and the margin grows with age" clause was removed from the card's text in this pass rather than left asserted without a source; what remains is the well-supported claim | 2026-09-22 |
 | **MAF / BAF (Accommodative Facility)** | ±2.00D flipper at 40cm, cycles/min; plus-side difficulty → trouble relaxing accommodation, minus-side difficulty → trouble stimulating accommodation | Standard test parameters, independently confirmed via multiple current sources (Myopia Profile clinical-procedures summary; peer-reviewed accommodative-facility studies e.g. Vera et al. 2023, *Ophthalmic and Physiological Optics*) | The test parameters and the general plus/minus interpretation logic | ✅ Verified | 2026-09-01 |
 | **MAF / BAF** | Normal facility ≈11cpm monocular / 8cpm binocular (adults), 6–16cpm range cited for younger populations (Scheiman & Wick, 2014) | Independently confirmed via current sources citing Scheiman & Wick's normative figures | The general figures — note RxKit's own `mafNotableBelowCpm = 6` threshold sits at/near the *bottom* of the cited normal range rather than matching a specific "abnormal" cutoff from the literature; see §4 | 🟡 Partially verified | 2026-09-01 |
 | **Gradient AC/A** | Formula: `AC/A = Δphoria(Δ) / Δstimulus(D)`, standard ±1.00D test lens | Standard, universal formula (any binocular-vision textbook) | ✅ Verified | 2026-09-01 |
-| **Gradient AC/A** | "Normal" range ~3:1 to 5:1 (the figure the card explicitly declines to assert as authoritative) | This audit independently confirms the code's own caution was well-founded: 3:1–5:1 is indeed the traditionally-cited figure (multiple sources), but methodologically rigorous gradient-specific studies found materially different, lower, and method-dependent values (e.g. one cited study: near gradient AC/A mean 2.86±2.40, distance gradient 1.22±0.86; "different gradient methods are not interchangeable and a universal normal range should not be applied") | The card's own explicit refusal to state a hard number | ✅ Verified (the caution itself is correct) — but see 🛑 discrepancy in §4 re: `acaHighAboveRatio = 6` | 2026-09-01 |
-| **NRA/PRA** | "Morgan's norms," roughly NRA≈+2.00D, PRA≈−2.37D | Not independently pinned to Morgan's original published normative table during this audit — "Morgan's norms" for NRA/PRA are very widely repeated in secondary optometric-teaching material, but this audit could not independently verify the exact figures against Morgan's primary source | 🔴 NEEDS SOURCE (the card's own self-flag is accurate; this audit could not resolve it further) | 2026-09-01 |
+| **Gradient AC/A** | "Normal" range ~3:1 to 5:1 (the figure the card explicitly declines to assert as authoritative) | This audit independently confirms the code's own caution was well-founded: 3:1–5:1 is indeed the traditionally-cited figure (multiple sources), but methodologically rigorous gradient-specific studies found materially different, lower, and method-dependent values (e.g. one cited study: near gradient AC/A mean 2.86±2.40, distance gradient 1.22±0.86; "different gradient methods are not interchangeable and a universal normal range should not be applied") | The card's own explicit refusal to state a hard number | ✅ Verified (the caution itself is correct) — and now further confirmed: a dedicated 2026 diagnostic-criteria study found gradient AC/A too weak diagnostically to propose *any* cutoff (see §4.1, `acaHighAboveRatio`) | 2026-09-22 |
+| **NRA/PRA** | "Morgan's norms," roughly NRA≈+2.00D, PRA≈−2.37D | Still not pinned to Morgan's original 1944 published table (*Am J Optom Arch Am Acad Optom* 21:301–13 — print-only, not independently retrieved), but this follow-up pass found an independent secondary compilation ("Morgan's Norms" clinical-teaching handout) reproducing the **exact same figures**: NRA +2.00D±0.50, PRA −2.37D±1.00 | 🟡 **Partially verified** — exact-figure match in an independent secondary source, not just "widely repeated"; short of Verified only because the primary 1944 source wasn't itself retrieved | 2026-09-22 |
 | **NRA/PRA** | Low PRA correlates with minus-side MAF difficulty (Accommodative Insufficiency); low NRA correlates with Accommodative Excess | Standard accommodative-dysfunction teaching (Scheiman & Wick classification scheme) | ✅ Verified | 2026-09-01 |
 | **Vergence Facility** | 3Δ BI / 12Δ BO flipper at near, both single-and-clear endpoint | Standard test parameters, independently confirmed (multiple peer-reviewed sources, e.g. "Verifying clinical utility of 12 BI/3 BO prism flipper test," and current vergence-facility-testing literature) | ✅ Verified | 2026-09-01 |
 | **Vergence Facility** | (Not stated on the card, but relevant): commonly-cited failure cutoff ≈10–15cpm | Independently found (multiple studies, e.g. cutoffs of 10.5cpm nonstereo/stereo-local, 9.75cpm stereo-global; "15cpm" cited elsewhere as an easy-to-recall sum-of-demands rule) — RxKit does not assert a specific cutoff on this card, which is consistent with the genuine methodological variability found | ⚪ RxKit correctly declines to assert a specific number here | 2026-09-01 |
@@ -180,10 +190,10 @@ the *qualitative* clinical judgment calls below still need sourcing.
 |---|---|---|---|---|
 | Diplopia | Monocular diplopia (persists with one eye covered) vs. binocular (resolves with either eye covered) is the entire branch point for the workup | Universal, foundational neuro-ophthalmic/optometric teaching — true monocular diplopia is essentially always ocular/optical, binocular diplopia essentially always reflects a misalignment | ✅ Verified | 2026-09-01 |
 | Diplopia (monocular) | New monocular diplopia + visual field defect/metamorphopsia → refer for retinal/macular assessment | Standard, defensible clinical triage logic (field defect/metamorphopsia are themselves independently well-established red flags for retinal/macular pathology) | ✅ Verified (general principle) — no single named source for this specific combined trigger | 2026-09-01 |
-| Diplopia (binocular) | Sudden diplopia + pain, ptosis, or pupil involvement → urgent medical/neuro-ophthalmic referral | The individual signs are each well-established: pupil-involving third-nerve palsy is the single most specific/urgent differentiator (compressive lesion, e.g. PCom aneurysm, requiring emergent neuroimaging — confirmed via StatPearls "Cranial Nerve III Palsy" and current neuro-ophthalmology teaching), while pain and ptosis are supportive but less specific findings also associated with third-nerve palsy | 🟡 Partially verified — see 🛑 discrepancy note below: the code ORs all three signs with equal weight, but the literature gives pupil involvement primacy as *the* differentiator for emergent workup | 2026-09-01 |
+| Diplopia (binocular) | Sudden diplopia + pain, ptosis, or pupil involvement → urgent medical/neuro-ophthalmic referral | Re-checked this pass with current sources: pupil involvement is still the classic differentiator, but **the "rule of the pupil" is now explicitly flagged in current literature as not absolute** — up to 20% of benign ischemic palsies show some pupil involvement, and early compressive lesions can spare the pupil. Pain does not reliably differentiate cause either | The original critique (down-weight pain/ptosis relative to pupil involvement) doesn't hold up: since pupil-sparing isn't reliable enough on its own to safely de-prioritize referral, and RxKit only triggers "seek prompt evaluation" rather than assigning a risk tier, treating all three as independent OR-triggers is the safer design, not a gap | ✅ **Verified (as a triage, not diagnostic, tool)** — was 🟡 + discrepancy note | 2026-09-22 |
 | Diplopia (binocular) | Gaze-dependent (incomitant) deviation complicates permanent single-prism management | Standard clinical reasoning (an incomitant deviation, by definition, varies by gaze position, so a single fixed prism cannot fully correct it in every position) | ✅ Verified (direct logical consequence of "incomitant," not a separate empirical claim) | 2026-09-01 |
 | Diplopia (binocular) | Prism may relieve symptomatic diplopia but is unlikely to restore fusion while suppression persists | Standard sensory-adaptation teaching (suppression is a cortical/sensory adaptation, not corrected by realigning the images with prism) | ✅ Verified | 2026-09-01 |
-| Strabismus | "Strabismus, fusion, and suppression do not by themselves lead to prism — a symptomatic binocular problem does" / "No current diplopia → prism is not indicated based on sensory testing alone" | Consistent with mainstream prism-prescribing philosophy (prism treats symptomatic diplopia/discomfort, not the presence of strabismus itself) — broadly aligned with AAO/AOA teaching on prism indications, though no single named source states this exact framing | 🟡 Partially verified — this is the single highest-stakes unsourced clinical rule in the pathway file; recommend an explicit citation (e.g. AAO BCSC Strabismus volume, or a named strabismus/prism-prescribing reference) before treating it as validated | 2026-09-01 |
+| Strabismus | "Strabismus, fusion, and suppression do not by themselves lead to prism — a symptomatic binocular problem does" / "No current diplopia → prism is not indicated based on sensory testing alone" | Now cited: **StatPearls, "Fresnel Prisms"** (NCBI Bookshelf NBK589665) frames prism indications consistently around symptomatic relief (diplopia, asthenopia) rather than correcting the deviation itself; general strabismus-management teaching is explicit that an asymptomatic deviation found on routine exam requires no treatment | The wording itself was reviewed and left unchanged — it's already appropriately conditional ("based on findings so far," not an absolute rule) and matches what the new citation supports | 🟡 **Partially verified, now cited** — still a tertiary/point-of-care reference rather than a named primary paper or the BCSC volume itself, so short of full Verified | 2026-09-22 |
 | Strabismus | New/recent strabismus + diplopia → consider urgent medical/neuro-ophthalmic assessment | Same reasoning as the diplopia red flag above — acute-onset strabismus with diplopia raises concern for an acquired (often neurological) cause vs. longstanding/childhood strabismus | ✅ Verified (general principle) | 2026-09-01 |
 | Strabismus | Gaze-dependent deviation: "trial for the patient's relevant functional viewing position... verify comfort/single vision before prescribing" | Standard clinical dispensing practice for incomitant deviations | ✅ Verified | 2026-09-01 |
 | Shared prism workflow | Prism dosing is titrated by trial-frame comfort ("single comfortable vision"), not calculated directly from the raw measured deviation | Standard clinical practice — the measured deviation informs the starting trial amount, but the prescribed amount is verified/adjusted by trial, matching general prism-prescribing teaching | ✅ Verified | 2026-09-01 |
@@ -208,17 +218,17 @@ comment), which makes them easy to audit in one place.
 
 | Threshold | Value | Source | Status | Reviewed |
 |---|---|---|---|---|
-| NPC "notable" break | >6cm | Code comment itself says "commonly cited range is ~5–10cm." This audit independently found normal break commonly cited as ≤5cm, with "receded" cutoffs ranging from ~6cm (pediatric screening context specifically) to >10cm (the more common general-clinical-practice cutoff, per Scheiman/Rouse *Optometry and Vision Science* normative paper and related literature) | 🟡 Partially verified — 6cm is *within* the cited range but at its strict/low end, closer to a pediatric-screening cutoff than the more commonly cited general->10cm "receded" threshold | 2026-09-01 |
-| Near phoria "notable" magnitude | ≥8Δ | Not independently matched to a specific named source — a plausible value given near exophoria norms of roughly 3–6Δ (so 8Δ is "above normal" by most cited ranges), but no source ties this exact cutoff to clinical significance vs. just "outside normal range" | 🔴 NEEDS SOURCE | 2026-09-01 |
-| Distance phoria "notable" magnitude | ≥3Δ | Same reasoning — plausible given distance norms of ~ortho to 2Δ exo/4Δ, but not independently sourced as *the* clinically-significant cutoff | 🔴 NEEDS SOURCE | 2026-09-01 |
-| MAF "notable" | <6cpm | Sits at/below the bottom of the cited 6–16cpm normal range for younger populations and below the ~8–11cpm adult norms found in this audit — a defensible "clearly low" pick, but not itself an independently sourced cutoff | 🟡 Partially verified | 2026-09-01 |
+| NPC "notable" break | >6cm | Same two primary sources as §2 above: Hayes et al. 1998 (children, cutoff 6cm — exact match) vs. Scheiman et al. 2003 (adults, cutoff 5cm) | 🟡 **Partially verified, now precisely sourced** — exactly matches a real primary pediatric cutoff; the adult-specific literature recommends 5cm instead | 2026-09-22 |
+| Near phoria "notable" magnitude | ≥8Δ | Morgan's-norms compilation: near lateral phoria 3Δ exo ± 3 SD. 8Δ ≈ mean + 1.67SD (just under mean+2SD = 9) | RxKit's own quantified pick against a real, named normative table — not an arbitrary guess, but still RxKit's derived choice, not a literature-stated cutoff | ⚪ **RxKit design decision (quantified)** | 2026-09-22 |
+| Distance phoria "notable" magnitude | ≥3Δ | Same table: distance lateral phoria 1Δ exo ± 2 SD. 3Δ = **exactly** mean + 1SD | Cleanly matches a defensible, specific statistic from a named table | ⚪ **RxKit design decision (quantified)** | 2026-09-22 |
+| MAF "notable" | <6cpm | Sits at the floor of the already-cited 6–16cpm/~8–11cpm adult norm range (§2) | Same style of floor-of-range pick as the phoria thresholds above | ⚪ **RxKit design decision (quantified)** | 2026-09-22 |
 | Sheard's multiplier | 2× | ✅ Verified — see §2 Sheard's Criterion above | ✅ Verified | 2026-09-01 |
 | Hofstetter minimum AA | `15 − 0.25×age` | ✅ Verified — see §2 above | ✅ Verified | 2026-09-01 |
-| Phoria-similar margin (distance vs. near, for Basic patterns) | 3Δ | No source found — this is the core threshold that decides whether a CI/CE/DI/DE pattern check even runs (distance-vs-near difference must *exceed* this margin) vs. a Basic-phoria check (difference must be *within* it). This is entirely an RxKit engineering choice for where to draw the line between two real, differently-named clinical categories | 🔴 NEEDS SOURCE — and see 🛑 discrepancy note below | 2026-09-01 |
-| Near-ortho max (for Fusional Vergence Dysfunction gate) | ≤2Δ | No source found | 🔴 NEEDS SOURCE | 2026-09-01 |
-| AC/A "high" threshold | >6 Δ/D | No source found in-code or externally. See 🛑 discrepancy below — this specific number is in tension with the codebase's *own* Gradient AC/A test card, which explicitly declines to assert any specific "normal" number, and with the literature's finding that gradient-method AC/A values run materially lower/more variable than the traditionally-cited 3:1–5:1 | 🛑 DISCREPANCY | 2026-09-01 |
-| Near BI "reduced" break | <10Δ | No source found | 🔴 NEEDS SOURCE | 2026-09-01 |
-| Near BO "reduced" break | <15Δ | No source found. (Loosely consistent with the general shape of Morgan's-type near BO norms this audit found earlier — base-out break ~21Δ typical — in that 15Δ sits below a typical value, but no source independently ties 15Δ specifically to "reduced/clinically notable") | 🟡 Partially verified | 2026-09-01 |
+| Phoria-similar margin (distance vs. near, for Basic patterns) | 3Δ | None possible — Duane's classification names the "Basic" category qualitatively ("similar at distance and near") and was never itself numeric; there is no published number to be sourced or contradicted here | Correctly an engineering translation of a real but non-numeric clinical taxonomy into a usable boundary | ⚪ **RxKit design decision** | 2026-09-22 |
+| Near-ortho max (for Fusional Vergence Dysfunction gate) | ≤2Δ | Same reasoning as above — FVD's "normal near/distance phoria" criterion is qualitative in the source literature, never quantified | Same | ⚪ **RxKit design decision** | 2026-09-22 |
+| AC/A "high" threshold | >6 Δ/D | A dedicated 2026 diagnostic-criteria study (Cacho-Martínez et al., *J Eye Mov Res*, doi:10.3390/jemr19030053) measured gradient AC/A specifically to find a Convergence Excess cutoff, found it too diagnostically weak to propose one at all (AUC 0.688, below their own usefulness threshold), and excluded it from their criteria — **no validated gradient AC/A cutoff exists in the published literature, full stop** | Relabeled in this pass, not re-derived from a group mean (a mean is not a clinical cutoff, and none was substituted). The number `6` is retained as RxKit's own reference point; the code comment and UI text now say so explicitly instead of implying a sourced threshold | ⚪ **RxKit design decision / reference point** (was 🛑 DISCREPANCY) | 2026-09-22 |
+| Near BI "reduced" break | <10Δ | Morgan's-norms compilation: near BI break 21Δ ± 4 SD. 10Δ ≈ mean − 2.75SD — notably stricter than a symmetric mean−1SD rule would give (17Δ) | Quantified, but not derived the same way as the BO figure below — the asymmetry between the two cutoffs isn't explained anywhere in-code | ⚪ **RxKit design decision (quantified, asymmetric — worth a comment explaining why)** | 2026-09-22 |
+| Near BO "reduced" break | <15Δ | Same table: near BO break 21Δ ± 6 SD. 15Δ = **exactly** mean − 1SD | Cleanly matches a defensible, specific statistic | ⚪ **RxKit design decision (quantified)** | 2026-09-22 |
 
 ### 4.2 Sheard's Criterion application (`domain/reference/binocularSheard.ts`)
 
@@ -279,8 +289,10 @@ The new shape, applied uniformly to all nine patterns:
   original implementation** — the same `phoriaSimilarMarginDelta`/
   `nearOrthoMaxDelta`/`nearBiBreakLowDelta`/etc. thresholds audited in §4.1
   still gate whether a pattern is suggested at all, for CI, CE, DI, DE, and
-  Basic Exo/Eso. Their evidence status is unchanged by this redesign: mostly
-  🔴 NEEDS SOURCE / ⚪ RxKit clinical convention, exactly as recorded in §4.1.
+  Basic Exo/Eso. Their evidence status was unchanged by this redesign — see
+  §4.1 for the current, individually-reconciled status of each (updated
+  2026-09-22; mostly ⚪ RxKit design decisions, several now with quantified
+  grounding against named normative tables).
 
   **FVD, Accommodative Excess, Accommodative Insufficiency, and
   Accommodative Infacility were revised on 2026-09-02**, after their
@@ -373,17 +385,17 @@ triggers identified in the 2026-09-02 follow-up review are now resolved too
 and every trigger that requires two signals now requires them for a
 specifically-considered reason (either a validated criterion, for AI, or an
 explicitly-labeled RxKit convention, for the other three) rather than by
-inheritance from the old tier system. **What remains open**, unchanged by
-either pass: the evidence status of CI/CE/DI/DE/Basic's individual trigger
-thresholds (§4.1) and the CE AC/A-method-mismatch discrepancy (#1 below) —
-both intentionally out of scope, per the user's explicit direction to keep
-each pass narrowly scoped rather than re-validating every threshold at once.
+inheritance from the old tier system. CI/CE/DI/DE/Basic's individual trigger
+thresholds (§4.1) and the CE AC/A-method-mismatch discrepancy were reconciled
+in the 2026-09-22 follow-up pass (see §4.1 and discrepancy-list item 1 below)
+— both were left alone by the 2026-09-01/02 passes on the user's explicit
+direction to keep each pass narrowly scoped, not because they were resolved.
 
 ### 4.5 Management Considerations (`domain/reference/binocularManagement.ts`)
 
 | Claim | Source | Status | Reviewed |
 |---|---|---|---|
-| CI: vergence/accommodative therapy "an important option, particularly in younger/symptomatic patients — prism is not the default first recommendation" | Independently supported by the CITT (Convergence Insufficiency Treatment Trial) — a NEI-funded multicenter RCT (Scheiman M, et al., "Randomized Clinical Trial of Treatments for Convergence Insufficiency in Childhood," published in the *CITT* investigator group's papers, *Archives of Ophthalmology*/*Optometry and Vision Science*, ~2005–2008) demonstrating office-based vergence/accommodative therapy outperforms other CI treatments in symptomatic children | 🟡 Partially verified — the general direction is well-supported by CITT for the *pediatric/young, symptomatic* population specifically named in the card; this audit did not independently verify the broader claims for adults, nor line-by-line detail beyond that headline finding | 2026-09-01 |
+| CI: vergence/accommodative therapy "an important option, particularly in younger/symptomatic patients — prism is not the default first recommendation" | CITT (Convergence Insufficiency Treatment Trial) — a NEI-funded multicenter RCT (Scheiman M, et al., *Archives of Ophthalmology*/*Optometry and Vision Science*, ~2005–2008) for children. A **separate CITT-affiliated adult RCT** (ages 19–30) independently confirmed this pass shows office-based therapy improving NPC and positive fusional vergence in young adults with symptomatic CI too | The "adults not independently verified" gap was overstated — it's specifically presbyopic/older-adult ages that remain uncovered, not "adults" broadly | ✅ **Verified for children and young adults (19–30)** — genuinely open only beyond that age range | 2026-09-22 |
 | CI: "no simplistic 'under 40 = therapy, over 40 = prism'" | Reasonable clinical caution against oversimplification; consistent with general teaching that treatment choice should be individualized, but not itself a citable empirical claim | ⚪ RxKit design decision (a reasonable caution, not an empirical claim) | 2026-09-01 |
 | General AOA-CPG alignment: best-correction-first, vergence/accommodative therapy vs. lens/prism support per pattern | Broadly consistent in spirit with AOA's "Care of the Patient with Accommodative and Vergence Dysfunction" Clinical Practice Guideline (a real, current AOA consensus-based guideline found during this audit) | 🟡 Partially verified — general alignment confirmed; this audit did not perform a line-by-line comparison against the full CPG text | 2026-09-01 |
 | All other pattern-specific management summaries (CE/DI/DE/Basic/FVD/AE/AInfac) | Code's own header comment: "a reasonable draft, not yet clinically validated" | Not independently verified beyond general clinical plausibility (each recommendation — e.g. plus addition for accommodatively-driven CE, BI prism as symptomatic relief, facility therapy for infacility — is directionally consistent with mainstream binocular-vision management teaching, but no line-by-line source check was performed for each bullet) | 🟡 Partially verified (general plausibility only) | 2026-09-01 |
@@ -457,6 +469,17 @@ this reduces the risk of the four copies silently drifting apart over time.
 - **Sheard's Criterion and Percival's Criterion** — both are real, correctly
   stated, well-established named criteria (now independently sourced by this
   audit, even though neither carried an inline citation in the code before).
+- **The eso→BO/exo→BI/hyper→BD/hypo→BU direction convention as taught by
+  Maddox Rod and Schober Test specifically** — this is the same rule already
+  Verified in §5 as universal optics teaching; scoring it lower on those two
+  individual cards was an inconsistency fixed in the 2026-09-22 follow-up.
+- **CI vergence/accommodative therapy over prism, for children *and* young
+  adults (19–30)** — a dedicated adult CITT-affiliated RCT closes most of what
+  was previously an unverified "adults" gap (2026-09-22).
+- **The third-nerve-palsy pain/ptosis/pupil OR-logic red flag, as a triage (not
+  diagnostic) trigger** — re-checked in 2026-09-22 against current literature
+  on pupil-sparing reliability; the current non-differentiated design turns out
+  to be the safer choice, not a gap.
 - **Superior oblique palsy torsion pattern** (excyclotorsion of the
   hypertropic eye; >10° suggesting bilateral palsy) — confirmed against
   StatPearls and AAO EyeWiki.
@@ -471,67 +494,61 @@ this reduces the risk of the four copies silently drifting apart over time.
 
 ### 2. Weakly supported or missing-source areas
 
-- **The Binocular Status pattern triggers' individual thresholds** (§4.1) —
-  the corroboration-counting/confidence-scoring layer that used to sit on top
-  of them was removed in the 2026-09-01 redesign (§4.4), but the underlying
-  per-pattern trigger numbers themselves (`phoriaSimilarMarginDelta`,
-  `nearOrthoMaxDelta`, `nearBiBreakLowDelta`/`nearBoBreakLowDelta`, etc.) were
-  deliberately left unchanged and are still mostly unsourced clinical
-  convention — real diagnostic categories, RxKit-chosen numeric gates.
-- **Most of `binocularNorms.ts`'s "notable" thresholds** (near/distance
-  phoria magnitude, phoria-similar margin, near-ortho max, near BI/BO
-  "reduced" break) — 🔴 NEEDS SOURCE, no citable authority found.
-- **Von Graefe's 12Δ BI/6Δ BU starting-prism convention** — plausible,
-  standard-sounding, but not independently corroborated.
-- **NRA/PRA "Morgan's norms" figures** (+2.00D / −2.37D) — repeatedly cited in
-  secondary sources but not independently traced to a primary source.
-- **AA push-up-vs-push-down systematic-difference claim** — plausible,
-  unsourced.
+**Updated 2026-09-22** — reconciled against sources already present in the
+project, plus focused new research for items that had none. Most of what this
+section listed on 2026-09-01 turned out to be *derived software cutoffs from
+an already-sourced clinical rule* or *secondary-source-only* citations, not
+clinical claims with no support at all — see the per-row status changes above
+for the full reasoning. What remains genuinely weak or missing:
+
+- **The Binocular Status pattern triggers' individual numeric cutoffs**
+  (§4.1: near/distance phoria magnitude, near BI/BO "reduced" break, MAF
+  "notable," phoria-similar margin, near-ortho max) — now individually
+  reclassified as ⚪ **RxKit design decisions**, several with real quantified
+  grounding against Morgan's-type norms (documented per-row above), rather
+  than left as blanket 🔴 NEEDS SOURCE. The underlying diagnostic categories
+  are real and sourced; these specific numeric gates are RxKit's own, by
+  necessity — no published source could settle most of them even in principle
+  (Duane's classification was never itself numeric).
 - **Most of `binocularManagement.ts`'s pattern-specific management bullets**
-  beyond the CI/CITT-supported headline — directionally reasonable, not
-  individually verified.
-- **The strabismus pathway's core prism-prescribing philosophy** ("prism
-  treats the symptom, not the strabismus") — reasonable and broadly
-  consistent with mainstream teaching, but no single named source in the code
-  or found by this audit for that exact framing.
+  beyond the CI/CITT-supported headline — still directionally reasonable, not
+  individually verified line-by-line. Unchanged by this pass; a real task if
+  wanted later.
+- **AOA CPG general alignment** — named source exists, no full line-by-line
+  comparison performed. Unchanged; a real task if wanted later.
 
 ### 3. Implementation/source discrepancies requiring review
 
-1. **🛑 AC/A "elevated" threshold (`acaHighAboveRatio = 6`) contradicts the
-   codebase's own Gradient AC/A test card.** The test card explicitly declines
-   to state a normal-range number, citing genuine methodological
-   uncertainty/variability in the literature (which this audit confirmed —
-   gradient-method AC/A values run materially lower and more variable than
-   the traditionally-cited 3:1–5:1 range). `binocularPatterns.ts` still uses
-   this hard-coded `6` to decide whether the "Elevated AC/A ratio" finding is
-   shown under a Convergence Excess suggestion, with no source of its own.
-   **Still open as of the 2026-09-01 confidence-scoring redesign** — that
-   redesign deliberately preserved every pattern's existing supporting-findings
-   selection logic unchanged (including this one), on the user's explicit
-   instruction that this specific, already-identified misapplication be
-   handled as its own separate change rather than folded into the scoring
-   removal. **Recommend:** either find/cite a specific source for `6` as a
-   genuine "clearly elevated" cutoff for the *gradient* method specifically,
-   or stop gating the finding's inclusion on this number and show the raw
-   AC/A value with a brief reference-range caption instead.
-2. **🛑 Third-nerve-palsy-style red flag (pain, ptosis, OR pupil involvement)
-   treats all three signs as equally weighted triggers**, but the
-   neuro-ophthalmology literature specifically singles out **pupil
-   involvement** as the differentiator that determines emergent-imaging
-   urgency (a normal pupil with complete painful ophthalmoplegia is
-   classically ischemic/microvascular and less immediately emergent than a
-   fixed, dilated pupil, which is classically compressive). The current OR
-   logic is not *wrong* (all three are legitimate reasons for prompt
-   referral) but doesn't reflect that pupil involvement carries
-   disproportionate urgency. **Recommend clinical review** of whether the red
-   flag's wording/urgency framing should distinguish pupil involvement from
-   the other two signs.
-3. **NPC "notable" threshold (6cm) sits at the strict end of a wide, genuinely
-   contested normal range (5–10cm across sources)**, closer to a pediatric-
-   screening cutoff than the more commonly cited general->10cm clinical
-   "receded" threshold. Not wrong, but worth an explicit clinical decision
-   (and a comment explaining *why* 6 was chosen over, say, 10) rather than
-   leaving it as an unexplained pick within a cited range.
+1. ~~🛑 AC/A "elevated" threshold (`acaHighAboveRatio = 6`) contradicts the
+   codebase's own Gradient AC/A test card~~ — **resolved 2026-09-22**: a
+   dedicated 2026 diagnostic-criteria study (Cacho-Martínez et al., *J Eye Mov
+   Res*, doi:10.3390/jemr19030053) confirms **no validated gradient AC/A
+   cutoff exists in the literature** — the study measured exactly this
+   relationship, found gradient AC/A too diagnostically weak to propose a
+   cutoff at all (AUC 0.688), and excluded it from their own criteria. Per
+   explicit instruction, a group mean was *not* used to derive a replacement
+   number (a mean is not a clinical cutoff). Instead: `binocularNorms.ts`'s
+   comment, the `binocularPatternSources.ts` CE citation, and the
+   `binocularPatterns.ts` UI finding text ("Elevated AC/A ratio" →
+   "AC/A ratio above RxKit's reference point") were all updated to state
+   plainly that `6` is RxKit's own reference point, not a clinical threshold.
+   Status reclassified ⚪ RxKit design decision / reference point.
+2. ~~🛑 Third-nerve-palsy-style red flag (pain, ptosis, OR pupil involvement)
+   treats all three signs as equally weighted triggers~~ — **resolved
+   2026-09-22**: re-checked against current sources; the "rule of the pupil"
+   is itself now flagged in the literature as unreliable (up to 20% of benign
+   ischemic palsies show some pupil involvement; early compressive lesions can
+   spare it), and pain doesn't reliably differentiate cause either. Since
+   RxKit only triggers "seek prompt evaluation" rather than a risk tier,
+   equal-weight OR-logic is the safer design, not a gap. No code change;
+   status reclassified ✅ Verified (as a triage tool).
+3. **NPC "notable" threshold (6cm)** — no longer "an unexplained pick within a
+   contested range": read both governing primary studies in full this pass.
+   It's an *exact match* to Hayes et al. 1998's pediatric cutoff, while
+   Scheiman et al. 2003's rigorous adult-specific study recommends 5cm
+   instead. Precisely characterized now rather than resolved outright — still
+   worth a deliberate choice between the two, or an explicit comment
+   explaining why the pediatric figure was kept for a general-audience tool.
 4. ~~Sheard's Criterion and Percival's Criterion carried zero inline source
    citation anywhere in the codebase~~ — **fixed 2026-09-01**: citations
    (Sheard C. "Zones of Ocular Comfort." *American Journal of Optometry*.

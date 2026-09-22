@@ -33,7 +33,14 @@ export const BINOCULAR_NORMS = {
   phoriaSimilarMarginDelta: 3,
   /** Phoria magnitude at/near this (Δ) or below is treated as "near ortho" for Fusional Vergence Dysfunction purposes. */
   nearOrthoMaxDelta: 2,
-  /** Gradient AC/A above this (Δ/D) is treated as elevated, supporting a Convergence Excess pattern. */
+  /**
+   * Gradient AC/A above this (Δ/D) is treated as elevated, supporting a Convergence Excess pattern.
+   * No validated clinical cutoff exists for "elevated" gradient AC/A — a dedicated 2026 diagnostic-
+   * criteria study (Cacho-Martínez et al., J Eye Mov Res, doi:10.3390/jemr19030053) measured gradient
+   * AC/A specifically for this purpose, found it too diagnostically weak to propose a cutoff at all
+   * (AUC 0.688), and excluded it from their criteria. This is RxKit's own reference point, not a
+   * clinical threshold — see docs/clinical/CLINICAL_SOURCES.md §4.1 for the full reasoning.
+   */
   acaHighAboveRatio: 6,
   /** Near BI break below this (Δ) is treated as reduced (Fusional Vergence Dysfunction supporting finding only — not a hard cutoff for any pass/fail). */
   nearBiBreakLowDelta: 10,
