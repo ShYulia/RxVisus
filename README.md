@@ -4,7 +4,7 @@
 
 A toolkit for opticians and optometrists — optical calculators and a
 chairside clinical reference, designed to be opened many times a day
-during real patient care. RxKit brings together my professional
+during patient care. RxKit brings together my professional
 experience in software development and optometry. It is built around
 real clinical workflows, with every formula and clinical rule reviewed
 against both the literature and practical optometric use.
@@ -145,8 +145,9 @@ for the acknowledgment's exact wording and version history.
 - **[docs/deployment.md](docs/deployment.md)** — The live PWA URL,
   hosting setup, and how the deployed site relates to this repo.
 - **[docs/clinical/CLINICAL_SOURCES.md](docs/clinical/CLINICAL_SOURCES.md)**
-  — Source-by-source audit of every clinical formula, threshold, and
-  reference range implemented.
+  — Audit of every clinical formula, threshold, and reference range
+  implemented, including documented RxKit design conventions used
+  where no universal clinical cutoff exists.
 - **[docs/legal/ACKNOWLEDGMENT_HISTORY.md](docs/legal/ACKNOWLEDGMENT_HISTORY.md)**
   — Immutable version history of the first-launch clinical-use
   acknowledgment's exact wording.
