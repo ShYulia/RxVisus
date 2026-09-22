@@ -108,37 +108,18 @@ worth trusting.
 
 ## Screenshots
 
-The repo doesn't yet contain real captures of the running app — only an
-early visual-design reference used to lock down the brand's color
-palette, type, and layout language before build (not a screenshot of
-current UI, and some on-screen copy has since changed). Once you have a
-debug build or emulator running, this is the highest-leverage thing you
-can add to this README. Recommended set — **5 screens**, arranged as one
-row of phone-frame images under this heading:
-
-1. **Home** — the "several times a day" entry point; sells the calm,
-   uncluttered first impression.
-2. **Calculators list** — shows the breadth of tools at a glance.
-3. **Vertex Distance result** — the single best "this is real clinical
-   software" screen: exact Rx and stock-lens parameters shown separately,
-   with the outside-stock-range notice visible if you trigger it.
-4. **Clinical Guide pathway** (e.g. Diplopia → a branch screen) — sells
-   the problem-first navigation idea in one glance.
-5. **A Test Card** (e.g. Double Maddox Rod) — sells the depth/quality of
-   the reference content itself.
-
-Export at actual device resolution (or a consistent phone-frame mockup),
-drop them in `docs/screenshots/`, and reference them here as:
-
-```md
 <p>
-  <img src="docs/screenshots/home.png" width="19%">
-  <img src="docs/screenshots/calculators.png" width="19%">
-  <img src="docs/screenshots/vertex-distance.png" width="19%">
-  <img src="docs/screenshots/guide-pathway.png" width="19%">
-  <img src="docs/screenshots/test-card.png" width="19%">
+  <img src="docs/screenshots/home.png" width="19%" alt="Home screen">
+  <img src="docs/screenshots/calculators.png" width="19%" alt="Calculators list">
+  <img src="docs/screenshots/vertex-distance.png" width="19%" alt="Vertex Distance result">
+  <img src="docs/screenshots/guide-pathway.png" width="19%" alt="Clinical Guide pathway">
+  <img src="docs/screenshots/test-card.png" width="19%" alt="Cover Test card">
 </p>
-```
+
+*Home → Calculators → Vertex Distance (exact Rx and stock-lens
+parameters, shown separately) → a Clinical Guide pathway question,
+several branches deep, with its breadcrumb → the Cover Test card it
+leads to, complete with an eye-position diagram.*
 
 ## Tech stack
 
